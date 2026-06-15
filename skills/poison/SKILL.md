@@ -10,7 +10,7 @@ This skill is scaffolded but not yet implemented.
 Read the repository plan before using or extending it:
 
 - `poison_execution_plan_zh.md`
-- `docs/plan/`
+- `docs/`
 - `poison_taxonomy_single_word_full.md`
 - `WORKFLOW.md`
 

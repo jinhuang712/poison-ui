@@ -2,7 +2,7 @@
 
 `poison-ui` is an early-stage, platform-neutral skill and command design for controlled UI prototype evolution. It is being designed to support Claude Code, Codex, and agentic workflows through one command, shared contracts, and evidence-based review gates.
 
-The project is currently in planning/scaffolding. The implementation plan index is [poison_execution_plan_zh.md](./poison_execution_plan_zh.md), and detailed contracts live under [docs/plan](./docs/plan).
+The project is currently in planning/scaffolding. The implementation plan index is [poison_execution_plan_zh.md](./poison_execution_plan_zh.md), and detailed contracts live under [docs](./docs).
 
 ## Goals
 
@@ -33,7 +33,7 @@ Planned modes:
 bin/poison.mjs
 skills/poison/SKILL.md
 skills/poison/references/
-docs/plan/
+docs/
 poison_execution_plan_zh.md
 poison_taxonomy_single_word_full.md
 WORKFLOW.md
@@ -59,7 +59,7 @@ poison [action-or-mode] [options]
 
 Read [WORKFLOW.md](./WORKFLOW.md) first. This file is intentionally project-neutral. Repository-specific agent instructions live in [AGENTS.md](./AGENTS.md) and [CLAUDE.md](./CLAUDE.md). Product and skill behavior belongs in [poison_execution_plan_zh.md](./poison_execution_plan_zh.md) and future `skills/poison/**` files.
 
-Do not grow [poison_execution_plan_zh.md](./poison_execution_plan_zh.md) back into a single huge reference. Update the relevant file under [docs/plan](./docs/plan).
+Do not grow [poison_execution_plan_zh.md](./poison_execution_plan_zh.md) back into a single huge reference. Update the relevant file under [docs](./docs).
 
 ## Status
 

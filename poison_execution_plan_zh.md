@@ -1,6 +1,6 @@
 # Codex 执行计划：构建 `poison` 受控演进式原型生成 Skill
 
-> 本文件是实施方案索引，不再承载全部细节。详细契约按主题拆分在 `docs/plan/` 下。
+> 本文件是实施方案索引，不再承载全部细节。详细契约按主题拆分在 `docs/` 下。
 
 ## Mission
 
@@ -16,20 +16,20 @@
 
 | Topic | File |
 |---|---|
-| Overview and goals | [docs/plan/00-overview.md](./docs/plan/00-overview.md) |
-| Repository architecture | [docs/plan/01-repository-architecture.md](./docs/plan/01-repository-architecture.md) |
-| Core runtime contracts | [docs/plan/02-core-runtime-contracts.md](./docs/plan/02-core-runtime-contracts.md) |
-| Modes and command API | [docs/plan/03-modes-and-command-api.md](./docs/plan/03-modes-and-command-api.md) |
-| Harness adapter contract | [docs/plan/04-harness-adapter-contract.md](./docs/plan/04-harness-adapter-contract.md) |
-| Autonomous workflow | [docs/plan/05-autonomous-workflow.md](./docs/plan/05-autonomous-workflow.md) |
-| Review and audit pipeline | [docs/plan/06-review-and-audit-pipeline.md](./docs/plan/06-review-and-audit-pipeline.md) |
-| Tools, gates, and state | [docs/plan/07-tools-gates-and-state.md](./docs/plan/07-tools-gates-and-state.md) |
-| Skill and role contracts | [docs/plan/08-skill-and-role-contracts.md](./docs/plan/08-skill-and-role-contracts.md) |
-| V1 delivery and dry-run | [docs/plan/09-v1-delivery.md](./docs/plan/09-v1-delivery.md) |
+| Overview and goals | [docs/00-overview.md](./docs/00-overview.md) |
+| Repository architecture | [docs/01-repository-architecture.md](./docs/01-repository-architecture.md) |
+| Core runtime contracts | [docs/02-core-runtime-contracts.md](./docs/02-core-runtime-contracts.md) |
+| Modes and command API | [docs/03-modes-and-command-api.md](./docs/03-modes-and-command-api.md) |
+| Harness adapter contract | [docs/04-harness-adapter-contract.md](./docs/04-harness-adapter-contract.md) |
+| Autonomous workflow | [docs/05-autonomous-workflow.md](./docs/05-autonomous-workflow.md) |
+| Review and audit pipeline | [docs/06-review-and-audit-pipeline.md](./docs/06-review-and-audit-pipeline.md) |
+| Tools, gates, and state | [docs/07-tools-gates-and-state.md](./docs/07-tools-gates-and-state.md) |
+| Skill and role contracts | [docs/08-skill-and-role-contracts.md](./docs/08-skill-and-role-contracts.md) |
+| V1 delivery and dry-run | [docs/09-v1-delivery.md](./docs/09-v1-delivery.md) |
 | Visual poison taxonomy | [poison_taxonomy_single_word_full.md](./poison_taxonomy_single_word_full.md) |
 
 ## Editing Rule
 
-Do not grow this file back into a single huge reference. Update the relevant file under `docs/plan/` and keep this index stable.
+Do not grow this file back into a single huge reference. Update the relevant file under `docs/` and keep this index stable.
 
 Implementation work must still follow [WORKFLOW.md](./WORKFLOW.md), [AGENTS.md](./AGENTS.md), and [CLAUDE.md](./CLAUDE.md).
