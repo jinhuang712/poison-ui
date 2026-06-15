@@ -1,0 +1,17 @@
+node_modules/
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+
+.DS_Store
+.env
+.env.*
+
+dist/
+coverage/
+.nyc_output/
+
+.poison/runs/*/screenshots/
+.poison/runs/*/console.log
+.poison/runs/*/tmp/
+

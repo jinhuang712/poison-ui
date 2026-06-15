@@ -1,0 +1,41 @@
+{
+  "name": "poison-ui",
+  "version": "0.0.0",
+  "description": "Controlled UI prototype evolution skill and command design.",
+  "type": "module",
+  "bin": {
+    "poison": "./bin/poison.mjs"
+  },
+  "files": [
+    "bin",
+    "skills",
+    "README.md",
+    "LICENSE",
+    "poison_execution_plan_zh.md",
+    "poison_taxonomy_single_word_full.md"
+  ],
+  "scripts": {
+    "check": "node bin/poison.mjs --help"
+  },
+  "keywords": [
+    "agent",
+    "skill",
+    "ui",
+    "prototype",
+    "review"
+  ],
+  "author": "Jin Huang",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jinhuang712/poison-ui.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jinhuang712/poison-ui/issues"
+  },
+  "homepage": "https://github.com/jinhuang712/poison-ui#readme",
+  "engines": {
+    "node": ">=18"
+  }
+}
+
