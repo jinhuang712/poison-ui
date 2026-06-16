@@ -1,4 +1,6 @@
 node_modules/
+.worktrees
+.worktrees/
 npm-debug.log*
 pnpm-debug.log*
 yarn-debug.log*
@@ -14,4 +16,3 @@ coverage/
 .poison/runs/*/screenshots/
 .poison/runs/*/console.log
 .poison/runs/*/tmp/
-
