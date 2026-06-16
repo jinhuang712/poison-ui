@@ -74,7 +74,6 @@ published
 |---|---|---|---|---|---|---|
 | `new-run --mode review` | none | `created` | none | CLI | no | `run-state.json`, `run-contract.md`, `context-health.md` |
 | `capture --url <url>` | `created`, `blocked` | `captured` | `blocked` | CLI/browser adapter | yes | `screenshots/`, `screenshot-manifest.json`, console evidence, or degraded evidence artifact |
-| manual evidence registration | `created`, `blocked` | `captured` | `blocked` | user/CLI | yes | manual evidence artifact with source and limitations |
 | `review` | `captured` | `reviewed` | `blocked` | reviewer/orchestrator | yes | `review-packet.md`, `review-summary.md` |
 | `schema-check` | `created`, `captured`, `reviewed`, `gated`, `blocked` | same state | `blocked` | CLI | yes | schema report or inline validation result |
 | `gate` | `reviewed` | `gated` | `blocked` | CLI | yes | `gate-report.md` |

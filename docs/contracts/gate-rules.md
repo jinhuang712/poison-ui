@@ -45,9 +45,12 @@ V1 hard checks:
 - Missing browser, screenshot, URL, or console capability is represented by an
   explicit degraded evidence artifact.
 - `review-summary.md` exists before gate can pass.
-- Review findings include severity and evidence source.
+- Review findings include `findingId`, `priorityRank`, `fixOrder`, severity,
+  category, evidence refs, affected screens, and first repair recommendation.
 - Severe console/runtime errors are absent when console evidence was captured,
-  or recorded as hard failures.
+  or recorded as hard failures. Severe means a browser `pageerror` or console
+  entry with level `error`; warnings, info logs, missing browser automation, and
+  degraded evidence do not fail V1 by themselves.
 - `blocked` cannot pass unless the blocker was resolved by a legal transition.
 - Passing gate moves run-state to `gated`.
 
@@ -59,12 +62,7 @@ These checks may be reported, but they do not fail V1 gate by default:
 - Visual poison taxonomy coverage.
 - Visual quality, hierarchy, spacing, rhythm, density, or taste concerns.
 - UX flow, empty state, error state, loading state, or accessibility concerns.
-- Frontend handoff completeness.
-- Protected-feature regression risk.
-- Visual memory drift.
-- Missing full `design/` folder output.
 - Missing multi-reviewer ensemble.
-- Missing completion audit.
 
 ## Later Strict Gates
 
@@ -104,6 +102,6 @@ as a warning with file or screenshot evidence.
 
 - Gate must produce executable fixes.
 - Missing automated screenshot or console capability must be represented as
-  manual evidence, `needs-manual-evidence`, degraded evidence, or `blocked`.
+  degraded evidence or `blocked`.
 - Gate failure moves the run to `blocked` and sets `previousStatus` plus
   `nextRecommendedAction`.

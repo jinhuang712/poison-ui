@@ -34,18 +34,21 @@ PASS | PASS_WITH_FIXES | FAIL | BLOCKED
 ## Findings
 
 ### Finding 1
+- findingId:
+- priorityRank:
+- fixOrder:
 - severity: blocker | major | minor
-- screen:
-- issue:
-- poison:
-- antidote:
-- category:
-- evidence level: E0 | E1 | E2 | E3 | E4
+- category: evidence | runtime | visual | ux | content | accessibility | other
+- evidenceRefs:
+- affectedScreens:
 - evidence source:
+- evidence level: E0 | E1 | E2 | E3 | E4
+- issue:
+- why it feels poisoned:
+- firstRepairRecommendation:
 - why severity is justified:
 - evidence:
 - source: design | poison-core | run-contract | completion-rubric | visual-rubric | ux-rubric | frontend-rubric | screenshot | runtime | code
-- recommended fix:
 
 ## Non-blocking suggestions
 
@@ -92,10 +95,30 @@ Used when the run has a target:
 
 ## Designer discretion items
 
+## Findings
+
+### Finding 1
+- findingId:
+- priorityRank:
+- fixOrder:
+- severity:
+- category:
+- evidenceRefs:
+- affectedScreens:
+- evidence source:
+- evidence level:
+- issue:
+- why it feels poisoned:
+- firstRepairRecommendation:
+
 ## Backlog items
 
 ## Rejected personal-taste findings
 ```
+
+For V1, the finding fields above are mandatory and later-version fields such as
+protected-feature ownership, visual-memory drift, frontend handoff status, and
+completion-audit coverage are not required.
 
 ## Repair Plan
 

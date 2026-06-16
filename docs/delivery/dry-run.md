@@ -25,7 +25,7 @@ node bin/poison.mjs gate \
   --run .poison/runs/001-poisoned-demo
 ```
 
-## Manual Or Degraded Evidence Path
+## Degraded Evidence Path
 
 If Playwright, browser access, the local app URL, or console capture is not
 available, `capture` must not silently pass. It must write an explicit degraded

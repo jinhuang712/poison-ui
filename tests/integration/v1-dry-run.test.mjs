@@ -1,0 +1,76 @@
+import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
+import { mkdtempSync, readFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { test } from "node:test";
+
+const repoRoot = new URL("../..", import.meta.url).pathname;
+const cliPath = join(repoRoot, "bin", "poison.mjs");
+
+function runPoison(cwd, args) {
+  return execFileSync(process.execPath, [cliPath, ...args], {
+    cwd,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+}
+
+function makeProject() {
+  return mkdtempSync(join(tmpdir(), "poison-v1-"));
+}
+
+function readJson(path) {
+  return JSON.parse(readFileSync(path, "utf8"));
+}
+
+test("V1 review-first dry-run creates required artifacts and passes the mechanical gate", () => {
+  const project = makeProject();
+
+  runPoison(project, ["init"]);
+  assert.match(readFileSync(join(project, ".poison/context/poison-core.current.md"), "utf8"), /# Poison Core/);
+  assert.match(readFileSync(join(project, ".poison/context/open-questions.md"), "utf8"), /# Open Questions/);
+
+  const newRunOutput = runPoison(project, ["new-run", "--mode", "review", "--name", "poisoned-demo"]);
+  assert.match(newRunOutput, /001-poisoned-demo/);
+  const runDir = join(project, ".poison/runs/001-poisoned-demo");
+
+  let state = readJson(join(runDir, "run-state.json"));
+  assert.equal(state.status, "created");
+  assert.equal(state.nextRecommendedAction, "capture");
+
+  runPoison(project, ["capture", "--url", "http://localhost:5173", "--run", ".poison/runs/001-poisoned-demo"]);
+  state = readJson(join(runDir, "run-state.json"));
+  assert.equal(state.status, "captured");
+  assert.equal(state.nextRecommendedAction, "review");
+  assert.match(readFileSync(join(runDir, "degraded-evidence.md"), "utf8"), /# Degraded Evidence/);
+
+  runPoison(project, ["review", "--run", ".poison/runs/001-poisoned-demo"]);
+  state = readJson(join(runDir, "run-state.json"));
+  assert.equal(state.status, "reviewed");
+  assert.equal(state.nextRecommendedAction, "gate");
+  const summary = readFileSync(join(runDir, "review-summary.md"), "utf8");
+  assert.match(summary, /## Findings/);
+  assert.match(summary, /findingId:/);
+  assert.match(summary, /priorityRank:/);
+  assert.match(summary, /fixOrder:/);
+  assert.match(summary, /severity:/);
+  assert.match(summary, /category:/);
+  assert.match(summary, /evidence source:/);
+  assert.match(summary, /evidenceRefs:/);
+  assert.match(summary, /affectedScreens:/);
+  assert.match(summary, /issue:/);
+  assert.match(summary, /why it feels poisoned:/);
+  assert.match(summary, /firstRepairRecommendation:/);
+  assert.doesNotMatch(summary, /protected behavior/i);
+
+  const schemaOutput = runPoison(project, ["schema-check", "--run", ".poison/runs/001-poisoned-demo"]);
+  assert.match(schemaOutput, /schema-check: PASS/);
+
+  const gateOutput = runPoison(project, ["gate", "--run", ".poison/runs/001-poisoned-demo"]);
+  assert.match(gateOutput, /gate: PASS/);
+  state = readJson(join(runDir, "run-state.json"));
+  assert.equal(state.status, "gated");
+  assert.equal(state.nextRecommendedAction, "complete-or-review-warnings");
+  assert.match(readFileSync(join(runDir, "gate-report.md"), "utf8"), /## Verdict\nPASS/);
+});

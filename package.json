@@ -15,7 +15,8 @@
     "poison_taxonomy_single_word_full.md"
   ],
   "scripts": {
-    "check": "node bin/poison.mjs --help"
+    "check": "node bin/poison.mjs --help",
+    "test": "node --test tests/**/*.test.mjs"
   },
   "keywords": [
     "agent",
@@ -38,4 +39,3 @@
     "node": ">=18"
   }
 }
-

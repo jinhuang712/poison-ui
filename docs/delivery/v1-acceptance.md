@@ -37,8 +37,8 @@ Creates `.poison/runs/001-poisoned-demo` with:
 - `run-contract.md`
 - `context-health.md`
 
-The initial status is `created`, and `nextRecommendedAction` identifies capture
-or manual evidence collection.
+The initial status is `created`, and `nextRecommendedAction` identifies
+capture or degraded evidence recording.
 
 ## C. Capture Or Evidence Gap
 
@@ -69,12 +69,16 @@ Creates:
 
 The summary includes:
 
-- issue title
+- `findingId`
+- `priorityRank`
+- `fixOrder`
+- category
 - severity
-- evidence source
+- evidence source and `evidenceRefs`
+- affected screens
+- issue
 - why it feels poisoned
 - first repair recommendation
-- protected behavior that must not regress
 
 ## E. Schema Check
 
@@ -87,7 +91,8 @@ Checks:
 - `run-state.json` parses and has required fields.
 - Required V1 Markdown artifacts have required headings.
 - Evidence gap artifacts exist when automated evidence is unavailable.
-- Review summaries have severity and evidence fields.
+- Review summaries have stable finding ID, fix order, severity, category,
+  evidence refs, affected screens, and first repair recommendation.
 
 ## F. Mechanical Gate
 
@@ -106,10 +111,14 @@ V1 hard gate fails only for mechanical reasons:
 - schema-check failure
 - unrepresented evidence gap
 - unresolved `blocked` state
-- severe console/runtime error captured during evidence collection
+- severe console/runtime error captured during evidence collection. Severe
+  means a browser `pageerror` or console entry with level `error`; warning and
+  info logs do not fail V1 by themselves.
 
-The gate report also records warnings for visual, UX, frontend, placeholder,
-taxonomy, protected-feature, and visual-memory concerns.
+The gate report may record warnings for visual quality, UX clarity,
+placeholder-looking UI copy, generic demo content, missing browser automation,
+or non-severe console concerns. V1 does not warn or fail on frontend handoff,
+protected-feature, visual-memory, or completion-audit concerns.
 
 ## Exit Criteria
 
@@ -122,6 +131,10 @@ V1 is acceptable when the dry-run can:
 5. Run schema checks.
 6. Run the mechanical gate.
 7. Leave `run-state.json` with a legal status and clear next action.
+8. Prove both degraded-evidence and real-browser-evidence fixtures, or keep the
+   real-browser path explicitly marked as the next incomplete V1b item.
+9. Prove missing-artifact and severe-runtime-error fixtures fail with
+   deterministic gate-report lines.
 
 ## Non-Goals
 

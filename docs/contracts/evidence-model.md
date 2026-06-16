@@ -35,6 +35,16 @@ E4 reviewer opinion   Reviewer taste, judgment, directional suggestion
 Each finding must include:
 
 ```markdown
+- findingId:
+- priorityRank:
+- fixOrder:
+- severity:
+- category:
+- evidenceRefs:
+- affectedScreens:
+- issue:
+- why it feels poisoned:
+- firstRepairRecommendation:
 - evidence level: E0 | E1 | E2 | E3 | E4
 - evidence source:
 - why severity is justified:
