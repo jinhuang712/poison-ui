@@ -225,6 +225,55 @@ function formatConsoleEntries(entries = []) {
     .join("\n");
 }
 
+function requireEvidenceArtifact(runDir, artifacts, artifact, message) {
+  if (!artifacts.includes(artifact) || !existsSync(join(runDir, artifact))) {
+    throw new Error(message);
+  }
+}
+
+function evidenceContext(runDir, state) {
+  const artifacts = state.artifacts || [];
+  if (artifacts.includes("screenshot-manifest.json") && existsSync(join(runDir, "screenshot-manifest.json"))) {
+    const manifest = JSON.parse(readFileSync(join(runDir, "screenshot-manifest.json"), "utf8"));
+    const screenshotPath = manifest.screenshots?.[0]?.path;
+    requireEvidenceArtifact(runDir, artifacts, "console.log", "browser evidence is incomplete: console.log is missing");
+    if (!screenshotPath) {
+      throw new Error("browser evidence is incomplete: screenshot path is missing");
+    }
+    requireEvidenceArtifact(runDir, artifacts, screenshotPath, `browser evidence is incomplete: ${screenshotPath} is missing`);
+
+    return {
+      kind: "browser",
+      inputs: ["run-contract.md", "context-health.md", "screenshot-manifest.json", "console.log", screenshotPath],
+      evidenceRefs: ["screenshot-manifest.json", "console.log", screenshotPath],
+      affectedScreens: screenshotPath,
+      packetSummary: "V1 review packet assembled from run contract, context health, screenshot manifest, and console evidence.",
+      summaryTarget: "Local prototype review with browser evidence.",
+      majorityPosition: "Proceed with review conclusions that are tied to the referenced browser evidence artifacts.",
+      issue: "browser evidence captured for review",
+      why: "UI observations can now be tied to screenshot and console artifacts",
+      recommendation: "use the referenced screenshot and console evidence for review findings",
+      backlogItems: ["none"],
+    };
+  }
+
+  requireEvidenceArtifact(runDir, artifacts, "degraded-evidence.md", "degraded evidence is missing");
+
+  return {
+    kind: "degraded",
+    inputs: ["run-contract.md", "context-health.md", "degraded-evidence.md"],
+    evidenceRefs: ["degraded-evidence.md"],
+    affectedScreens: "unknown",
+    packetSummary: "V1 review packet assembled from run contract, context health, and degraded evidence.",
+    summaryTarget: "Local prototype review with degraded evidence.",
+    majorityPosition: "Proceed only with mechanical readiness conclusions until runtime evidence is available.",
+    issue: "automated visual evidence is unavailable",
+    why: "UI quality cannot be assessed from runtime screenshots in this run",
+    recommendation: "provide screenshots or enable a browser adapter before making visual claims",
+    backlogItems: ["Capture real screenshot and console evidence before making visual findings."],
+  };
+}
+
 export function initPoisonProject(projectRoot = process.cwd()) {
   const poisonRoot = join(projectRoot, ".poison");
   const contextDir = join(poisonRoot, "context");
@@ -474,6 +523,7 @@ export function writeReviewArtifacts(projectRoot = process.cwd(), { runPath } = 
   if (state.status !== "captured") {
     throw new Error(`review requires status captured, got ${state.status}`);
   }
+  const evidence = evidenceContext(run.absolutePath, state);
 
   writeMarkdown(
     run.absolutePath,
@@ -485,15 +535,13 @@ export function writeReviewArtifacts(projectRoot = process.cwd(), { runPath } = 
       "# Review Packet",
       "",
       "## Summary",
-      "V1 review packet assembled from run contract, context health, and degraded evidence.",
+      evidence.packetSummary,
       "",
       "## Inputs",
-      "- run-contract.md",
-      "- context-health.md",
-      "- degraded-evidence.md",
+      ...evidence.inputs.map((input) => `- ${input}`),
       "",
       "## Evidence",
-      "- degraded-evidence.md",
+      ...evidence.evidenceRefs.map((artifact) => `- ${artifact}`),
       "",
       "## Decisions",
       "none",
@@ -516,13 +564,13 @@ export function writeReviewArtifacts(projectRoot = process.cwd(), { runPath } = 
       "# Review Summary",
       "",
       "## Target",
-      "Local prototype review with degraded evidence.",
+      evidence.summaryTarget,
       "",
       "## Vote tally",
       "PASS_WITH_FIXES: 1",
       "",
       "## Majority position",
-      "Proceed only with mechanical readiness conclusions until runtime evidence is available.",
+      evidence.majorityPosition,
       "",
       "## Minority concerns",
       "none",
@@ -540,16 +588,16 @@ export function writeReviewArtifacts(projectRoot = process.cwd(), { runPath } = 
       "- fixOrder: 65",
       "- severity: minor",
       "- category: evidence",
-      "- evidence source: degraded-evidence.md",
-      "- evidenceRefs: degraded-evidence.md",
-      "- affectedScreens: unknown",
+      `- evidence source: ${evidence.evidenceRefs[0]}`,
+      `- evidenceRefs: ${evidence.evidenceRefs.join(", ")}`,
+      `- affectedScreens: ${evidence.affectedScreens}`,
       "- evidence level: E2",
-      "- issue: automated visual evidence is unavailable",
-      "- why it feels poisoned: UI quality cannot be assessed from runtime screenshots in this run",
-      "- firstRepairRecommendation: provide screenshots or enable a browser adapter before making visual claims",
+      `- issue: ${evidence.issue}`,
+      `- why it feels poisoned: ${evidence.why}`,
+      `- firstRepairRecommendation: ${evidence.recommendation}`,
       "",
       "## Backlog items",
-      "- Capture real screenshot and console evidence before making visual findings.",
+      ...evidence.backlogItems.map((item) => (item === "none" ? "none" : `- ${item}`)),
       "",
       "## Rejected personal-taste findings",
       "none",

@@ -3,7 +3,7 @@
 This file tracks real repository work. Keep it actionable and remove or update
 items as they are completed.
 
-## Active: V1b Evidence Capture
+## Completed: V1b Evidence Capture
 
 - Playwright-backed screenshot and console capture is wired behind the existing
   `poison capture --url <url> --run <run>` contract.
@@ -12,12 +12,12 @@ items as they are completed.
 - Degraded capture remains available when Playwright is unavailable or capture
   fails.
 
-## Next: V1c Review Packet
+## Completed: V1c Review Packet
 
-- Ensure every review finding has `findingId`, `priorityRank`, `fixOrder`,
+- Every review finding has `findingId`, `priorityRank`, `fixOrder`,
   severity, category, evidence refs, affected screens, issue, rationale, and
   first repair recommendation.
-- Ensure review summaries never claim visual or runtime observations without
+- Review summaries do not claim visual or runtime observations without
   matching evidence artifacts.
 
 ## Next: V1d Mechanical Gate

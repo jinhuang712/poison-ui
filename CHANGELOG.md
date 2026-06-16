@@ -7,6 +7,9 @@ All notable changes to this project will be documented here.
 - Implemented V1b browser evidence capture with an optional Playwright adapter,
   screenshot manifest, console evidence, and degraded fallback when browser
   automation is unavailable.
+- Implemented V1c review packet generation that references browser evidence
+  artifacts only when present and keeps degraded runs tied to
+  `degraded-evidence.md`.
 - Tightened V1-VN delivery files after strict PM critique: V1 now has V1a-V1d
   gates, V2 is limited to one controlled harden loop, V3 starts with minimal
   evidence-to-design handoff publishing, V4 is deferred to adapter maturity,

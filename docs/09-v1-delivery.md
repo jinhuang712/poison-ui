@@ -39,10 +39,9 @@ report.
 
 ## Remaining V1 Work
 
-The main remaining V1 enhancement is real browser screenshot and console
-capture behind the existing `capture` contract. Until that exists, V1 must keep
-evidence limitations explicit and avoid claiming visual observations that were
-not captured.
+The main remaining V1 enhancement is V1d mechanical gate fixture coverage for
+missing artifacts and severe captured runtime errors. V1 must keep subjective
+visual, UX, and taste concerns outside hard gate behavior.
 
 ## Non-Goals
 

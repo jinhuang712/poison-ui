@@ -22,7 +22,7 @@ The repository currently provides:
 - An operational `skills/poison/SKILL.md` entrypoint that routes behavior to
   contract owners.
 
-The repository does not yet provide evidence-aware review packet generation,
+The repository does not yet provide complete V1d gate failure fixtures,
 multi-reviewer review, repair loops, later seed/evolve/full/harden modes, or
 full `design/` publishing.
 
@@ -30,18 +30,17 @@ full `design/` publishing.
 
 The most recent implementation direction was:
 
-- V1b evidence capture: add real browser screenshot and console evidence behind
-  the existing `poison capture --url <url> --run <run>` contract, while keeping
-  degraded evidence explicit and review claims tied to artifacts.
+- V1c review packet: generate review packets and summaries only from available
+  evidence artifacts.
 
-V1b acceptance checks:
+V1c acceptance checks:
 
-- Degraded capture fixture still passes with explicit limitation and reason.
-- Browser capture fixture writes screenshot and console evidence artifacts.
-- Real browser smoke run writes `screenshot-manifest.json`, `console.log`, and
-  `screenshots/capture.png`.
+- Browser evidence review packets reference `screenshot-manifest.json`,
+  `console.log`, and the captured screenshot.
+- Degraded evidence review packets reference only `degraded-evidence.md`.
+- Review summaries point findings to existing evidence artifacts.
 
-Do not start V1c/V1d implementation inside the V1b evidence capture commit.
+Do not start V1d implementation inside the V1c review packet commit.
 
 ## Blocked
 
@@ -55,9 +54,8 @@ These items must not begin implementation yet:
 
 ## Next
 
-When V1b evidence capture is committed, move to:
+When V1c review packet is committed, move to:
 
-- V1c review packet: generate summaries only from available evidence.
 - V1d mechanical gate: deterministic pass/fail checks for missing artifacts and
   severe runtime errors.
 
@@ -92,7 +90,7 @@ Residual rule:
 
 ## V1 Review-First Detector
 
-Status: minimal subset implemented; browser evidence remains.
+Status: V1a-V1c implemented; V1d gate failure fixtures remain.
 
 User job:
 
@@ -105,23 +103,24 @@ Implemented:
 - `poison init` creates minimal `.poison/context` and `.poison/runs`.
 - `poison new-run --mode review --name <name>` creates a review run with
   `run-state.json`, `run-contract.md`, and `context-health.md`.
-- `poison capture --url <url> --run <run>` records explicit degraded evidence
-  when automated browser capture is unavailable.
+- `poison capture --url <url> --run <run>` records browser screenshot and
+  console evidence when Playwright is available, or explicit degraded evidence
+  when capture is unavailable.
 - `poison review --run <run>` writes `review-packet.md` and
-  `review-summary.md`.
+  `review-summary.md` from the evidence artifacts that exist in the run.
 - `poison schema-check --run <run>` validates required V1 JSON and Markdown
   structure.
 - `poison gate --run <run>` writes `gate-report.md` and moves passing runs to
   `gated`.
-- Tests cover runtime artifact helpers, run-state validation, degraded evidence
-  reporting, schema checking, gate behavior, and the V1 dry-run flow.
+- Tests cover runtime artifact helpers, run-state validation, browser evidence,
+  degraded evidence reporting, evidence-aware review artifacts, schema checking,
+  gate behavior, and the V1 dry-run flow.
 
 Remaining:
 
-- Add Playwright-backed screenshot and console capture behind the existing
-  `capture` contract.
-- Add fixture coverage for successful screenshot and console evidence.
-- Improve review inputs once real evidence is available.
+- Add V1d fixture coverage for missing-artifact gate failures and severe
+  runtime-error gate failures without making subjective review warnings hard
+  failures.
 
 Exit gate:
 

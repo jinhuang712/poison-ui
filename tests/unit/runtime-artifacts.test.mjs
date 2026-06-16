@@ -212,6 +212,123 @@ test("review artifacts satisfy schema check and gate rules", () => {
   assert.equal(state.status, "gated");
 });
 
+test("review artifacts reference only degraded evidence when capture degraded", () => {
+  const project = makeProject();
+  initPoisonProject(project);
+  const run = createReviewRun(project, { mode: "review", name: "degraded review" });
+  recordDegradedCapture(project, {
+    runPath: run.relativePath,
+    url: "http://localhost:5173",
+    reason: "Automated browser capture is unavailable in this runtime.",
+  });
+
+  writeReviewArtifacts(project, { runPath: run.relativePath });
+
+  const packet = readFileSync(join(run.absolutePath, "review-packet.md"), "utf8");
+  assert.match(packet, /degraded-evidence\.md/);
+  assert.doesNotMatch(packet, /screenshot-manifest\.json/);
+  assert.doesNotMatch(packet, /console\.log/);
+  assert.doesNotMatch(packet, /screenshots\//);
+
+  const summary = readFileSync(join(run.absolutePath, "review-summary.md"), "utf8");
+  assert.match(summary, /Local prototype review with degraded evidence/);
+  assert.match(summary, /evidence source: degraded-evidence\.md/);
+  assert.match(summary, /evidenceRefs: degraded-evidence\.md/);
+  assert.doesNotMatch(summary, /screenshot-manifest\.json/);
+  assert.doesNotMatch(summary, /console\.log/);
+  assert.doesNotMatch(summary, /screenshots\//);
+});
+
+test("review artifacts refuse to cite missing degraded evidence file", () => {
+  const project = makeProject();
+  initPoisonProject(project);
+  const run = createReviewRun(project, { mode: "review", name: "missing degraded evidence" });
+  recordDegradedCapture(project, {
+    runPath: run.relativePath,
+    url: "http://localhost:5173",
+    reason: "Automated browser capture is unavailable in this runtime.",
+  });
+  writeFileSync(join(run.absolutePath, "degraded-evidence.md"), "");
+  const state = readJson(join(run.absolutePath, "run-state.json"));
+  state.artifacts = state.artifacts.filter((artifact) => artifact !== "degraded-evidence.md");
+  writeFileSync(join(run.absolutePath, "run-state.json"), `${JSON.stringify(state, null, 2)}\n`);
+
+  assert.throws(
+    () => writeReviewArtifacts(project, { runPath: run.relativePath }),
+    /degraded evidence is missing/,
+  );
+});
+
+test("review artifacts reference browser evidence when browser capture exists", async () => {
+  const project = makeProject();
+  initPoisonProject(project);
+  const run = createReviewRun(project, { mode: "review", name: "browser review" });
+  await recordBrowserCapture(project, {
+    runPath: run.relativePath,
+    url: "http://localhost:5173",
+    adapter: async () => ({
+      screenshot: {
+        fileName: "home.png",
+        bytes: Buffer.from("browser"),
+        width: 1280,
+        height: 720,
+      },
+      consoleEntries: [{ level: "info", text: "ready" }],
+      pageErrors: [],
+    }),
+  });
+
+  writeReviewArtifacts(project, { runPath: run.relativePath });
+
+  const packet = readFileSync(join(run.absolutePath, "review-packet.md"), "utf8");
+  assert.match(packet, /screenshot-manifest\.json/);
+  assert.match(packet, /console\.log/);
+  assert.match(packet, /screenshots\/home\.png/);
+  assert.doesNotMatch(packet, /degraded-evidence\.md/);
+
+  const summary = readFileSync(join(run.absolutePath, "review-summary.md"), "utf8");
+  assert.match(summary, /Local prototype review with browser evidence/);
+  assert.match(summary, /evidence source: screenshot-manifest\.json/);
+  assert.match(summary, /evidenceRefs: screenshot-manifest\.json, console\.log, screenshots\/home\.png/);
+  assert.match(summary, /affectedScreens: screenshots\/home\.png/);
+  assert.doesNotMatch(summary, /automated visual evidence is unavailable/);
+  assert.doesNotMatch(summary, /degraded evidence/i);
+  assert.doesNotMatch(summary, /until runtime evidence is available/i);
+  assert.doesNotMatch(summary, /Capture real screenshot and console evidence/i);
+
+  const schema = schemaCheckRun(project, { runPath: run.relativePath });
+  assert.deepEqual(schema.errors, []);
+});
+
+test("review artifacts refuse to cite missing browser evidence files", async () => {
+  const project = makeProject();
+  initPoisonProject(project);
+  const run = createReviewRun(project, { mode: "review", name: "missing browser evidence" });
+  await recordBrowserCapture(project, {
+    runPath: run.relativePath,
+    url: "http://localhost:5173",
+    adapter: async () => ({
+      screenshot: {
+        fileName: "home.png",
+        bytes: Buffer.from("browser"),
+        width: 1280,
+        height: 720,
+      },
+      consoleEntries: [{ level: "info", text: "ready" }],
+      pageErrors: [],
+    }),
+  });
+  writeFileSync(join(run.absolutePath, "console.log"), "");
+  const state = readJson(join(run.absolutePath, "run-state.json"));
+  state.artifacts = state.artifacts.filter((artifact) => artifact !== "console.log");
+  writeFileSync(join(run.absolutePath, "run-state.json"), `${JSON.stringify(state, null, 2)}\n`);
+
+  assert.throws(
+    () => writeReviewArtifacts(project, { runPath: run.relativePath }),
+    /browser evidence is incomplete/,
+  );
+});
+
 test("schema check requires every V1 finding to carry the full minimum field set", () => {
   const project = makeProject();
   initPoisonProject(project);
