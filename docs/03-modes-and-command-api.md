@@ -2,6 +2,10 @@
 
 > Source split from `poison_execution_plan_zh.md`.
 
+Detailed command ownership now lives in
+[docs/contracts/command-api.md](./contracts/command-api.md). This file keeps the
+high-level mode and command narrative.
+
 ## 3. 模式设计
 
 在 Skill instructions 和 scripts 中实现以下模式。
@@ -161,4 +165,3 @@ poison update-state --run .poison/runs/001-test-seed
 这些 action 是 internal tools 的命令映射，不是多个独立入口。后续 plugin 或 MCP adapter 也只能调用同一套 command/core modules。
 
 ---
-

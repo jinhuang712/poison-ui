@@ -5,8 +5,6 @@ items as they are completed.
 
 ## Next Implementation Steps
 
-- Split high-level design details into semantic docs under `docs/architecture`,
-  `docs/contracts`, and `docs/delivery`.
 - Expand `skills/poison/SKILL.md` from scaffold into the operational skill
   entrypoint after contract owners are stable.
 - Implement the thin CLI dispatch layer and deterministic V1 tools listed in

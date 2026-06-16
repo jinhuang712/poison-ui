@@ -2,6 +2,11 @@
 
 > Source split from `poison_execution_plan_zh.md`.
 
+Detailed delivery ownership now lives in
+[docs/delivery/v1-acceptance.md](./delivery/v1-acceptance.md) and
+[docs/delivery/dry-run.md](./delivery/dry-run.md). This file keeps the high-level
+V1 delivery narrative.
+
 ## 22. 第一版验收标准
 
 第一版完成时，以下能力必须可用。
@@ -367,4 +372,3 @@ node bin/poison.mjs capture \
   --url http://localhost:5173 \
   --run .poison/runs/001-test-seed
 ```
-

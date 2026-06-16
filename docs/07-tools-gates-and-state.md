@@ -2,6 +2,10 @@
 
 > Source split from `poison_execution_plan_zh.md`.
 
+Detailed gate ownership now lives in
+[docs/contracts/gate-rules.md](./contracts/gate-rules.md). This file keeps the
+high-level tools, gates, and state narrative.
+
 ## 17. Screenshot Capture：截图捕获
 
 实现 `src/tools/capture-screenshots.mjs`，由 `bin/poison.mjs` 调用。
@@ -178,4 +182,3 @@ v1 可以简单处理。优先追加结构化内容，而不是激进重写。
 ```
 
 ---
-

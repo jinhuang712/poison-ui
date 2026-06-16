@@ -2,6 +2,11 @@
 
 > Source split from `poison_execution_plan_zh.md`.
 
+Detailed review and evidence ownership now lives in
+[docs/contracts/evidence-model.md](./contracts/evidence-model.md) and
+[docs/contracts/review-schema.md](./contracts/review-schema.md). This file keeps
+the high-level review and audit narrative.
+
 ## 10. Readiness Assessment：输入完整度评估
 
 实现 `src/tools/assess-readiness.mjs`，由 `bin/poison.mjs` 调用。
@@ -694,4 +699,3 @@ arbiter 必须：
 > arbiter 不能把多数审美偏好直接升级为 must fix。只有违反目标、范围、可用性、runtime、gate 或冻结决策的问题才能成为 must fix。
 
 ---
-

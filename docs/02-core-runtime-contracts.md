@@ -2,6 +2,12 @@
 
 > Source split from `poison_execution_plan_zh.md`.
 
+Detailed implementation owners:
+
+- [Runtime artifacts](./contracts/runtime-artifacts.md)
+- [Run state](./contracts/run-state.md)
+- [Output contract](./contracts/output-contract.md)
+
 ## 2. 核心概念
 
 `poison` 不能允许多个 agent 各自发明不同的产品理解。
@@ -265,4 +271,3 @@ poison schema-check --run .poison/runs/<run-id>
 - 产物不能只写散文;关键信息必须放在固定字段或固定章节里。
 
 ---
-

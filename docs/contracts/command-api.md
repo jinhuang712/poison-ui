@@ -1,0 +1,68 @@
+# Command API Contract
+
+This file owns the public command and deterministic action contract for V1.
+
+## Executable
+
+V1 exposes one executable mapping: `poison` to `./bin/poison.mjs`.
+
+Supported invocation forms:
+
+```bash
+node bin/poison.mjs [action-or-mode] [options]
+npx poison-ui [action-or-mode] [options]
+poison [action-or-mode] [options]
+```
+
+## Modes
+
+Conceptual modes:
+
+- `seed`
+- `evolve`
+- `full`
+- `review`
+- `harden`
+
+`auto` is command behavior, not a separate mode. In auto behavior, the
+orchestrator assesses input completeness and records the chosen mode plus reason
+in `.poison/runs/<run-id>/readiness-assessment.md`.
+
+## User-Facing Examples
+
+```bash
+poison --input prd.md --url http://localhost:5173
+poison seed --input idea.md
+poison evolve --name checkout-polish --url http://localhost:5173
+poison review --run .poison/runs/003-full
+poison review --design docs/design.md --url http://localhost:5173 --audit completion
+poison harden --run .poison/runs/004-evolve-checkout
+```
+
+## Deterministic Action Mappings
+
+These actions exist for testing, adapter calls, and dry-run workflows. They are
+not separate public entrypoints; they still go through `poison`.
+
+```bash
+poison init
+poison new-run --mode seed --name test-seed
+poison init-protected-features --run .poison/runs/001-test-seed
+poison assess-readiness --input ./docs/sample-prd.md --run .poison/runs/001-test-seed
+poison assess-scope --run .poison/runs/001-test-seed
+poison capture --url http://localhost:5173 --run .poison/runs/001-test-seed
+poison build-review-packet --run .poison/runs/001-test-seed
+poison decision-html --question "choose search layout" --run .poison/runs/001-test-seed
+poison ambiguity-check --run .poison/runs/001-test-seed
+poison audit-completion --design docs/design.md --url http://localhost:5173 --run .poison/runs/001-test-seed
+poison schema-check --run .poison/runs/001-test-seed
+poison gate --run .poison/runs/001-test-seed
+poison update-state --run .poison/runs/001-test-seed
+```
+
+## Adapter Rule
+
+Claude Code adapters, Codex adapters, future plugins, and future MCP adapters
+must call this command contract or shared core modules. They must not define
+their own modes, action names, state transitions, artifact formats, review
+schemas, or gate rules.
