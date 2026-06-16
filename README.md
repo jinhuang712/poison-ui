@@ -5,10 +5,11 @@ controlled UI prototype review and evolution. It is being designed to support
 Claude Code, Codex, and agentic workflows through one command, shared contracts,
 and evidence-based review gates.
 
-The project is currently in V0 planning/scaffolding. The implementation plan
-index is [poison_execution_plan_zh.md](./poison_execution_plan_zh.md), current
-progress is tracked in [PROGRESS.md](./PROGRESS.md), and detailed docs live
-under [docs](./docs).
+The project now includes a minimal V1 review-first CLI subset. The
+implementation plan index is
+[poison_execution_plan_zh.md](./poison_execution_plan_zh.md), current progress
+is tracked in [PROGRESS.md](./PROGRESS.md), and detailed docs live under
+[docs](./docs).
 
 ## Goals
 
@@ -56,21 +57,25 @@ CLAUDE.md
 
 ## CLI
 
-The CLI is currently a placeholder that exposes help and points to the implementation plan.
+The CLI exposes the V1 review-first dry-run path:
 
 ```bash
 node bin/poison.mjs --help
+node bin/poison.mjs init
+node bin/poison.mjs new-run --mode review --name poisoned-demo
+node bin/poison.mjs capture --url http://localhost:5173 --run .poison/runs/001-poisoned-demo
+node bin/poison.mjs review --run .poison/runs/001-poisoned-demo
+node bin/poison.mjs schema-check --run .poison/runs/001-poisoned-demo
+node bin/poison.mjs gate --run .poison/runs/001-poisoned-demo
 ```
 
-Planned public command:
-
-```bash
-poison [action-or-mode] [options]
-```
+The current capture command records explicit degraded evidence when automated
+browser capture is unavailable. It does not claim live visual or console
+observations without evidence artifacts.
 
 ## Development Workflow
 
-Read [WORKFLOW.md](./WORKFLOW.md) first. This file is intentionally project-neutral. Repository-specific agent instructions live in [AGENTS.md](./AGENTS.md) and [CLAUDE.md](./CLAUDE.md). Product and skill behavior belongs in [poison_execution_plan_zh.md](./poison_execution_plan_zh.md), [docs](./docs), and future `skills/poison/**` files.
+Read [WORKFLOW.md](./WORKFLOW.md) first. This file is intentionally project-neutral. Repository-specific agent instructions live in [AGENTS.md](./AGENTS.md) and [CLAUDE.md](./CLAUDE.md). [poison_execution_plan_zh.md](./poison_execution_plan_zh.md) is an implementation index; product and skill behavior belongs in the relevant owner files under [docs](./docs) and `skills/poison/**`.
 
 Do not grow [poison_execution_plan_zh.md](./poison_execution_plan_zh.md) back into a single huge reference. Update the relevant file under [docs](./docs).
 
@@ -89,7 +94,9 @@ The expected target-project `design/` delivery package is defined in
 
 ## Status
 
-This repository is public scaffolding and design work. Do not treat the CLI or skill as production-ready yet.
+This repository is public early implementation work. The V1 review-first subset
+is test-covered, but later seed/evolve/full/harden modes and full design folder
+publishing are not implemented yet.
 
 ## License
 

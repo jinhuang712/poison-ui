@@ -4,6 +4,27 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
+- Tightened V1-VN delivery files after strict PM critique: V1 now has V1a-V1d
+  gates, V2 is limited to one controlled harden loop, V3 starts with minimal
+  evidence-to-design handoff publishing, V4 is deferred to adapter maturity,
+  and VN promotion requires one user job, one owner, one gate, and pass/fail
+  tests.
+- Updated V1 review output expectations to require stable finding IDs, fix
+  order, evidence refs, affected screens, and first repair recommendation while
+  excluding protected-feature and visual-memory fields from V1.
+- Implemented the minimal V1 review-first CLI subset for init, new-run,
+  degraded capture, review, schema-check, and gate.
+- Added Node built-in tests for the V1 dry-run, runtime artifact helpers,
+  run-state validation, degraded evidence reporting, schema checking, and gate
+  behavior.
+- Expanded `skills/poison/SKILL.md` into an operational V1 entrypoint that
+  routes durable behavior to contract owners.
+- Completed the docs migration by moving source-of-truth, autonomous workflow,
+  review process, and role details into contract owner files.
+- Added V1-V4 delivery owner files and a VN backlog to keep version scope,
+  weighting, gates, and sequencing explicit.
+- Reduced duplicated runtime, command, adapter, review, role, tool, gate, and
+  state detail in high-level docs.
 - Added V0-V4 version roadmap and root progress tracking.
 - Refocused V1 around review-first poison detection for vibe coding developers.
 - Added a documentation index and contract owner policy under `docs/README.md`.

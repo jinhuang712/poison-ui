@@ -1,193 +1,53 @@
 # Version Roadmap
 
-This file owns Poison's version ladder. It separates the near-term product wedge
-from the full long-term design platform.
+This file is an index for the version ladder. Detailed scope, gates, weights,
+and exit criteria live in the per-version delivery owner files.
 
 ## First User
 
-The first user is a vibe coding developer who can ship with AI but does not
-know design, frontend craft, or UI/UX well enough to judge an interface before
-it feels wrong. They are frustrated by AI-generated prototype screenshots and
-demos that look plausible at first glance but are full of poison: unclear
-hierarchy, awkward flows, generic components, fake polish, broken states, and
-interaction choices that make them want to stop using the result.
+The first user is a vibe coding developer who can ship with AI but cannot yet
+reliably judge whether an interface has good design, frontend craft, or UI/UX
+quality.
 
-Poison's first promise is not "generate every design artifact." It is:
+Poison's first promise is:
 
 ```text
-Point Poison at the current AI-made prototype, show it the intended design or
-product context, and get a concrete, evidence-backed report of what is poisoned,
-what to fix first, and what must not regress.
+Point Poison at the current AI-made prototype, get evidence-backed findings,
+and learn what to fix first.
 ```
 
 ## Version Principles
 
-- Keep the 99 percent path cheap: review an existing prototype before trying to
-  generate an entire product design system.
-- Make each version independently useful and testable.
-- Treat rich `design/` output as a later publish target, not as a prerequisite
-  for early review.
-- Preserve audit evidence in `.poison/runs/<run-id>` even when the human-facing
-  `design/` package only publishes a small subset.
-- Move subjective design judgment through explicit review reports and warnings
-  before turning it into hard gate behavior.
+- Keep one active implementation milestone at a time.
+- Make every version independently useful and testable.
+- Treat `.poison/runs/<run-id>` as audit evidence.
+- Treat `design/` as a later human-facing publish snapshot, not the early source
+  of truth.
+- Promote subjective design judgment to hard gates only after evidence,
+  artifacts, recovery path, and pass/fail tests exist.
 
-## V0: Documentation And Contract Scaffold
+## Ladder
 
-Status: in progress.
+| Version | Status | User job | Owner |
+|---|---|---|---|
+| V0 Documentation scaffold | complete | make the repository implementable without a monolithic plan | [PROGRESS.md](../../PROGRESS.md#v0-documentation-migration) |
+| V1 Review-first detector | active, V1b next | I have an AI-made local UI demo; tell me what is poisoned and what to fix first | [v1-review-first.md](./v1-review-first.md) |
+| V2 Controlled hardening | blocked | improve this prototype without breaking what already works | [v2-controlled-hardening.md](./v2-controlled-hardening.md) |
+| V3 Design package | blocked | publish a traceable handoff from evidence-backed runs | [v3-design-package.md](./v3-design-package.md) |
+| V4 Platform and adapter maturity | deferred | use the same Poison contract across harnesses | [v4-platform-adapter-maturity.md](./v4-platform-adapter-maturity.md) |
+| VN Backlog | parked | future items awaiting a narrow owner and gate | [vn-backlog.md](./vn-backlog.md) |
 
-User job: make the repository implementable without turning the execution plan
-back into a single huge document.
+## Current Active Sequence
 
-Includes:
+1. Finish V1b evidence capture.
+2. Finish V1c review packet generation from available evidence only.
+3. Finish V1d mechanical gate failure fixtures.
+4. Start V2 only after the V1 gates above pass.
 
-- Repository structure and owner docs.
-- Product mission and first-user wedge.
-- Runtime artifact, command, state, gate, review, evidence, and design-folder
-  contracts.
-- Version roadmap and progress tracking.
-- Placeholder CLI help for baseline verification.
+## Must Not Start Yet
 
-Non-goals:
-
-- Functional Poison commands beyond help output.
-- Real screenshot capture, review, gate, or design publishing.
-- Full skill packaging.
-
-Exit criteria:
-
-- Root README, TODO, CHANGELOG, `docs/README.md`, and execution plan index agree
-  on current status.
-- V1 scope is review-first and does not require full generation or full
-  `design/` output.
-- Run-state and gate contracts are precise enough for implementation planning.
-
-## V1: Review-First Poison Detector
-
-Status: planned.
-
-User job: "I have an AI-made local UI demo. Tell me why it feels poisoned and
-what to fix first."
-
-Includes:
-
-- `poison init` for minimal `.poison/context` setup.
-- `poison new-run --mode review --name <name>` for an auditable run folder.
-- `poison capture --url <local-url> --run <run>` when browser capability exists,
-  with explicit degraded/manual evidence output when it does not.
-- `poison review --run <run>` to build a review packet and produce
-  `review-summary.md` plus actionable findings.
-- `poison schema-check --run <run>` for required JSON and Markdown structure.
-- `poison gate --run <run>` as a mechanical readiness check, not a final design
-  taste tribunal.
-- A repair-oriented `nextRecommendedAction` in `run-state.json`.
-
-Hard V1 gate scope:
-
-- Legal run-state transitions.
-- Required artifacts for the active review run exist and parse.
-- Capture evidence exists, or missing capture capability is explicitly recorded.
-- Severe console/runtime errors are failures when console evidence was captured.
-- Blocked state cannot be marked complete without a recovery transition.
-
-V1 warnings, not hard failures:
-
-- Visual quality concerns.
-- UX completion concerns.
-- Frontend handoff completeness.
-- Placeholder or generic-looking UI copy.
-- Visual taxonomy coverage.
-- Protected-feature regression risk.
-- Visual memory drift.
-
-Non-goals:
-
-- Generating a full prototype from scratch.
-- Full-spec mode.
-- Automatic design system extraction.
-- Multi-reviewer ensemble as a required path.
-- Automatic code repair.
-- Full `design/` package publishing.
-
-Exit criteria:
-
-- The dry-run sequence can create a review run, record evidence state, generate
-  a review summary, run schema checks, run the mechanical gate, and explain the
-  next action.
-- The CLI and tests prove degraded evidence paths are explicit instead of
-  silently passing.
-
-## V2: Controlled Hardening Loop
-
-Status: planned after V1.
-
-User job: "Now help me improve this prototype without breaking the parts that
-already work."
-
-Includes:
-
-- `harden` and narrow `evolve` flows.
-- Protected features initialization and regression tracking.
-- Repair plan generation.
-- One or more repair rounds with explicit acceptance criteria.
-- Optional design-folder publish for the current slice.
-- Minimal screen and interaction handoff docs when implementation needs them.
-
-Non-goals:
-
-- Deep multi-agent design generation for whole products.
-- Mandatory full `design/` tree.
-- Pixel-perfect visual diffing.
-
-Exit criteria:
-
-- Poison can move a run from review findings to a bounded repair plan and back
-  through capture, review, and gate.
-- Protected features are represented as explicit constraints rather than hidden
-  memory.
-
-## V3: Full Design Package Mode
-
-Status: planned after hardening loops are reliable.
-
-User job: "Generate or consolidate a full high-fidelity design package that a
-frontend implementer can use."
-
-Includes:
-
-- `seed`, `evolve`, and `full` generation paths.
-- Rich `design/` publishing from one or more `.poison/runs`.
-- Screen, flow, interaction, ADR, review, and handoff files when useful.
-- Historical prototype snapshots and raw evidence references when preserving
-  them helps audit or comparison.
-- Stronger completion audit and design-readiness reports.
-
-Non-goals:
-
-- Treating every maximal `design/` file as mandatory.
-- Replacing human product decisions when the product context is ambiguous.
-
-Exit criteria:
-
-- A full mode run can publish a coherent `design/` package with `sourceRunId`
-  traceability and a clear implementation map.
-
-## V4: Platform And Adapter Maturity
-
-Status: future.
-
-User job: "Use the same Poison contract across Codex, Claude Code, plugins, MCP
-adapters, and project templates."
-
-Includes:
-
-- Adapter parity for supported harnesses.
-- Package-ready skill references.
-- Stable command error and exit semantics.
-- Stronger CI coverage and fixture-based contract tests.
-- Optional deeper visual checks when reliable automation exists.
-
-Non-goals:
-
-- Harness-specific forks of Poison behavior.
-- Hidden adapter contracts that bypass the command and runtime contract owners.
+- V2 implementation before V1 evidence/review/gate fixtures pass.
+- V3 publishing before V2 performs one bounded harden loop and re-gates.
+- V4 adapter parity or packaging before V3 publish traceability is stable.
+- VN items before they have one user job, one artifact owner, one gate behavior,
+  and pass/fail tests.
