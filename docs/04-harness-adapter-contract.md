@@ -2,6 +2,10 @@
 
 > Source split from `poison_execution_plan_zh.md`.
 
+Detailed adapter ownership now lives in
+[docs/architecture/adapter-layout.md](./architecture/adapter-layout.md). This
+file keeps the high-level harness contract narrative.
+
 ## 5. Harness Adapter Contract：双端一致性与能力降级
 
 Claude Code 和 Codex 都是一等支持目标,但它们的可用工具能力可能不同。`poison` 的核心契约必须一致,adapter 只能处理加载、提示和能力降级。
@@ -59,4 +63,3 @@ skills/poison/references/adapter-contract.md
 skills/poison/references/harness-claude.md
 skills/poison/references/harness-codex.md
 ```
-

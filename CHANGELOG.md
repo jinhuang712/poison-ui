@@ -5,6 +5,7 @@ All notable changes to this project will be documented here.
 ## Unreleased
 
 - Added repository structure design and root `TODO.md` ownership.
+- Added architecture owner docs and source/test scaffold boundaries.
 - Split planned implementation contracts into semantic documentation owners.
 - Documented future `src` and `tests` ownership boundaries without implementing
   V1 commands.

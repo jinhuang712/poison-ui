@@ -1,10 +1,12 @@
 # Poison References
 
-Reference contracts and rubrics will live here as the V1 implementation is built.
+This directory contains agent-facing operational references derived from the
+implementation contracts in `docs/contracts`.
 
-The current source of truth is the root implementation plan:
+Rules:
 
-```text
-poison_execution_plan_zh.md
-```
-
+- Do not define a second source of truth for command behavior, artifact schemas,
+  run states, review schemas, or gate rules here.
+- Keep references aligned with `docs/contracts` when contracts change.
+- Use these files to make the skill easier for agents to execute, not to change
+  product behavior.

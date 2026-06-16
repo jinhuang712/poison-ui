@@ -2,6 +2,11 @@
 
 > Source split from `poison_execution_plan_zh.md`.
 
+Detailed source ownership now lives in
+[docs/architecture/source-layout.md](./architecture/source-layout.md). This file
+keeps the high-level architecture narrative and links to the implementation
+owner.
+
 ## 1. 目标目录结构
 
 在仓库中创建以下平台中立源码结构：
@@ -100,4 +105,3 @@ tests/
 默认不要忽略 `.poison/context/`。这些上下文文件应该可以被 git 追踪，除非仓库 owner 后续决定不追踪。
 
 ---
-
