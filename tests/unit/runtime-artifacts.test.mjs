@@ -7,6 +7,7 @@ import { test } from "node:test";
 import {
   initPoisonProject,
   createReviewRun,
+  recordBrowserCapture,
   recordDegradedCapture,
   writeReviewArtifacts,
   schemaCheckRun,
@@ -38,6 +39,138 @@ test("run-state transitions preserve recoverable blocked metadata for degraded c
   assert.equal(state.blockedReason, null);
   assert.equal(state.nextRecommendedAction, "review");
   assert.ok(state.artifacts.includes("degraded-evidence.md"));
+});
+
+test("browser capture writes screenshot manifest and console evidence", async () => {
+  const project = makeProject();
+  initPoisonProject(project);
+  const run = createReviewRun(project, { mode: "review", name: "browser demo" });
+
+  await recordBrowserCapture(project, {
+    runPath: run.relativePath,
+    url: "http://localhost:5173",
+    adapter: async ({ outputDir }) => ({
+      screenshot: {
+        fileName: "home.png",
+        bytes: Buffer.from("fake-png"),
+        width: 1280,
+        height: 720,
+      },
+      consoleEntries: [
+        { level: "info", text: "ready", timestamp: "2026-06-16T00:00:00.000Z" },
+        { level: "warn", text: "slow resource", timestamp: "2026-06-16T00:00:01.000Z" },
+      ],
+      pageErrors: [],
+      metadata: {
+        adapter: "test-adapter",
+        outputDir,
+      },
+    }),
+  });
+
+  const state = readJson(join(run.absolutePath, "run-state.json"));
+  assert.equal(state.status, "captured");
+  assert.equal(state.nextRecommendedAction, "review");
+  assert.ok(state.artifacts.includes("screenshot-manifest.json"));
+  assert.ok(state.artifacts.includes("console.log"));
+  assert.ok(state.artifacts.includes("screenshots/home.png"));
+  assert.equal(readFileSync(join(run.absolutePath, "screenshots/home.png"), "utf8"), "fake-png");
+
+  const manifest = readJson(join(run.absolutePath, "screenshot-manifest.json"));
+  assert.equal(manifest.kind, "browser");
+  assert.equal(manifest.url, "http://localhost:5173");
+  assert.equal(manifest.screenshots[0].path, "screenshots/home.png");
+  assert.equal(manifest.screenshots[0].width, 1280);
+  assert.equal(manifest.screenshots[0].height, 720);
+  assert.equal(manifest.console.path, "console.log");
+
+  const consoleLog = readFileSync(join(run.absolutePath, "console.log"), "utf8");
+  assert.match(consoleLog, /\[info\] ready/);
+  assert.match(consoleLog, /\[warn\] slow resource/);
+
+  const schema = schemaCheckRun(project, { runPath: run.relativePath });
+  assert.deepEqual(schema.errors, []);
+});
+
+test("browser recapture clears stale pageerror evidence when the new capture is clean", async () => {
+  const project = makeProject();
+  initPoisonProject(project);
+  const run = createReviewRun(project, { mode: "review", name: "recapture demo" });
+
+  await recordBrowserCapture(project, {
+    runPath: run.relativePath,
+    url: "http://localhost:5173",
+    adapter: async () => ({
+      screenshot: {
+        fileName: "home.png",
+        bytes: Buffer.from("first"),
+        width: 1280,
+        height: 720,
+      },
+      consoleEntries: [],
+      pageErrors: [{ text: "first failure" }],
+    }),
+  });
+  assert.match(readFileSync(join(run.absolutePath, "pageerrors.log"), "utf8"), /first failure/);
+
+  await recordBrowserCapture(project, {
+    runPath: run.relativePath,
+    url: "http://localhost:5173",
+    adapter: async () => ({
+      screenshot: {
+        fileName: "home.png",
+        bytes: Buffer.from("second"),
+        width: 1280,
+        height: 720,
+      },
+      consoleEntries: [],
+      pageErrors: [],
+    }),
+  });
+
+  const state = readJson(join(run.absolutePath, "run-state.json"));
+  assert.equal(state.artifacts.includes("pageerrors.log"), false);
+  assert.throws(() => readFileSync(join(run.absolutePath, "pageerrors.log"), "utf8"), /ENOENT/);
+  const manifest = readJson(join(run.absolutePath, "screenshot-manifest.json"));
+  assert.equal(manifest.pageErrors.path, null);
+  assert.equal(manifest.pageErrors.entries, 0);
+});
+
+test("degraded recapture clears stale browser evidence artifacts", async () => {
+  const project = makeProject();
+  initPoisonProject(project);
+  const run = createReviewRun(project, { mode: "review", name: "degraded recapture" });
+
+  await recordBrowserCapture(project, {
+    runPath: run.relativePath,
+    url: "http://localhost:5173",
+    adapter: async () => ({
+      screenshot: {
+        fileName: "home.png",
+        bytes: Buffer.from("browser"),
+        width: 1280,
+        height: 720,
+      },
+      consoleEntries: [{ level: "error", text: "old failure" }],
+      pageErrors: [{ text: "old page error" }],
+    }),
+  });
+
+  recordDegradedCapture(project, {
+    runPath: run.relativePath,
+    url: "http://localhost:5173",
+    reason: "browser unavailable on recapture",
+  });
+
+  const state = readJson(join(run.absolutePath, "run-state.json"));
+  assert.ok(state.artifacts.includes("degraded-evidence.md"));
+  assert.equal(state.artifacts.includes("screenshot-manifest.json"), false);
+  assert.equal(state.artifacts.includes("console.log"), false);
+  assert.equal(state.artifacts.includes("pageerrors.log"), false);
+  assert.equal(state.artifacts.includes("screenshots/home.png"), false);
+  assert.throws(() => readFileSync(join(run.absolutePath, "screenshot-manifest.json"), "utf8"), /ENOENT/);
+  assert.throws(() => readFileSync(join(run.absolutePath, "console.log"), "utf8"), /ENOENT/);
+  assert.throws(() => readFileSync(join(run.absolutePath, "pageerrors.log"), "utf8"), /ENOENT/);
 });
 
 test("schema check reports missing review evidence before gate can pass", () => {

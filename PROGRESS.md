@@ -22,24 +22,26 @@ The repository currently provides:
 - An operational `skills/poison/SKILL.md` entrypoint that routes behavior to
   contract owners.
 
-The repository does not yet provide real browser screenshot capture,
+The repository does not yet provide evidence-aware review packet generation,
 multi-reviewer review, repair loops, later seed/evolve/full/harden modes, or
 full `design/` publishing.
 
 ## Active
 
-Exactly one implementation direction is active now:
+The most recent implementation direction was:
 
 - V1b evidence capture: add real browser screenshot and console evidence behind
   the existing `poison capture --url <url> --run <run>` contract, while keeping
   degraded evidence explicit and review claims tied to artifacts.
 
-Active acceptance checks:
+V1b acceptance checks:
 
 - Degraded capture fixture still passes with explicit limitation and reason.
 - Browser capture fixture writes screenshot and console evidence artifacts.
+- Real browser smoke run writes `screenshot-manifest.json`, `console.log`, and
+  `screenshots/capture.png`.
 
-Do not start V1c/V1d implementation while V1b is active.
+Do not start V1c/V1d implementation inside the V1b evidence capture commit.
 
 ## Blocked
 
@@ -53,7 +55,7 @@ These items must not begin implementation yet:
 
 ## Next
 
-When V1b evidence capture passes, move to:
+When V1b evidence capture is committed, move to:
 
 - V1c review packet: generate summaries only from available evidence.
 - V1d mechanical gate: deterministic pass/fail checks for missing artifacts and

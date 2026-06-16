@@ -131,8 +131,7 @@ V1 is acceptable when the dry-run can:
 5. Run schema checks.
 6. Run the mechanical gate.
 7. Leave `run-state.json` with a legal status and clear next action.
-8. Prove both degraded-evidence and real-browser-evidence fixtures, or keep the
-   real-browser path explicitly marked as the next incomplete V1b item.
+8. Prove both degraded-evidence and real-browser-evidence fixtures.
 9. Prove missing-artifact and severe-runtime-error fixtures fail with
    deterministic gate-report lines.
 

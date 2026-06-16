@@ -1,6 +1,7 @@
 import {
   existsSync,
   mkdirSync,
+  rmSync,
   readFileSync,
   readdirSync,
   writeFileSync,
@@ -39,6 +40,10 @@ function now() {
 
 function ensureDir(path) {
   mkdirSync(path, { recursive: true });
+}
+
+function writeBuffer(path, bytes) {
+  writeFileSync(path, Buffer.isBuffer(bytes) ? bytes : Buffer.from(bytes || ""));
 }
 
 function writeFileIfMissing(path, content) {
@@ -93,6 +98,37 @@ function addArtifact(state, artifact) {
   return {
     ...state,
     artifacts: Array.from(new Set([...(state.artifacts || []), artifact])),
+  };
+}
+
+function addArtifacts(state, artifacts) {
+  return artifacts.reduce((nextState, artifact) => addArtifact(nextState, artifact), state);
+}
+
+function removeArtifacts(state, artifacts) {
+  const removeSet = new Set(artifacts);
+  return {
+    ...state,
+    artifacts: (state.artifacts || []).filter((artifact) => !removeSet.has(artifact)),
+  };
+}
+
+function removeGeneratedEvidence(runDir) {
+  rmSync(join(runDir, "screenshot-manifest.json"), { force: true });
+  rmSync(join(runDir, "console.log"), { force: true });
+  rmSync(join(runDir, "pageerrors.log"), { force: true });
+  rmSync(join(runDir, "screenshots"), { recursive: true, force: true });
+}
+
+function clearGeneratedEvidenceArtifacts(state) {
+  return {
+    ...state,
+    artifacts: (state.artifacts || []).filter((artifact) => (
+      artifact !== "screenshot-manifest.json"
+      && artifact !== "console.log"
+      && artifact !== "pageerrors.log"
+      && !artifact.startsWith("screenshots/")
+    )),
   };
 }
 
@@ -176,6 +212,17 @@ function severeRuntimeErrors(runDir) {
   }
 
   return errors;
+}
+
+function formatConsoleEntries(entries = []) {
+  return entries
+    .map((entry) => {
+      const timestamp = entry.timestamp ? `${entry.timestamp} ` : "";
+      const level = entry.level || "log";
+      const text = entry.text || "";
+      return `${timestamp}[${level}] ${text}`;
+    })
+    .join("\n");
 }
 
 export function initPoisonProject(projectRoot = process.cwd()) {
@@ -301,6 +348,7 @@ export function recordDegradedCapture(projectRoot = process.cwd(), { runPath, ur
     throw new Error(`capture cannot run from status ${state.status}`);
   }
 
+  removeGeneratedEvidence(run.absolutePath);
   writeMarkdown(
     run.absolutePath,
     run.runId,
@@ -335,7 +383,7 @@ export function recordDegradedCapture(projectRoot = process.cwd(), { runPath, ur
 
   const nextState = addArtifact(
     {
-      ...state,
+      ...clearGeneratedEvidenceArtifacts(state),
       status: "captured",
       previousStatus: null,
       blockedReason: null,
@@ -344,6 +392,80 @@ export function recordDegradedCapture(projectRoot = process.cwd(), { runPath, ur
     "degraded-evidence.md",
   );
   return writeState(run.absolutePath, nextState);
+}
+
+export async function recordBrowserCapture(projectRoot = process.cwd(), { runPath, url, adapter } = {}) {
+  const run = normalizeRunPath(projectRoot, runPath);
+  const state = readState(run.absolutePath);
+  if (!["created", "blocked", "captured"].includes(state.status)) {
+    throw new Error(`capture cannot run from status ${state.status}`);
+  }
+  if (typeof adapter !== "function") {
+    throw new Error("browser capture adapter is required");
+  }
+
+  const screenshotsDir = join(run.absolutePath, "screenshots");
+  ensureDir(screenshotsDir);
+
+  const result = await adapter({
+    url,
+    runDir: run.absolutePath,
+    outputDir: screenshotsDir,
+  });
+  const screenshot = result?.screenshot;
+  if (!screenshot?.fileName || !screenshot.bytes) {
+    throw new Error("browser capture adapter must return screenshot fileName and bytes");
+  }
+
+  const screenshotPath = join("screenshots", screenshot.fileName);
+  writeBuffer(join(run.absolutePath, screenshotPath), screenshot.bytes);
+
+  const consoleEntries = result.consoleEntries || [];
+  writeFileSync(join(run.absolutePath, "console.log"), `${formatConsoleEntries(consoleEntries)}\n`);
+
+  const pageErrors = result.pageErrors || [];
+  rmSync(join(run.absolutePath, "pageerrors.log"), { force: true });
+  if (pageErrors.length > 0) {
+    writeFileSync(join(run.absolutePath, "pageerrors.log"), `${pageErrors.map((error) => error.text || String(error)).join("\n")}\n`);
+  }
+
+  const manifest = {
+    schemaVersion: 1,
+    kind: "browser",
+    runId: run.runId,
+    url: url || null,
+    capturedAt: now(),
+    screenshots: [
+      {
+        path: screenshotPath,
+        width: screenshot.width || null,
+        height: screenshot.height || null,
+      },
+    ],
+    console: {
+      path: "console.log",
+      entries: consoleEntries.length,
+    },
+    pageErrors: {
+      path: pageErrors.length > 0 ? "pageerrors.log" : null,
+      entries: pageErrors.length,
+    },
+    metadata: result.metadata || {},
+  };
+  writeFileSync(join(run.absolutePath, "screenshot-manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
+
+  const artifacts = ["screenshot-manifest.json", "console.log", screenshotPath];
+  if (pageErrors.length > 0) {
+    artifacts.push("pageerrors.log");
+  }
+
+  return writeState(run.absolutePath, {
+    ...addArtifacts(removeArtifacts(state, ["pageerrors.log"]), artifacts),
+    status: "captured",
+    previousStatus: null,
+    blockedReason: null,
+    nextRecommendedAction: "review",
+  });
 }
 
 export function writeReviewArtifacts(projectRoot = process.cwd(), { runPath } = {}) {

@@ -5,11 +5,12 @@ items as they are completed.
 
 ## Active: V1b Evidence Capture
 
-- Add Playwright-backed screenshot and console capture behind the existing
+- Playwright-backed screenshot and console capture is wired behind the existing
   `poison capture --url <url> --run <run>` contract.
-- Add fixtures and tests for successful screenshot evidence and console
-  evidence.
-- Keep the degraded capture fixture passing with explicit limitation and reason.
+- Browser capture writes `screenshots/capture.png`,
+  `screenshot-manifest.json`, and `console.log`.
+- Degraded capture remains available when Playwright is unavailable or capture
+  fails.
 
 ## Next: V1c Review Packet
 

@@ -4,10 +4,12 @@ import {
   createReviewRun,
   gateRun,
   initPoisonProject,
+  recordBrowserCapture,
   recordDegradedCapture,
   schemaCheckRun,
   writeReviewArtifacts,
 } from "../src/core/v1-runtime.mjs";
+import { createPlaywrightCaptureAdapter } from "../src/tools/playwright-capture.mjs";
 
 const help = `poison-ui
 
@@ -53,6 +55,17 @@ function fail(error) {
   process.exit(1);
 }
 
+async function createOptionalPlaywrightAdapter() {
+  try {
+    const playwright = await import("playwright");
+    return createPlaywrightCaptureAdapter({ playwright });
+  } catch (error) {
+    return {
+      unavailableReason: `Playwright browser capture unavailable: ${error.message}`,
+    };
+  }
+}
+
 if (args.length === 0 || args.includes("--help") || args.includes("-h")) {
   process.stdout.write(help);
   process.exit(0);
@@ -73,14 +86,36 @@ try {
       process.stdout.write(`new-run: ${run.relativePath}\n`);
       break;
     }
-    case "capture":
+    case "capture": {
+      const adapter = await createOptionalPlaywrightAdapter();
+      if (typeof adapter === "function") {
+        try {
+          await recordBrowserCapture(cwd, {
+            runPath: options.run,
+            url: options.url,
+            adapter,
+          });
+          process.stdout.write("capture: browser evidence recorded\n");
+          break;
+        } catch (error) {
+          recordDegradedCapture(cwd, {
+            runPath: options.run,
+            url: options.url,
+            reason: `Browser capture failed: ${error.message}`,
+          });
+          process.stdout.write("capture: degraded evidence recorded\n");
+          break;
+        }
+      }
+
       recordDegradedCapture(cwd, {
         runPath: options.run,
         url: options.url,
-        reason: "Automated browser capture is unavailable in the V1 dependency-free runtime.",
+        reason: adapter.unavailableReason,
       });
       process.stdout.write("capture: degraded evidence recorded\n");
       break;
+    }
     case "review":
       writeReviewArtifacts(cwd, { runPath: options.run });
       process.stdout.write("review: artifacts written\n");
