@@ -38,6 +38,19 @@ Use this separation when deciding where to write information:
 Do not put product-specific capabilities, command contracts, domain roles, UI
 rules, or runtime file formats in `WORKFLOW.md`.
 
+When a repository has root state files such as `README.md`, `TODO.md`, and
+`CHANGELOG.md`, keep their responsibilities separate:
+
+- `README.md` introduces the project and points to current documentation.
+- `TODO.md` tracks real actionable work and open follow-ups.
+- `CHANGELOG.md` records completed changes.
+
+When high-level design documents and implementation contract documents both
+exist, keep high-level documents short and route durable contracts to their
+specific owner files. Do not let an index or narrative document grow into a
+second source of truth for command behavior, runtime schemas, gate rules, or
+implementation tasks.
+
 ## Change Routing
 
 Before changing files, classify the request:

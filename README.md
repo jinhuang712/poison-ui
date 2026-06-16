@@ -61,6 +61,11 @@ Read [WORKFLOW.md](./WORKFLOW.md) first. This file is intentionally project-neut
 
 Do not grow [poison_execution_plan_zh.md](./poison_execution_plan_zh.md) back into a single huge reference. Update the relevant file under [docs](./docs).
 
+Root project state is tracked in [TODO.md](./TODO.md) and
+[CHANGELOG.md](./CHANGELOG.md). High-level design entries stay in [docs](./docs),
+while implementation-facing contracts are owned by the semantic subdirectories
+under `docs/architecture`, `docs/contracts`, and `docs/delivery`.
+
 ## Status
 
 This repository is public scaffolding and design work. Do not treat the CLI or skill as production-ready yet.

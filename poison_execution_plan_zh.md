@@ -26,7 +26,12 @@
 | Tools, gates, and state | [docs/07-tools-gates-and-state.md](./docs/07-tools-gates-and-state.md) |
 | Skill and role contracts | [docs/08-skill-and-role-contracts.md](./docs/08-skill-and-role-contracts.md) |
 | V1 delivery and dry-run | [docs/09-v1-delivery.md](./docs/09-v1-delivery.md) |
+| Source and adapter architecture | [docs/architecture](./docs/architecture) |
+| Implementation contracts | [docs/contracts](./docs/contracts) |
+| V1 acceptance and dry-run | [docs/delivery](./docs/delivery) |
 | Visual poison taxonomy | [poison_taxonomy_single_word_full.md](./poison_taxonomy_single_word_full.md) |
+| Repository TODO | [TODO.md](./TODO.md) |
+| Changelog | [CHANGELOG.md](./CHANGELOG.md) |
 
 ## Editing Rule
 
