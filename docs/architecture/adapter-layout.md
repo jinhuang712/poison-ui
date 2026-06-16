@@ -28,5 +28,4 @@ artifact schema, or reviewer profiles.
 
 If a harness lacks browser screenshots, console capture, Playwright, or
 subagent orchestration, the adapter must record the missing capability and route
-to manual evidence, `needs-manual-evidence`, or `blocked`. It must not silently
-skip gate evidence.
+to degraded evidence or `blocked`. It must not silently skip gate evidence.

@@ -1,5 +1,9 @@
 # Repository Structure Design
 
+Historical snapshot: this spec describes the repository-structure migration as
+it was planned before the minimal V1 CLI subset existed. For current status,
+use [PROGRESS.md](../../../PROGRESS.md).
+
 ## Goal
 
 Prepare `poison-ui` for V1 implementation by separating stable project entry
@@ -227,8 +231,8 @@ Manual verification:
 - Duplicated contract text can drift while migration is partial. Mitigation:
   high-level docs should link to new owner files after the split.
 - Creating too many empty files can make the repo look more implemented than it
-  is. Mitigation: source and test directories should use minimal README files
-  and the root `TODO.md` should state that V1 commands remain unimplemented.
+  is. Mitigation at the time was to keep source and test directories minimal
+  and make the root `TODO.md` state the current implementation status.
 - `skills/poison/references` may duplicate `docs/contracts`. Mitigation:
   `docs/contracts` owns implementation contracts; `skills/poison/references`
   owns agent-facing operational guidance derived from those contracts.

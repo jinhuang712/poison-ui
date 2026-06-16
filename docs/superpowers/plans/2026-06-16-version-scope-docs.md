@@ -1,5 +1,8 @@
 # Version Scope Documentation Implementation Plan
 
+Historical snapshot: this plan records the version-scope documentation pass as
+it was executed. For current status, use [PROGRESS.md](../../../PROGRESS.md).
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Clarify Poison's version ladder, first-user wedge, progress state, gate scope, run-state recovery, and `design/` delivery contract before implementation starts.

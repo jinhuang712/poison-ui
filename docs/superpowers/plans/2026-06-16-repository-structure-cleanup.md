@@ -1,5 +1,9 @@
 # Repository Structure Cleanup Implementation Plan
 
+Historical snapshot: this plan describes the repository-structure cleanup as it
+was planned before the minimal V1 CLI subset existed. For current status, use
+[PROGRESS.md](../../../PROGRESS.md).
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Restructure the repository documentation and scaffold boundaries so V1 implementation can start from stable source, contract, skill, and status-file owners.
@@ -255,8 +259,7 @@ artifact schema, or reviewer profiles.
 
 If a harness lacks browser screenshots, console capture, Playwright, or
 subagent orchestration, the adapter must record the missing capability and route
-to manual evidence, `needs-manual-evidence`, or `blocked`. It must not silently
-skip gate evidence.
+to degraded evidence or `blocked`. It must not silently skip gate evidence.
 ```
 
 - [ ] **Step 3: Create decisions README**
