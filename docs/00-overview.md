@@ -19,7 +19,7 @@
 
 Superpowers 是架构参照，不是照搬对象。`poison` 应借鉴其 workflow 编排、harness adapter 分层、规则硬约束和技能可测试思想，但具体目录和实现以 `poison` 的目标为准。
 
-实施前必须遵守 [`WORKFLOW.md`](./WORKFLOW.md) 定义的通用协作顺序：先判断变更归口，再更新本实施方案或对应项目文件，确认后再进入设计、计划和实现。任何讨论导致的范围、mode、command、tool、harness、runtime 产物或 gate 变化，都不能只停留在聊天上下文里。
+实施前必须遵守 [`WORKFLOW.md`](../WORKFLOW.md) 定义的通用协作顺序：先判断变更归口，再更新本实施方案或对应项目文件，确认后再进入设计、计划和实现。任何讨论导致的范围、mode、command、tool、harness、runtime 产物或 gate 变化，都不能只停留在聊天上下文里。
 
 `poison` 必须支持两种生成节奏：
 
@@ -42,4 +42,3 @@ Superpowers 是架构参照，不是照搬对象。`poison` 应借鉴其 workflo
 - 安全的小步演进机制
 
 ---
-

@@ -29,6 +29,7 @@
 | Source and adapter architecture | [docs/architecture](./docs/architecture) |
 | Implementation contracts | [docs/contracts](./docs/contracts) |
 | V1 acceptance and dry-run | [docs/delivery](./docs/delivery) |
+| Decision log index | [docs/decisions](./docs/decisions) |
 | Visual poison taxonomy | [poison_taxonomy_single_word_full.md](./poison_taxonomy_single_word_full.md) |
 | Repository TODO | [TODO.md](./TODO.md) |
 | Changelog | [CHANGELOG.md](./CHANGELOG.md) |

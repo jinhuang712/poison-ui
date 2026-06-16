@@ -115,8 +115,8 @@ implementation tasks.
 In `Development Workflow`, add one paragraph after the existing docs guidance:
 
 ```markdown
-Root project state is tracked in [TODO.md](./TODO.md) and
-[CHANGELOG.md](./CHANGELOG.md). High-level design entries stay in [docs](./docs),
+Root project state is tracked in `TODO.md` and
+`CHANGELOG.md`. High-level design entries stay in `docs`,
 while implementation-facing contracts are owned by the semantic subdirectories
 under `docs/architecture`, `docs/contracts`, and `docs/delivery`.
 ```
@@ -126,11 +126,11 @@ under `docs/architecture`, `docs/contracts`, and `docs/delivery`.
 Add rows for:
 
 ```markdown
-| Source and adapter architecture | [docs/architecture](./docs/architecture) |
-| Implementation contracts | [docs/contracts](./docs/contracts) |
-| V1 acceptance and dry-run | [docs/delivery](./docs/delivery) |
-| Repository TODO | [TODO.md](./TODO.md) |
-| Changelog | [CHANGELOG.md](./CHANGELOG.md) |
+| Source and adapter architecture | `docs/architecture` |
+| Implementation contracts | `docs/contracts` |
+| V1 acceptance and dry-run | `docs/delivery` |
+| Repository TODO | `TODO.md` |
+| Changelog | `CHANGELOG.md` |
 ```
 
 - [ ] **Step 6: Verify root status task**
@@ -351,7 +351,7 @@ In `docs/01-repository-architecture.md`, add near the top:
 
 ```markdown
 Detailed source ownership now lives in
-[docs/architecture/source-layout.md](./architecture/source-layout.md). This file
+`docs/architecture/source-layout.md`. This file
 keeps the high-level architecture narrative and links to the implementation
 owner.
 ```
@@ -360,7 +360,7 @@ In `docs/04-harness-adapter-contract.md`, add near the top:
 
 ```markdown
 Detailed adapter ownership now lives in
-[docs/architecture/adapter-layout.md](./architecture/adapter-layout.md). This
+`docs/architecture/adapter-layout.md`. This
 file keeps the high-level harness contract narrative.
 ```
 
