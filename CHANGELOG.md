@@ -4,6 +4,7 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
+- Added the target-project `design/` folder delivery contract.
 - Added repository structure design and root `TODO.md` ownership.
 - Added architecture owner docs and source/test scaffold boundaries.
 - Added implementation contract docs for commands, runtime artifacts, state,

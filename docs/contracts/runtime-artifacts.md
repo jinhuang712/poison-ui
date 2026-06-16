@@ -19,6 +19,9 @@ Every run must also include a librarian-built shared context package:
 reviewers, and arbiters. It is built from `.poison/context/*`, the current
 `run-contract.md`, accepted decisions, and evidence indexes.
 
+The target project's human-facing design deliverable belongs in `design/`, not
+inside `.poison/`. See [Design Folder Contract](./design-folder.md).
+
 ## Trackable Context Files
 
 By default, `.poison/context` is trackable repository state.

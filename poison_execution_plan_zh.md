@@ -28,6 +28,7 @@
 | V1 delivery and dry-run | [docs/09-v1-delivery.md](./docs/09-v1-delivery.md) |
 | Source and adapter architecture | [docs/architecture](./docs/architecture) |
 | Implementation contracts | [docs/contracts](./docs/contracts) |
+| Design folder contract | [docs/contracts/design-folder.md](./docs/contracts/design-folder.md) |
 | V1 acceptance and dry-run | [docs/delivery](./docs/delivery) |
 | Decision log index | [docs/decisions](./docs/decisions) |
 | Visual poison taxonomy | [poison_taxonomy_single_word_full.md](./poison_taxonomy_single_word_full.md) |

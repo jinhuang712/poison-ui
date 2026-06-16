@@ -67,6 +67,9 @@ while implementation-facing contracts are owned by the semantic subdirectories
 under `docs/architecture`, `docs/contracts`, `docs/delivery`, and
 `docs/decisions`.
 
+The expected target-project `design/` delivery package is defined in
+[docs/contracts/design-folder.md](./docs/contracts/design-folder.md).
+
 ## Status
 
 This repository is public scaffolding and design work. Do not treat the CLI or skill as production-ready yet.

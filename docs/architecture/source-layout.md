@@ -39,3 +39,9 @@ This file owns the intended repository source layout for V1 implementation.
 - `tests/fixtures`: sample inputs and expected artifact fragments.
 - `tests/unit`: focused `src/core` and `src/tools` tests.
 - `tests/integration`: CLI dry-run flows.
+
+## Target Project Output
+
+When Poison operates on another project, its human-facing design delivery package
+belongs in that target project's `design/` folder. The expected shape is owned by
+`docs/contracts/design-folder.md`.

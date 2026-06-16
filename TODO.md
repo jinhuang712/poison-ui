@@ -9,6 +9,8 @@ items as they are completed.
   entrypoint after contract owners are stable.
 - Implement the thin CLI dispatch layer and deterministic V1 tools listed in
   `docs/delivery/v1-acceptance.md`.
+- Add design folder generation and update flows based on
+  `docs/contracts/design-folder.md`.
 - Add tests for core artifact helpers, run-state validation, schema checking,
   and CLI dry-run flows.
 
