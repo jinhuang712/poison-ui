@@ -1,6 +1,7 @@
 # Runtime Artifacts Contract
 
-This file owns the V1 runtime artifact inventory.
+This file owns the runtime artifact inventory. V1 uses only the review-first
+subset needed for capture, review, schema-check, and mechanical gate.
 
 ## Canonical Context
 
@@ -9,18 +10,21 @@ All roles use these canonical inputs:
 - `.poison/context/poison-core.current.md`
 - `.poison/runs/<run-id>/run-contract.md`
 
-Every run must also include a librarian-built shared context package:
+Later-version runs may include a librarian-built shared context package:
 
 - `.poison/runs/<run-id>/context-pack.md`
 - `.poison/runs/<run-id>/sot-index.json`
 - `.poison/runs/<run-id>/context-health.md`
 
-`context-pack.md` is the practical entrypoint for designers, builders,
-reviewers, and arbiters. It is built from `.poison/context/*`, the current
-`run-contract.md`, accepted decisions, and evidence indexes.
+`context-pack.md` becomes the practical entrypoint for designers, builders,
+reviewers, and arbiters once V2+ workflows need shared context packaging. It is
+built from `.poison/context/*`, the current `run-contract.md`, accepted
+decisions, and evidence indexes.
 
 The target project's human-facing design deliverable belongs in `design/`, not
-inside `.poison/`. See [Design Folder Contract](./design-folder.md).
+inside `.poison/`. `.poison/runs/<run-id>` is audit/source evidence;
+`design/` is a one-way published snapshot that may be partial. See
+[Design Folder Contract](./design-folder.md).
 
 ## Trackable Context Files
 
@@ -68,6 +72,10 @@ By default, `.poison/context` is trackable repository state.
 Only artifacts required by the active mode/action need to exist during an
 in-progress run. Gate rules decide which missing artifacts are failures for the
 current state.
+
+V1 review-first runs require only the subset needed for capture, review,
+schema-check, and mechanical gate. Later seed/evolve/full/harden runs may
+create the broader inventory.
 
 ## Generated Evidence
 

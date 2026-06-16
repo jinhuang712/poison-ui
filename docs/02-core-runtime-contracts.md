@@ -8,6 +8,10 @@ Detailed implementation owners:
 - [Run state](./contracts/run-state.md)
 - [Output contract](./contracts/output-contract.md)
 
+Contract owner note: this file is narrative orientation. If the detailed
+runtime, state, or output contract files conflict with this file, the detailed
+contract files win and this file should be corrected.
+
 ## 2. 核心概念
 
 `poison` 不能允许多个 agent 各自发明不同的产品理解。

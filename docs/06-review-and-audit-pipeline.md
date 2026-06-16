@@ -7,6 +7,10 @@ Detailed review and evidence ownership now lives in
 [docs/contracts/review-schema.md](./contracts/review-schema.md). This file keeps
 the high-level review and audit narrative.
 
+Contract owner note: this file is narrative orientation. If the evidence model,
+review schema, gate rules, or version roadmap conflicts with this file, the
+detailed owner files win and this file should be corrected.
+
 ## 10. Readiness Assessment：输入完整度评估
 
 实现 `src/tools/assess-readiness.mjs`，由 `bin/poison.mjs` 调用。

@@ -1,6 +1,8 @@
 # Gate Rules Contract
 
-This file owns V1 gate checks and report shape.
+This file owns gate checks and report shape. V1 gate is mechanical. Later
+versions can opt into stricter visual, UX, frontend, and completion gates after
+those checks are implementable and testable.
 
 ## Command
 
@@ -20,52 +22,73 @@ poison gate --run .poison/runs/<run-id>
 ## Verdict
 PASS | FAIL
 
-## Passed checks
-
-## Failed checks
+## Hard checks
 
 ## Warnings
 
 ## Required fixes
+
+## Next action
 ```
 
-## Checks
+## V1 Hard Checks
 
-Gate checks:
+V1 hard checks:
 
-- `run-state.json` exists and state transition is legal.
-- Key artifacts pass `schema-check`.
-- `poison-core.current.md` exists.
-- `protected-features.md` exists.
-- `user-design-taste.md` exists.
-- `visual-memory.md` exists.
-- `run-contract.md` exists.
-- `review-packet.md` exists.
-- Screenshots exist when the run requires visual/runtime evidence.
-- `screenshot-manifest.json` exists when capture has run.
-- `console.log` exists or missing console evidence is explicitly degraded.
-- Severe console errors are absent or recorded as failures.
-- Source files do not contain obvious placeholder text.
-- Visual, UX, and frontend review outputs exist when required by the run.
-- Visual poison findings use taxonomy words and required terminal format.
-- Visual quality pluses and poison findings are recorded separately.
-- Blocker and major findings have E0-E3 evidence.
-- `design-rationale.md` exists.
-- `user-ambiguity-check.md` exists and has no unresolved ambiguity.
-- Completion audit runs include `completion-report.md`.
-- Arbiter repair plan exists when reviews found fixable issues.
-- Protected features did not regress.
-- Visual memory did not drift without explanation.
-- Final report exists before completion.
+- `run-state.json` exists, parses, and uses a legal status.
+- Current state transition is legal according to
+  [run-state.md](./run-state.md).
+- Required V1 artifacts for the active state exist.
+- Required V1 JSON artifacts parse and include required fields.
+- Required V1 Markdown artifacts include required headings.
+- Evidence exists when capture succeeded.
+- Missing browser, screenshot, URL, or console capability is represented by an
+  explicit degraded evidence artifact.
+- `review-summary.md` exists before gate can pass.
+- Review findings include severity and evidence source.
+- Severe console/runtime errors are absent when console evidence was captured,
+  or recorded as hard failures.
+- `blocked` cannot pass unless the blocker was resolved by a legal transition.
 - Passing gate moves run-state to `gated`.
+
+## V1 Warnings
+
+These checks may be reported, but they do not fail V1 gate by default:
+
+- Placeholder-looking text or generic demo copy.
+- Visual poison taxonomy coverage.
+- Visual quality, hierarchy, spacing, rhythm, density, or taste concerns.
+- UX flow, empty state, error state, loading state, or accessibility concerns.
+- Frontend handoff completeness.
+- Protected-feature regression risk.
+- Visual memory drift.
+- Missing full `design/` folder output.
+- Missing multi-reviewer ensemble.
+- Missing completion audit.
+
+## Later Strict Gates
+
+Later versions may promote warnings to hard failures only when the project has:
+
+- deterministic detection or a clearly inspectable evidence source
+- a stable artifact schema
+- a recovery path
+- tests proving both pass and fail behavior
+
+Examples of later strict gates:
+
+- protected features did not regress
+- visual memory did not drift without explanation
+- blocker and major findings have E0-E3 evidence
+- completion audit exists and maps design requirements to runtime evidence
+- required `design/` package files were published for full mode
 
 ## Placeholder Detection
 
-Gate flags obvious placeholder text in source files:
+Gate may flag obvious placeholder text as a V1 warning:
 
 ```text
 Lorem ipsum
-TODO
 Sample
 Placeholder
 Untitled
@@ -73,12 +96,14 @@ Example Card
 Your app
 ```
 
+`TODO` is not a universal V1 failure because it can be legitimate source code
+or developer-facing text. If it appears in a user-facing UI surface, report it
+as a warning with file or screenshot evidence.
+
 ## Failure Behavior
 
-- Missing reviews can fail gate, but gate must produce executable fixes.
-- Blocker or major findings without E0-E3 evidence fail gate or require arbiter
-  severity downgrade.
+- Gate must produce executable fixes.
 - Missing automated screenshot or console capability must be represented as
-  manual evidence, `needs-manual-evidence`, or `blocked`.
-- Gate failure moves the run to `repaired`, `reviewed`, or `blocked` and sets
+  manual evidence, `needs-manual-evidence`, degraded evidence, or `blocked`.
+- Gate failure moves the run to `blocked` and sets `previousStatus` plus
   `nextRecommendedAction`.

@@ -1,6 +1,8 @@
 # Command API Contract
 
-This file owns the public command and deterministic action contract for V1.
+This file owns the public command and deterministic action contract. V1 supports
+the review-first subset; later versions can activate additional modes and
+actions defined here.
 
 ## Executable
 
@@ -16,7 +18,7 @@ poison [action-or-mode] [options]
 
 ## Modes
 
-Conceptual modes:
+Long-term conceptual modes:
 
 - `seed`
 - `evolve`
@@ -27,6 +29,8 @@ Conceptual modes:
 `auto` is command behavior, not a separate mode. In auto behavior, the
 orchestrator assesses input completeness and records the chosen mode plus reason
 in `.poison/runs/<run-id>/readiness-assessment.md`.
+
+V1 only requires `review`. Other modes are roadmap targets.
 
 ## User-Facing Examples
 
@@ -39,10 +43,24 @@ poison review --design docs/design.md --url http://localhost:5173 --audit comple
 poison harden --run .poison/runs/004-evolve-checkout
 ```
 
-## Deterministic Action Mappings
+## V1 Deterministic Action Mappings
+
+These actions are required for the V1 review-first dry-run:
+
+```bash
+poison init
+poison new-run --mode review --name poisoned-demo
+poison capture --url http://localhost:5173 --run .poison/runs/001-poisoned-demo
+poison review --run .poison/runs/001-poisoned-demo
+poison schema-check --run .poison/runs/001-poisoned-demo
+poison gate --run .poison/runs/001-poisoned-demo
+```
+
+## Later Deterministic Action Mappings
 
 These actions exist for testing, adapter calls, and dry-run workflows. They are
-not separate public entrypoints; they still go through `poison`.
+not separate public entrypoints; they still go through `poison`. They are not V1
+requirements unless listed in the V1 mappings above.
 
 ```bash
 poison init

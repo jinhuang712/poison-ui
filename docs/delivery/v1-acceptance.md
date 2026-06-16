@@ -1,6 +1,8 @@
 # V1 Acceptance
 
-This file owns the V1 acceptance checklist.
+This file owns the V1 review-first acceptance checklist. Broader seed, evolve,
+full, harden, design publishing, and deep review behavior belongs to later
+versions in [version-roadmap.md](./version-roadmap.md).
 
 ## A. Initialization
 
@@ -8,128 +10,123 @@ This file owns the V1 acceptance checklist.
 node bin/poison.mjs init
 ```
 
-Creates `.poison/context`, `.poison/runs`, and default context files:
+Creates:
+
+```text
+.poison/context/
+.poison/runs/
+```
+
+Minimum context files:
 
 - `.poison/context/poison-core.current.md`
-- `.poison/context/protected-features.md`
-- `.poison/context/visual-system.md`
-- `.poison/context/visual-memory.md`
-- `.poison/context/user-design-taste.md`
-- `.poison/context/design-decisions.md`
 - `.poison/context/open-questions.md`
 
-## B. New Run
+Optional context files may be created when known, but V1 must not invent
+product facts to satisfy a template.
+
+## B. New Review Run
 
 ```bash
-node bin/poison.mjs new-run --mode seed --name test-seed
+node bin/poison.mjs new-run --mode review --name poisoned-demo
 ```
 
-Creates `.poison/runs/001-test-seed` with run state, run contract, readiness
-assessment, context pack, SoT index, and context health.
+Creates `.poison/runs/001-poisoned-demo` with:
 
-## C. Protected Features
+- `run-state.json`
+- `run-contract.md`
+- `context-health.md`
+
+The initial status is `created`, and `nextRecommendedAction` identifies capture
+or manual evidence collection.
+
+## C. Capture Or Evidence Gap
 
 ```bash
-node bin/poison.mjs init-protected-features --run .poison/runs/001-test-seed
+node bin/poison.mjs capture --url http://localhost:5173 --run .poison/runs/001-poisoned-demo
 ```
 
-Updates `.poison/context/protected-features.md` and moves run-state to
-`protected_ready`.
+When capture works, V1 creates:
 
-## D. SoT Query
+- `screenshots/`
+- `screenshot-manifest.json`
+- `console.log` or structured console evidence
+
+When capture cannot run, V1 creates an explicit degraded evidence artifact and
+sets a recoverable `blocked` state or a reviewable degraded state with
+`nextRecommendedAction`.
+
+## D. Review
 
 ```bash
-node bin/poison.mjs sot query --run .poison/runs/001-test-seed --topic "primary user action"
+node bin/poison.mjs review --run .poison/runs/001-poisoned-demo
 ```
 
-Returns a `CONFIRMED`, `UNKNOWN`, `CONFLICTED`, or `OPEN` answer. `UNKNOWN`
-writes to open questions. `CONFLICTED` writes to context health and blocks or
-keeps the run blocked.
+Creates:
 
-## E. Scope Assessment
+- `review-packet.md`
+- `review-summary.md`
+
+The summary includes:
+
+- issue title
+- severity
+- evidence source
+- why it feels poisoned
+- first repair recommendation
+- protected behavior that must not regress
+
+## E. Schema Check
 
 ```bash
-node bin/poison.mjs assess-scope --run .poison/runs/001-test-seed
+node bin/poison.mjs schema-check --run .poison/runs/001-poisoned-demo
 ```
 
-Creates `scope-assessment.md` with selected depth, selected expansion, reviewer
-set, user override, and token/efficiency rationale.
+Checks:
 
-## F. Capture
+- `run-state.json` parses and has required fields.
+- Required V1 Markdown artifacts have required headings.
+- Evidence gap artifacts exist when automated evidence is unavailable.
+- Review summaries have severity and evidence fields.
+
+## F. Mechanical Gate
 
 ```bash
-node bin/poison.mjs capture --url http://localhost:5173 --run .poison/runs/001-test-seed
+node bin/poison.mjs gate --run .poison/runs/001-poisoned-demo
 ```
 
-Creates screenshots, `screenshot-manifest.json`, and console evidence or a clear
-capability-degradation report.
+Creates:
 
-## G. Review Packet
+- `gate-report.md`
 
-```bash
-node bin/poison.mjs build-review-packet --run .poison/runs/001-test-seed
-```
+V1 hard gate fails only for mechanical reasons:
 
-Creates `review-packet.md`.
+- illegal state transition
+- missing required V1 artifact
+- schema-check failure
+- unrepresented evidence gap
+- unresolved `blocked` state
+- severe console/runtime error captured during evidence collection
 
-## H. Decision HTML
+The gate report also records warnings for visual, UX, frontend, placeholder,
+taxonomy, protected-feature, and visual-memory concerns.
 
-```bash
-node bin/poison.mjs decision-html --question "choose search layout" --run .poison/runs/001-test-seed
-```
+## Exit Criteria
 
-Creates a visual decision HTML page and matching Markdown decision prompt.
+V1 is acceptable when the dry-run can:
 
-## I. User Ambiguity Check
-
-```bash
-node bin/poison.mjs ambiguity-check --run .poison/runs/001-test-seed
-```
-
-Creates `user-ambiguity-check.md`. `HAS_AMBIGUITY` or `BLOCKED` prevents
-completion until resolved.
-
-## J. Reviewer Ensemble
-
-```bash
-node bin/poison.mjs review --run .poison/runs/001-test-seed
-```
-
-Creates `review-summary.md` for target runs or `direction-synthesis.md` for
-directional runs. Blocker and major findings include evidence level, evidence
-source, and severity justification.
-
-## K. Schema Check
-
-```bash
-node bin/poison.mjs schema-check --run .poison/runs/001-test-seed
-```
-
-Checks key Markdown metadata, required sections, required JSON fields, and JSON
-parseability.
-
-## L. Gate
-
-```bash
-node bin/poison.mjs gate --run .poison/runs/001-test-seed
-```
-
-Creates `gate-report.md`, fails clearly when evidence or reviews are missing,
-and moves run-state according to gate result.
-
-## M. Completion Audit
-
-```bash
-node bin/poison.mjs audit-completion --design docs/sample-design.md --url http://localhost:5173 --run .poison/runs/001-test-seed
-```
-
-Creates `completion-audit-packet.md` and `completion-report.md`. Missing design,
-runtime, screenshots, or evidence produces a `BLOCKED` verdict and evidence gap
-list.
+1. Initialize Poison runtime folders.
+2. Create a review run.
+3. Capture evidence or record why evidence is missing.
+4. Produce a structured review summary.
+5. Run schema checks.
+6. Run the mechanical gate.
+7. Leave `run-state.json` with a legal status and clear next action.
 
 ## Non-Goals
 
 V1 does not include Figma export, pixel-perfect visual diffing, complex visual
-scoring, automatic design system extraction, remote deployment, multi-worktree
-merge strategy, embedded report images, internal LLM API calls, automatic code
-changes from completion audit, or evidence-free completion percentages.
+scoring, automatic design system extraction, remote deployment,
+multi-worktree merge strategy, embedded report images, internal LLM API calls,
+automatic code changes from completion audit, full `design/` publishing, or
+evidence-free completion percentages.

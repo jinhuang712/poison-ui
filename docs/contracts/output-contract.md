@@ -1,6 +1,7 @@
 # Output Contract
 
-This file owns V1 artifact metadata and lightweight schema requirements.
+This file owns artifact metadata and lightweight schema requirements. V1 uses
+the review-first subset of this contract.
 
 V1 does not introduce complex JSON Schema. Tools should validate required
 fields, required sections, and JSON parseability.
@@ -53,18 +54,26 @@ Key JSON artifacts must include:
 
 ## Key Artifacts
 
+V1 key artifacts:
+
 ```text
 run-state.json
 run-contract.md
+context-health.md
+review-packet.md
+review-summary.md
+gate-report.md
+```
+
+Later-version artifacts:
+
+```text
 context-pack.md
 scope-assessment.md
 design-rationale.md
 user-ambiguity-check.md
-review-packet.md
-review-summary.md
 direction-synthesis.md
 repair-plan.md
-gate-report.md
 completion-audit-packet.md
 completion-report.md
 ```

@@ -6,6 +6,11 @@ Detailed gate ownership now lives in
 [docs/contracts/gate-rules.md](./contracts/gate-rules.md). This file keeps the
 high-level tools, gates, and state narrative.
 
+Contract owner note: this file is narrative orientation. If gate or run-state
+details conflict with [Gate Rules](./contracts/gate-rules.md) or
+[Run State](./contracts/run-state.md), the detailed contract files win and this
+file should be corrected.
+
 ## 17. Screenshot Capture：截图捕获
 
 实现 `src/tools/capture-screenshots.mjs`，由 `bin/poison.mjs` 调用。
@@ -66,7 +71,12 @@ poison capture --url http://localhost:5173 --run .poison/runs/<run-id>
 poison gate --run .poison/runs/<run-id>
 ```
 
-检查项：
+The detailed V1 hard checks and warning checks live in
+[Gate Rules](./contracts/gate-rules.md). Do not treat the list below as the
+current hard-gate source of truth; it is retained as a legacy full-platform
+check inventory for later versions.
+
+Legacy full-platform check inventory:
 
 ```text
 - run-state.json 是否存在且状态转移合法
@@ -99,6 +109,10 @@ poison gate --run .poison/runs/<run-id>
 - gate 通过后 run-state 是否进入 `gated`
 ```
 
+Placeholder detection details also live in
+[Gate Rules](./contracts/gate-rules.md). In V1, placeholder-looking UI is a
+warning unless the active mode opts into a stricter gate.
+
 placeholder 检测应标记：
 
 ```text
@@ -125,13 +139,13 @@ Your app
 ## Verdict
 PASS | FAIL
 
-## Passed checks
-
-## Failed checks
+## Hard checks
 
 ## Warnings
 
 ## Required fixes
+
+## Next action
 ```
 
 ---

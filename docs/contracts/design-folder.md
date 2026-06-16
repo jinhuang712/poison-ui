@@ -1,20 +1,83 @@
 # Design Folder Contract
 
 This file owns the expected `design/` folder shape that a full Poison run can
-produce inside a target project.
+publish inside a target project.
 
 ## Purpose
 
 `design/` is the human-facing design delivery package for a target project. It
-contains the runnable prototype, screenshots, screen descriptions, interaction
-contracts, design decisions, implementation handoff notes, and review outputs
-needed by product, design, and frontend implementation work.
+contains the current prototype handoff, selected screenshots, screen
+descriptions, interaction contracts, design decisions, implementation handoff
+notes, and review outputs needed by product, design, and frontend
+implementation work.
 
-`.poison/` remains Poison runtime state. It stores context, run contracts,
-review evidence, gate reports, and tool state. `design/` can reference `.poison`
-evidence, but it must not become a hidden runtime state directory.
+This contract describes the maximal package. Most files are optional and should
+exist only when they are useful for the active run, project maturity, and handoff
+needs.
 
-## Top-Level Shape
+## Relationship To `.poison`
+
+`.poison/runs/<run-id>` is the audit/source evidence directory. It stores raw
+run contracts, context packs, evidence, screenshots, console output, review
+packets, gate reports, and tool state.
+
+`design/` is a published human snapshot. It is optimized for people who need to
+understand what should be built, not for tools that need to replay every
+decision.
+
+Publishing is one-way:
+
+```text
+.poison/runs/<run-id> -> design/
+```
+
+Poison may publish selected run results into `design/`, but it must not silently
+reverse-sync edits from `design/` back into `.poison` runtime state. If a human
+edits `design/`, a later Poison run must treat that edit as new input and record
+the source explicitly.
+
+Published files should identify their source run when possible:
+
+```text
+sourceRunId: 001-poisoned-demo
+sourceEvidence: .poison/runs/001-poisoned-demo/review-summary.md
+publishedAt: ISO-8601
+```
+
+Historical prototypes and raw evidence should be preserved in `.poison/runs`.
+They may also be referenced or selectively copied into `design/` when useful for
+comparison, audit, or handoff.
+
+## Minimal Publish Package
+
+A small review-first or hardening run may publish only:
+
+```text
+design/
+  README.md
+  review/
+    latest-summary.md
+  handoff/
+    acceptance-checklist.md
+    open-questions.md
+```
+
+If a runnable prototype is part of the handoff, add:
+
+```text
+design/prototypes/current/
+  index.html
+  manifest.json
+  assets/
+  screenshots/
+```
+
+The minimal package must explain what is included, what is missing, and which
+`.poison/runs/<run-id>` produced it.
+
+## Maximal Top-Level Shape
+
+Full mode or mature handoff may publish:
 
 ```text
 design/
@@ -36,11 +99,15 @@ design/
   handoff/
 ```
 
+Absence of a maximal file is not a failure by itself. Gate or publish checks
+must decide required files from the active mode, target version, and handoff
+scope.
+
 ## Entry Files
 
 - `README.md`: delivery entrypoint. It explains what this design package covers,
-  which prototype is canonical, and which files implementation should read
-  first.
+  which prototype is canonical, source run IDs, and which files implementation
+  should read first.
 - `design-brief.md`: product goal, target users, non-goals, constraints, and
   current design scope.
 - `product-context.md`: product facts distilled from Poison core and confirmed
@@ -72,11 +139,12 @@ design/prototypes/
     003-harden/
 ```
 
-`current/` is the canonical prototype handoff. `runs/` preserves historical
-prototype snapshots when they are useful for review, comparison, or audit.
+`current/` is the canonical prototype handoff when a runnable prototype is
+published. `runs/` preserves historical prototype snapshots only when they are
+useful for review, comparison, audit, or rollback explanation.
 
-`manifest.json` should identify included pages, routes, screenshots, source run
-ID, generated timestamp, and required local viewing instructions.
+`manifest.json` should identify included pages, routes, screenshots,
+`sourceRunId`, generated timestamp, and required local viewing instructions.
 
 ## Screens
 
@@ -96,7 +164,8 @@ design/screens/
     notes.md
 ```
 
-Each screen folder owns one page or major surface:
+Each screen folder owns one page or major surface. Create a screen folder only
+when the screen has enough design or handoff detail to justify its own files.
 
 - `screen.md`: purpose, user goal, layout, content hierarchy, components, and
   acceptance notes.
@@ -116,9 +185,10 @@ design/flows/
   checkout.md
 ```
 
-Flow files describe task-level journeys across screens. They should include the
-starting state, user intent, steps, decision points, recoveries, final states,
-and cross-screen dependencies.
+Flow files describe task-level journeys across screens. Create them when a
+journey crosses screens, has decision points, or needs implementation handoff.
+They should include the starting state, user intent, steps, decision points,
+recoveries, final states, and cross-screen dependencies.
 
 ## Interactions
 
@@ -150,15 +220,18 @@ and related prototype evidence.
 
 ```text
 design/review/
+  latest-summary.md
   completion-report.md
   visual-review.md
   ux-review.md
   frontend-handoff-review.md
+  archive/
 ```
 
 Review files summarize completion audit, visual quality, UX, and frontend
 handoff readiness for the design package. They can link back to `.poison/runs`
-evidence and gate reports.
+evidence and gate reports. `archive/` is optional; keep long history in
+`.poison/runs` unless human readers benefit from a copied summary.
 
 ## Handoff
 
@@ -180,28 +253,14 @@ Handoff files translate design into implementation work:
 - `backlog.md`: lower-priority design follow-ups that should not block the
   current implementation slice.
 
-## Relationship To `.poison`
+## Publish Rules
 
-Use `.poison/` for:
-
-- run contracts
-- context packs
-- SoT indexes
-- review packets
-- gate reports
-- raw screenshots and console evidence
-- tool state
-
-Use `design/` for:
-
-- design package entrypoints
-- current prototype handoff
-- screen and flow descriptions
-- interaction contracts
-- design ADRs
-- review summaries
-- implementation handoff material
-
-When a Poison run changes the delivered design, update both `.poison` runtime
-state and the relevant `design/` files. The runtime state explains how the work
-was produced; the design folder explains what should be built.
+- Do not require the maximal tree for V1 review.
+- Do not copy raw evidence into `design/` unless it helps human review or
+  handoff.
+- Preserve source history and raw evidence in `.poison/runs` by default.
+- Every published snapshot should include `sourceRunId` or an explicit "source
+  unknown" note.
+- If a file does not exist because the run did not need it, that is acceptable.
+- If a file is required by the active publish mode, missing it must be reported
+  as a publish or gate failure with a concrete next action.

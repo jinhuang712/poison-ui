@@ -6,6 +6,10 @@ Detailed command ownership now lives in
 [docs/contracts/command-api.md](./contracts/command-api.md). This file keeps the
 high-level mode and command narrative.
 
+Contract owner note: this file is narrative orientation. If the command contract
+or version roadmap conflicts with this file, the detailed owner files win and
+this file should be corrected.
+
 ## 3. 模式设计
 
 在 Skill instructions 和 scripts 中实现以下模式。
