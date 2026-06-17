@@ -25,12 +25,16 @@ node bin/poison.mjs gate \
   --run .poison/runs/001-poisoned-demo
 ```
 
-## V2a Protected Baseline
+## V2 Controlled Hardening Slice
 
-After the V1 gate passes, V2a may initialize the protected baseline:
+After the V1 gate passes, V2 may initialize the protected baseline and generate
+a repair plan:
 
 ```bash
 node bin/poison.mjs init-protected-features \
+  --run .poison/runs/001-poisoned-demo
+
+node bin/poison.mjs repair-plan \
   --run .poison/runs/001-poisoned-demo
 ```
 

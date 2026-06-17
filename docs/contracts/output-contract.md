@@ -65,6 +65,14 @@ review-summary.md
 gate-report.md
 ```
 
+V2 active artifacts:
+
+```text
+protected-features.md
+repair-plan.md
+repair-plan.json
+```
+
 Later-version artifacts:
 
 ```text
@@ -73,7 +81,10 @@ scope-assessment.md
 design-rationale.md
 user-ambiguity-check.md
 direction-synthesis.md
-repair-plan.md
+repair-rounds/001/repair-plan.md
+repair-rounds/001/repair-plan.json
+repair-rounds/001/before-after-evidence.md
+repair-rounds/001/regression-results.json
 completion-audit-packet.md
 completion-report.md
 ```
@@ -86,6 +97,8 @@ completion-report.md
 - Required Markdown sections.
 - JSON parseability.
 - Required JSON fields.
+- V2 repair-plan item shape, planned-only status, duplicate IDs, future routing
+  fields, and one-to-one mapping to V1 findings.
 
 Gate must call `schema-check` or an equivalent core module. Missing schema
 metadata prevents entering `gated`.

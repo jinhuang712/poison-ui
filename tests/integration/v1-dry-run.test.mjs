@@ -24,7 +24,7 @@ function readJson(path) {
   return JSON.parse(readFileSync(path, "utf8"));
 }
 
-test("V1 review-first dry-run can initialize the V2a protected baseline after gate", () => {
+test("V1 review-first dry-run can initialize V2 protected baseline and repair plan after gate", () => {
   const project = makeProject();
 
   runPoison(project, ["init"]);
@@ -81,4 +81,12 @@ test("V1 review-first dry-run can initialize the V2a protected baseline after ga
   assert.equal(state.nextRecommendedAction, "repair-plan");
   assert.match(readFileSync(join(runDir, "protected-features.md"), "utf8"), /# Protected Features/);
   assert.doesNotMatch(readFileSync(join(runDir, "protected-features.md"), "utf8"), /design\/manifest/);
+
+  const repairOutput = runPoison(project, ["repair-plan", "--run", ".poison/runs/001-poisoned-demo"]);
+  assert.match(repairOutput, /repair-plan: artifacts written/);
+  state = readJson(join(runDir, "run-state.json"));
+  assert.equal(state.status, "repair_planned");
+  assert.equal(state.nextRecommendedAction, "arbiter-route");
+  assert.match(readFileSync(join(runDir, "repair-plan.md"), "utf8"), /findingId: V1-F001/);
+  assert.equal(readJson(join(runDir, "repair-plan.json")).repairs[0].findingId, "V1-F001");
 });

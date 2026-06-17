@@ -4,6 +4,9 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
+- Implemented V2b repair planning with `repair-plan.md`,
+  `repair-plan.json`, `repair_planned` state, schema coverage, and CLI support
+  for `repair-plan`.
 - Implemented V2a protected baseline initialization with
   `protected-features.md`, `protected_ready` state, schema coverage, and CLI
   support for `init-protected-features`.

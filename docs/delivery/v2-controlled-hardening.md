@@ -21,8 +21,8 @@ work. Any repair must trace to a V1 finding accepted by the arbiter.
 | Slice | Status | Owns | Must-not-start gate |
 |---|---|---|---|
 | V2a Protected baseline | implemented | `protected-features.md`, update rules, source evidence | Do not start repair planning until protected items have ownership and evidence. |
-| V2b Repair planning | next | ordered `repair-plan.md` and `repair-plan.json` from V1 finding IDs | Do not start arbiter routing until repair items map one-to-one to findings or declared backlog items. |
-| V2c Arbiter routing | blocked | `currentRepair`, `backlog`, `needsUserDecision`, `rejected` only | Do not start hardening while any item is ambiguously routed. |
+| V2b Repair planning | implemented | ordered `repair-plan.md` and `repair-plan.json` from V1 finding IDs | Do not start arbiter routing until repair items map one-to-one to findings or declared backlog items. |
+| V2c Arbiter routing | next | `currentRepair`, `backlog`, `needsUserDecision`, `rejected` only | Do not start hardening while any item is ambiguously routed. |
 | V2d Single bounded harden loop | blocked | one narrow repair round, recapture, review, gate | Do not start drift reporting until a before/after repair round exists. |
 | V2e Regression and drift | blocked | protected-feature regression first; visual drift only when evidence exists | Do not start V3 until a bounded repair can re-gate without scope expansion. |
 
@@ -38,6 +38,25 @@ work. Any repair must trace to a V1 finding accepted by the arbiter.
 - Visual drift report only when before/after visual evidence exists.
 - Tests for protected features, repair-plan shape, arbiter routing, state
   transitions, regression checks, and one bounded harden round.
+
+## Current V2b Slice Exit Criteria
+
+- `poison repair-plan --run <run-path>` accepts only `protected_ready` or an
+  existing complete `repair_planned` run.
+- A first successful run writes root-level `repair-plan.md` and
+  `repair-plan.json`.
+- `repair-plan.json` maps one repair item to each V1 `findingId`, preserves
+  numeric `priorityRank` and `fixOrder`, and keeps every item in `planned`
+  status.
+- Schema checks reject missing repair-plan metadata, missing required repair
+  fields, duplicate IDs, non-numeric ordering fields, future routing fields, or
+  a plan that no longer maps one-to-one to the V1 findings.
+- A repeat `repair-plan` on a complete `repair_planned` run preserves existing
+  repair-plan artifacts and only refreshes run-state metadata.
+- If a legal source run cannot produce repairs, it moves to `blocked` with
+  `previousStatus`, `blockedReason`, and `nextRecommendedAction`.
+- V2b must not write `currentRepair`, `backlog`, `needsUserDecision`,
+  `rejected`, `repair-rounds/`, recapture, regression, or `design/` artifacts.
 
 ## Weighting
 
@@ -76,6 +95,9 @@ work. Any repair must trace to a V1 finding accepted by the arbiter.
   screens, artifact path, and first repair recommendation.
 
 ## Exit Criteria
+
+These are the full V2 exit criteria after V2c-V2e land. They are not required
+for V2b.
 
 - A run can move from review findings to a bounded repair plan.
 - V2c arbiter routing maps repair items only to `currentRepair`, `backlog`,

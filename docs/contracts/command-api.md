@@ -64,6 +64,15 @@ This action initializes the protected baseline after a V1 run has passed gate:
 poison init-protected-features --run .poison/runs/001-poisoned-demo
 ```
 
+## V2b Deterministic Action Mapping
+
+This action writes repair-plan artifacts from V1 finding IDs after the
+protected baseline is ready:
+
+```bash
+poison repair-plan --run .poison/runs/001-poisoned-demo
+```
+
 ## Later Deterministic Action Mappings
 
 These actions exist for testing, adapter calls, and dry-run workflows. They are

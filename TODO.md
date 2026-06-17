@@ -37,12 +37,20 @@ items as they are completed.
 - Run state moves to `protected_ready` without creating repair-plan or design
   publishing artifacts.
 
-## Next: V2b Repair Planning
+## Completed: V2b Repair Planning
 
-- Implement only the first bounded hardening slice.
-- Start with repair-plan artifacts from V1 finding IDs.
+- `poison repair-plan --run <run>` writes `repair-plan.md` and
+  `repair-plan.json`.
+- Repair items map one-to-one to V1 finding IDs and stay in `planned` status.
+- Run state moves to `repair_planned` without arbiter routing, harden
+  execution, or design publishing.
+
+## Next: V2c Arbiter Routing
+
 - Do not start arbiter routing until repair items map one-to-one to findings or
   declared backlog items.
+- Route repair items only to `currentRepair`, `backlog`, `needsUserDecision`,
+  or `rejected`.
 - Do not add optional design publishing to V2.
 - Do not add broad `evolve` behavior to V2.
 - Keep V2 implementation limited to

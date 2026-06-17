@@ -10,6 +10,7 @@ import {
   recordBrowserCapture,
   recordDegradedCapture,
   initializeProtectedFeatures,
+  writeRepairPlan,
   writeReviewArtifacts,
   schemaCheckRun,
   gateRun,
@@ -668,4 +669,511 @@ test("schema check fails when protected-ready run loses protected baseline artif
   const schema = schemaCheckRun(project, { runPath: run.relativePath });
   assert.equal(schema.ok, false);
   assert.match(schema.errors.join("\n"), /protected-features\.md/);
+});
+
+test("repair planning requires protected-ready baseline", () => {
+  const project = makeProject();
+  initPoisonProject(project);
+  const run = createReviewRun(project, { mode: "review", name: "repair too early" });
+
+  assert.throws(
+    () => writeRepairPlan(project, { runPath: run.relativePath }),
+    /repair planning requires status protected_ready/,
+  );
+});
+
+test("repair planning blocks protected-ready run when findings are missing", () => {
+  const project = makeProject();
+  initPoisonProject(project);
+  const run = createReviewRun(project, { mode: "review", name: "missing repair findings" });
+  recordDegradedCapture(project, {
+    runPath: run.relativePath,
+    url: "http://localhost:5173",
+    reason: "Automated browser capture is unavailable in this runtime.",
+  });
+  writeReviewArtifacts(project, { runPath: run.relativePath });
+  gateRun(project, { runPath: run.relativePath });
+  initializeProtectedFeatures(project, { runPath: run.relativePath });
+  writeFileSync(join(run.absolutePath, "review-summary.md"), [
+    "---",
+    "schemaVersion: 1",
+    `runId: ${run.runId}`,
+    "artifact: review-summary.md",
+    "status: READY",
+    "source: test",
+    "updatedAt: 2026-06-17T00:00:00.000Z",
+    "---",
+    "# Review Summary",
+    "",
+    "## Findings",
+    "none",
+    "",
+  ].join("\n"));
+
+  assert.throws(
+    () => writeRepairPlan(project, { runPath: run.relativePath }),
+    /protected baseline failed schema-check/,
+  );
+  const state = readJson(join(run.absolutePath, "run-state.json"));
+  assert.equal(state.status, "blocked");
+  assert.equal(state.previousStatus, "protected_ready");
+  assert.match(state.blockedReason, /review-summary\.md findings must include at least one finding/);
+  assert.equal(state.nextRecommendedAction, "schema-check");
+});
+
+test("repair planning blocks protected-ready run when protected baseline artifact is missing", () => {
+  const project = makeProject();
+  initPoisonProject(project);
+  const run = createReviewRun(project, { mode: "review", name: "missing repair baseline" });
+  recordDegradedCapture(project, {
+    runPath: run.relativePath,
+    url: "http://localhost:5173",
+    reason: "Automated browser capture is unavailable in this runtime.",
+  });
+  writeReviewArtifacts(project, { runPath: run.relativePath });
+  gateRun(project, { runPath: run.relativePath });
+  initializeProtectedFeatures(project, { runPath: run.relativePath });
+  rmSync(join(run.absolutePath, "protected-features.md"));
+
+  assert.throws(
+    () => writeRepairPlan(project, { runPath: run.relativePath }),
+    /protected-features\.md is required before repair planning/,
+  );
+  const state = readJson(join(run.absolutePath, "run-state.json"));
+  assert.equal(state.status, "blocked");
+  assert.equal(state.previousStatus, "protected_ready");
+  assert.match(state.blockedReason, /protected-features\.md is required before repair planning/);
+  assert.equal(state.nextRecommendedAction, "init-protected-features");
+});
+
+test("repair planning blocks protected-ready run when protected baseline artifact is invalid", () => {
+  const project = makeProject();
+  initPoisonProject(project);
+  const run = createReviewRun(project, { mode: "review", name: "invalid repair baseline" });
+  recordDegradedCapture(project, {
+    runPath: run.relativePath,
+    url: "http://localhost:5173",
+    reason: "Automated browser capture is unavailable in this runtime.",
+  });
+  writeReviewArtifacts(project, { runPath: run.relativePath });
+  gateRun(project, { runPath: run.relativePath });
+  initializeProtectedFeatures(project, { runPath: run.relativePath });
+  writeFileSync(join(run.absolutePath, "protected-features.md"), "# Broken Protected Features\n");
+
+  assert.throws(
+    () => writeRepairPlan(project, { runPath: run.relativePath }),
+    /protected baseline failed schema-check/,
+  );
+  const state = readJson(join(run.absolutePath, "run-state.json"));
+  assert.equal(state.status, "blocked");
+  assert.equal(state.previousStatus, "protected_ready");
+  assert.match(state.blockedReason, /protected-features\.md is missing metadata/);
+  assert.equal(state.nextRecommendedAction, "schema-check");
+});
+
+test("repair planning writes ordered artifacts mapped to V1 finding IDs", () => {
+  const project = makeProject();
+  initPoisonProject(project);
+  const run = createReviewRun(project, { mode: "review", name: "repair plan" });
+  recordDegradedCapture(project, {
+    runPath: run.relativePath,
+    url: "http://localhost:5173",
+    reason: "Automated browser capture is unavailable in this runtime.",
+  });
+  writeReviewArtifacts(project, { runPath: run.relativePath });
+  gateRun(project, { runPath: run.relativePath });
+  initializeProtectedFeatures(project, { runPath: run.relativePath });
+
+  writeRepairPlan(project, { runPath: run.relativePath });
+
+  const repairPlan = readFileSync(join(run.absolutePath, "repair-plan.md"), "utf8");
+  assert.match(repairPlan, /# Repair Plan/);
+  assert.match(repairPlan, /## Source Findings/);
+  assert.match(repairPlan, /V1-F001/);
+  assert.match(repairPlan, /## Repair Items/);
+  assert.match(repairPlan, /repairId: RP-001/);
+  assert.match(repairPlan, /findingId: V1-F001/);
+  assert.match(repairPlan, /## Scope Guardrails/);
+  assert.match(repairPlan, /Do not start arbiter routing in V2b/);
+  assert.doesNotMatch(repairPlan, /currentRepair/);
+  assert.doesNotMatch(repairPlan, /needsUserDecision/);
+  assert.doesNotMatch(repairPlan, /design\/manifest/);
+
+  const repairJson = readJson(join(run.absolutePath, "repair-plan.json"));
+  assert.equal(repairJson.schemaVersion, 1);
+  assert.equal(repairJson.runId, run.runId);
+  assert.equal(repairJson.artifact, "repair-plan.json");
+  assert.equal(repairJson.status, "READY");
+  assert.match(repairJson.updatedAt, /^\d{4}-\d{2}-\d{2}T/);
+  assert.deepEqual(repairJson.artifacts, ["repair-plan.md", "repair-plan.json"]);
+  assert.deepEqual(repairJson.sourceArtifacts, ["review-summary.md", "protected-features.md"]);
+  assert.equal(repairJson.repairs.length, 1);
+  assert.equal(repairJson.repairs[0].repairId, "RP-001");
+  assert.equal(repairJson.repairs[0].findingId, "V1-F001");
+  assert.equal(repairJson.repairs[0].status, "planned");
+  assert.equal("currentRepair" in repairJson.repairs[0], false);
+  assert.equal("needsUserDecision" in repairJson.repairs[0], false);
+
+  const state = readJson(join(run.absolutePath, "run-state.json"));
+  assert.equal(state.status, "repair_planned");
+  assert.equal(state.nextRecommendedAction, "arbiter-route");
+  assert.ok(state.artifacts.includes("repair-plan.md"));
+  assert.ok(state.artifacts.includes("repair-plan.json"));
+
+  const schema = schemaCheckRun(project, { runPath: run.relativePath });
+  assert.deepEqual(schema.errors, []);
+});
+
+test("repair planning rerun preserves existing repair plan artifacts", () => {
+  const project = makeProject();
+  initPoisonProject(project);
+  const run = createReviewRun(project, { mode: "review", name: "repair rerun" });
+  recordDegradedCapture(project, {
+    runPath: run.relativePath,
+    url: "http://localhost:5173",
+    reason: "Automated browser capture is unavailable in this runtime.",
+  });
+  writeReviewArtifacts(project, { runPath: run.relativePath });
+  gateRun(project, { runPath: run.relativePath });
+  initializeProtectedFeatures(project, { runPath: run.relativePath });
+  writeRepairPlan(project, { runPath: run.relativePath });
+
+  const repairMarkdownPath = join(run.absolutePath, "repair-plan.md");
+  const repairJsonPath = join(run.absolutePath, "repair-plan.json");
+  const editedMarkdown = readFileSync(repairMarkdownPath, "utf8").replace(
+    "- Do not execute repairs in V2b.",
+    "- Manual note: preserve reviewer-approved repair ordering.",
+  );
+  const editedJson = readJson(repairJsonPath);
+  editedJson.note = "preserve schema-valid reviewer note";
+  writeFileSync(repairMarkdownPath, editedMarkdown);
+  writeFileSync(repairJsonPath, `${JSON.stringify(editedJson, null, 2)}\n`);
+
+  writeRepairPlan(project, { runPath: run.relativePath });
+
+  assert.match(readFileSync(repairMarkdownPath, "utf8"), /preserve reviewer-approved repair ordering/);
+  assert.equal(readJson(repairJsonPath).note, "preserve schema-valid reviewer note");
+});
+
+test("repair planning rerun blocks when existing repair plan artifacts fail schema", () => {
+  const project = makeProject();
+  initPoisonProject(project);
+  const run = createReviewRun(project, { mode: "review", name: "repair invalid rerun" });
+  recordDegradedCapture(project, {
+    runPath: run.relativePath,
+    url: "http://localhost:5173",
+    reason: "Automated browser capture is unavailable in this runtime.",
+  });
+  writeReviewArtifacts(project, { runPath: run.relativePath });
+  gateRun(project, { runPath: run.relativePath });
+  initializeProtectedFeatures(project, { runPath: run.relativePath });
+  writeRepairPlan(project, { runPath: run.relativePath });
+
+  const repairJsonPath = join(run.absolutePath, "repair-plan.json");
+  const editedJson = readJson(repairJsonPath);
+  editedJson.repairs[0].status = "routed";
+  writeFileSync(repairJsonPath, `${JSON.stringify(editedJson, null, 2)}\n`);
+
+  assert.throws(
+    () => writeRepairPlan(project, { runPath: run.relativePath }),
+    /existing repair plan failed schema-check/,
+  );
+  const state = readJson(join(run.absolutePath, "run-state.json"));
+  assert.equal(state.status, "blocked");
+  assert.equal(state.previousStatus, "repair_planned");
+  assert.match(state.blockedReason, /repair-plan\.json repair RP-001 status must be planned/);
+  assert.equal(state.nextRecommendedAction, "schema-check");
+});
+
+test("repair planning rerun blocks when existing repair plan artifact is missing", () => {
+  const project = makeProject();
+  initPoisonProject(project);
+  const run = createReviewRun(project, { mode: "review", name: "repair missing artifact rerun" });
+  recordDegradedCapture(project, {
+    runPath: run.relativePath,
+    url: "http://localhost:5173",
+    reason: "Automated browser capture is unavailable in this runtime.",
+  });
+  writeReviewArtifacts(project, { runPath: run.relativePath });
+  gateRun(project, { runPath: run.relativePath });
+  initializeProtectedFeatures(project, { runPath: run.relativePath });
+  writeRepairPlan(project, { runPath: run.relativePath });
+  rmSync(join(run.absolutePath, "repair-plan.json"));
+
+  assert.throws(
+    () => writeRepairPlan(project, { runPath: run.relativePath }),
+    /existing repair plan failed schema-check/,
+  );
+  const state = readJson(join(run.absolutePath, "run-state.json"));
+  assert.equal(state.status, "blocked");
+  assert.equal(state.previousStatus, "repair_planned");
+  assert.match(state.blockedReason, /missing artifact: repair-plan\.json/);
+  assert.equal(state.nextRecommendedAction, "schema-check");
+});
+
+test("repair planning rerun blocks when repair-planned state omits repair artifacts", () => {
+  const project = makeProject();
+  initPoisonProject(project);
+  const run = createReviewRun(project, { mode: "review", name: "repair missing state artifact rerun" });
+  recordDegradedCapture(project, {
+    runPath: run.relativePath,
+    url: "http://localhost:5173",
+    reason: "Automated browser capture is unavailable in this runtime.",
+  });
+  writeReviewArtifacts(project, { runPath: run.relativePath });
+  gateRun(project, { runPath: run.relativePath });
+  initializeProtectedFeatures(project, { runPath: run.relativePath });
+  writeRepairPlan(project, { runPath: run.relativePath });
+
+  const statePath = join(run.absolutePath, "run-state.json");
+  const state = readJson(statePath);
+  state.artifacts = state.artifacts.filter((artifact) => artifact !== "repair-plan.md");
+  writeFileSync(statePath, `${JSON.stringify(state, null, 2)}\n`);
+
+  assert.throws(
+    () => writeRepairPlan(project, { runPath: run.relativePath }),
+    /existing repair plan failed schema-check/,
+  );
+  const blockedState = readJson(statePath);
+  assert.equal(blockedState.status, "blocked");
+  assert.equal(blockedState.previousStatus, "repair_planned");
+  assert.match(blockedState.blockedReason, /run-state\.json repair_planned state must list repair-plan\.md/);
+  assert.equal(blockedState.nextRecommendedAction, "schema-check");
+});
+
+test("repair planning rerun uses schema-check when protected baseline is missing", () => {
+  const project = makeProject();
+  initPoisonProject(project);
+  const run = createReviewRun(project, { mode: "review", name: "repair missing baseline rerun" });
+  recordDegradedCapture(project, {
+    runPath: run.relativePath,
+    url: "http://localhost:5173",
+    reason: "Automated browser capture is unavailable in this runtime.",
+  });
+  writeReviewArtifacts(project, { runPath: run.relativePath });
+  gateRun(project, { runPath: run.relativePath });
+  initializeProtectedFeatures(project, { runPath: run.relativePath });
+  writeRepairPlan(project, { runPath: run.relativePath });
+  rmSync(join(run.absolutePath, "protected-features.md"));
+
+  assert.throws(
+    () => writeRepairPlan(project, { runPath: run.relativePath }),
+    /existing repair plan failed schema-check/,
+  );
+  const state = readJson(join(run.absolutePath, "run-state.json"));
+  assert.equal(state.status, "blocked");
+  assert.equal(state.previousStatus, "repair_planned");
+  assert.match(state.blockedReason, /protected-features\.md is missing/);
+  assert.equal(state.nextRecommendedAction, "schema-check");
+});
+
+test("repair planning blocks when review finding ordering is not numeric", () => {
+  const project = makeProject();
+  initPoisonProject(project);
+  const run = createReviewRun(project, { mode: "review", name: "repair nonnumeric ordering" });
+  recordDegradedCapture(project, {
+    runPath: run.relativePath,
+    url: "http://localhost:5173",
+    reason: "Automated browser capture is unavailable in this runtime.",
+  });
+  writeReviewArtifacts(project, { runPath: run.relativePath });
+  const summaryPath = join(run.absolutePath, "review-summary.md");
+  const brokenSummary = readFileSync(summaryPath, "utf8")
+    .replace("- priorityRank: 65", "- priorityRank: high")
+    .replace("- fixOrder: 65", "- fixOrder: first");
+  writeFileSync(summaryPath, brokenSummary);
+  gateRun(project, { runPath: run.relativePath });
+  initializeProtectedFeatures(project, { runPath: run.relativePath });
+
+  assert.throws(
+    () => writeRepairPlan(project, { runPath: run.relativePath }),
+    /repair planning requires numeric priorityRank and fixOrder/,
+  );
+  const state = readJson(join(run.absolutePath, "run-state.json"));
+  assert.equal(state.status, "blocked");
+  assert.equal(state.previousStatus, "protected_ready");
+  assert.match(state.blockedReason, /V1-F001 has non-numeric priorityRank or fixOrder/);
+  assert.equal(state.nextRecommendedAction, "review");
+});
+
+test("repair planning blocks when review finding ordering is blank", () => {
+  const project = makeProject();
+  initPoisonProject(project);
+  const run = createReviewRun(project, { mode: "review", name: "repair blank ordering" });
+  recordDegradedCapture(project, {
+    runPath: run.relativePath,
+    url: "http://localhost:5173",
+    reason: "Automated browser capture is unavailable in this runtime.",
+  });
+  writeReviewArtifacts(project, { runPath: run.relativePath });
+  const summaryPath = join(run.absolutePath, "review-summary.md");
+  const brokenSummary = readFileSync(summaryPath, "utf8")
+    .replace("- priorityRank: 65", "- priorityRank: ")
+    .replace("- fixOrder: 65", "- fixOrder: ");
+  writeFileSync(summaryPath, brokenSummary);
+  gateRun(project, { runPath: run.relativePath });
+  initializeProtectedFeatures(project, { runPath: run.relativePath });
+
+  assert.throws(
+    () => writeRepairPlan(project, { runPath: run.relativePath }),
+    /repair planning requires numeric priorityRank and fixOrder/,
+  );
+  const state = readJson(join(run.absolutePath, "run-state.json"));
+  assert.equal(state.status, "blocked");
+  assert.equal(state.previousStatus, "protected_ready");
+  assert.match(state.blockedReason, /V1-F001 has non-numeric priorityRank or fixOrder/);
+  assert.equal(state.nextRecommendedAction, "review");
+});
+
+test("schema check fails when repair-plan json loses repairs array", () => {
+  const project = makeProject();
+  initPoisonProject(project);
+  const run = createReviewRun(project, { mode: "review", name: "broken repair plan" });
+  recordDegradedCapture(project, {
+    runPath: run.relativePath,
+    url: "http://localhost:5173",
+    reason: "Automated browser capture is unavailable in this runtime.",
+  });
+  writeReviewArtifacts(project, { runPath: run.relativePath });
+  gateRun(project, { runPath: run.relativePath });
+  initializeProtectedFeatures(project, { runPath: run.relativePath });
+  writeRepairPlan(project, { runPath: run.relativePath });
+
+  const brokenPlan = readJson(join(run.absolutePath, "repair-plan.json"));
+  delete brokenPlan.repairs;
+  writeFileSync(join(run.absolutePath, "repair-plan.json"), `${JSON.stringify(brokenPlan, null, 2)}\n`);
+
+  const schema = schemaCheckRun(project, { runPath: run.relativePath });
+  assert.equal(schema.ok, false);
+  assert.match(schema.errors.join("\n"), /repair-plan\.json repairs must be an array/);
+});
+
+test("schema check fails when repair-plan json loses required metadata", () => {
+  const project = makeProject();
+  initPoisonProject(project);
+  const run = createReviewRun(project, { mode: "review", name: "broken repair metadata" });
+  recordDegradedCapture(project, {
+    runPath: run.relativePath,
+    url: "http://localhost:5173",
+    reason: "Automated browser capture is unavailable in this runtime.",
+  });
+  writeReviewArtifacts(project, { runPath: run.relativePath });
+  gateRun(project, { runPath: run.relativePath });
+  initializeProtectedFeatures(project, { runPath: run.relativePath });
+  writeRepairPlan(project, { runPath: run.relativePath });
+
+  const brokenPlan = readJson(join(run.absolutePath, "repair-plan.json"));
+  delete brokenPlan.runId;
+  delete brokenPlan.updatedAt;
+  delete brokenPlan.artifacts;
+  delete brokenPlan.sourceArtifacts;
+  writeFileSync(join(run.absolutePath, "repair-plan.json"), `${JSON.stringify(brokenPlan, null, 2)}\n`);
+
+  const schema = schemaCheckRun(project, { runPath: run.relativePath });
+  assert.equal(schema.ok, false);
+  assert.match(schema.errors.join("\n"), /repair-plan\.json runId must match run-state/);
+  assert.match(schema.errors.join("\n"), /repair-plan\.json updatedAt is required/);
+  assert.match(schema.errors.join("\n"), /repair-plan\.json artifacts must list repair-plan\.md and repair-plan\.json/);
+  assert.match(schema.errors.join("\n"), /repair-plan\.json sourceArtifacts must list review-summary\.md and protected-features\.md/);
+});
+
+test("schema check fails when repair-plan json repair item loses finding ID", () => {
+  const project = makeProject();
+  initPoisonProject(project);
+  const run = createReviewRun(project, { mode: "review", name: "broken repair item" });
+  recordDegradedCapture(project, {
+    runPath: run.relativePath,
+    url: "http://localhost:5173",
+    reason: "Automated browser capture is unavailable in this runtime.",
+  });
+  writeReviewArtifacts(project, { runPath: run.relativePath });
+  gateRun(project, { runPath: run.relativePath });
+  initializeProtectedFeatures(project, { runPath: run.relativePath });
+  writeRepairPlan(project, { runPath: run.relativePath });
+
+  const brokenPlan = readJson(join(run.absolutePath, "repair-plan.json"));
+  delete brokenPlan.repairs[0].findingId;
+  writeFileSync(join(run.absolutePath, "repair-plan.json"), `${JSON.stringify(brokenPlan, null, 2)}\n`);
+
+  const schema = schemaCheckRun(project, { runPath: run.relativePath });
+  assert.equal(schema.ok, false);
+  assert.match(schema.errors.join("\n"), /repair-plan\.json repair RP-001 is missing findingId/);
+});
+
+test("schema check fails when repair-plan json repair item has invalid planning fields", () => {
+  const project = makeProject();
+  initPoisonProject(project);
+  const run = createReviewRun(project, { mode: "review", name: "invalid repair item fields" });
+  recordDegradedCapture(project, {
+    runPath: run.relativePath,
+    url: "http://localhost:5173",
+    reason: "Automated browser capture is unavailable in this runtime.",
+  });
+  writeReviewArtifacts(project, { runPath: run.relativePath });
+  gateRun(project, { runPath: run.relativePath });
+  initializeProtectedFeatures(project, { runPath: run.relativePath });
+  writeRepairPlan(project, { runPath: run.relativePath });
+
+  const brokenPlan = readJson(join(run.absolutePath, "repair-plan.json"));
+  brokenPlan.repairs[0].status = "routed";
+  brokenPlan.repairs[0].priorityRank = "high";
+  brokenPlan.repairs[0].currentRepair = true;
+  brokenPlan.backlog = [];
+  writeFileSync(join(run.absolutePath, "repair-plan.json"), `${JSON.stringify(brokenPlan, null, 2)}\n`);
+
+  const schema = schemaCheckRun(project, { runPath: run.relativePath });
+  assert.equal(schema.ok, false);
+  assert.match(schema.errors.join("\n"), /repair-plan\.json must not include backlog before V2c/);
+  assert.match(schema.errors.join("\n"), /repair-plan\.json repair RP-001 status must be planned/);
+  assert.match(schema.errors.join("\n"), /repair-plan\.json repair RP-001 priorityRank must be a number/);
+  assert.match(schema.errors.join("\n"), /repair-plan\.json repair RP-001 must not include currentRepair before V2c/);
+});
+
+test("schema check fails when repair-plan json does not map one-to-one to findings", () => {
+  const project = makeProject();
+  initPoisonProject(project);
+  const run = createReviewRun(project, { mode: "review", name: "invalid repair mapping" });
+  recordDegradedCapture(project, {
+    runPath: run.relativePath,
+    url: "http://localhost:5173",
+    reason: "Automated browser capture is unavailable in this runtime.",
+  });
+  writeReviewArtifacts(project, { runPath: run.relativePath });
+  gateRun(project, { runPath: run.relativePath });
+  initializeProtectedFeatures(project, { runPath: run.relativePath });
+  writeRepairPlan(project, { runPath: run.relativePath });
+
+  const brokenPlan = readJson(join(run.absolutePath, "repair-plan.json"));
+  brokenPlan.repairs.push({ ...brokenPlan.repairs[0] });
+  writeFileSync(join(run.absolutePath, "repair-plan.json"), `${JSON.stringify(brokenPlan, null, 2)}\n`);
+
+  const schema = schemaCheckRun(project, { runPath: run.relativePath });
+  assert.equal(schema.ok, false);
+  assert.match(schema.errors.join("\n"), /repair-plan\.json repairId RP-001 is duplicated/);
+  assert.match(schema.errors.join("\n"), /repair-plan\.json must map one-to-one to review-summary findings/);
+});
+
+test("schema check fails when repair-planned state omits repair artifacts", () => {
+  const project = makeProject();
+  initPoisonProject(project);
+  const run = createReviewRun(project, { mode: "review", name: "missing repair state artifacts" });
+  recordDegradedCapture(project, {
+    runPath: run.relativePath,
+    url: "http://localhost:5173",
+    reason: "Automated browser capture is unavailable in this runtime.",
+  });
+  writeReviewArtifacts(project, { runPath: run.relativePath });
+  gateRun(project, { runPath: run.relativePath });
+  initializeProtectedFeatures(project, { runPath: run.relativePath });
+  writeRepairPlan(project, { runPath: run.relativePath });
+
+  const statePath = join(run.absolutePath, "run-state.json");
+  const state = readJson(statePath);
+  state.artifacts = state.artifacts.filter((artifact) => artifact !== "repair-plan.md" && artifact !== "repair-plan.json");
+  writeFileSync(statePath, `${JSON.stringify(state, null, 2)}\n`);
+
+  const schema = schemaCheckRun(project, { runPath: run.relativePath });
+  assert.equal(schema.ok, false);
+  assert.match(schema.errors.join("\n"), /run-state.json repair_planned state must list repair-plan.md/);
+  assert.match(schema.errors.join("\n"), /run-state.json repair_planned state must list repair-plan.json/);
 });

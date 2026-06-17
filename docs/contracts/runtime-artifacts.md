@@ -64,6 +64,7 @@ By default, `.poison/context` is trackable repository state.
   review-summary.md
   direction-synthesis.md
   repair-plan.md
+  repair-plan.json
   gate-report.md
   completion-audit-packet.md
   completion-report.md
@@ -74,8 +75,10 @@ in-progress run. Gate rules decide which missing artifacts are failures for the
 current state.
 
 V1 review-first runs require only the subset needed for capture, review,
-schema-check, and mechanical gate. Later seed/evolve/full/harden runs may
-create the broader inventory.
+schema-check, and mechanical gate. V2b repair-planning runs add only the
+root-level `protected-features.md`, `repair-plan.md`, and `repair-plan.json`.
+Later seed/evolve/full/harden runs may create the broader inventory or
+`repair-rounds/` artifacts.
 
 ## Generated Evidence
 

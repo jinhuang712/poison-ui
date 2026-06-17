@@ -8,7 +8,7 @@ import {
 } from "node:fs";
 import { basename, join, relative, resolve } from "node:path";
 
-const STATE_STATUSES = new Set(["created", "captured", "reviewed", "gated", "completed", "blocked", "protected_ready"]);
+const STATE_STATUSES = new Set(["created", "captured", "reviewed", "gated", "completed", "blocked", "protected_ready", "repair_planned"]);
 const REQUIRED_STATE_FIELDS = [
   "schemaVersion",
   "runId",
@@ -33,6 +33,18 @@ const REQUIRED_FINDING_FIELDS = [
   "why it feels poisoned",
   "firstRepairRecommendation",
 ];
+const REQUIRED_REPAIR_FIELDS = [
+  "repairId",
+  "findingId",
+  "severity",
+  "category",
+  "evidenceRefs",
+  "affectedScreens",
+  "issue",
+  "firstRepairRecommendation",
+  "status",
+];
+const FUTURE_REPAIR_FIELDS = new Set(["currentRepair", "backlog", "needsUserDecision", "rejected"]);
 
 function now() {
   return new Date().toISOString();
@@ -118,6 +130,16 @@ function addArtifact(state, artifact) {
 
 function addArtifacts(state, artifacts) {
   return artifacts.reduce((nextState, artifact) => addArtifact(nextState, artifact), state);
+}
+
+function blockRun(runDir, state, blockedReason, nextRecommendedAction) {
+  return writeState(runDir, {
+    ...state,
+    status: "blocked",
+    previousStatus: state.status,
+    blockedReason,
+    nextRecommendedAction,
+  });
 }
 
 function removeArtifacts(state, artifacts) {
@@ -210,9 +232,131 @@ function validateReviewFindings(summary, errors) {
   }
 }
 
+function parseFindingFields(content) {
+  const fields = {};
+  for (const line of content.split("\n")) {
+    const match = line.match(/^- ([^:]+):\s*(.*)$/);
+    if (match) {
+      fields[match[1]] = match[2];
+    }
+  }
+  return fields;
+}
+
+function readReviewFindings(runDir) {
+  const summary = readFileSync(join(runDir, "review-summary.md"), "utf8");
+  return findReviewFindings(summary).map((finding) => parseFindingFields(finding.content));
+}
+
+function validateRepairFindings(findings, errors) {
+  for (const finding of findings) {
+    const priorityRank = String(finding.priorityRank || "").trim();
+    const fixOrder = String(finding.fixOrder || "").trim();
+    if (
+      priorityRank === "" ||
+      fixOrder === "" ||
+      !Number.isFinite(Number(priorityRank)) ||
+      !Number.isFinite(Number(fixOrder))
+    ) {
+      errors.push(`${finding.findingId || "unknown finding"} has non-numeric priorityRank or fixOrder`);
+    }
+  }
+}
+
+function validateRepairPlan(repairPlan, reviewFindings, runState, errors) {
+  if (repairPlan.schemaVersion !== 1) {
+    errors.push("repair-plan.json schemaVersion must be 1");
+  }
+  if (repairPlan.runId !== runState.runId) {
+    errors.push("repair-plan.json runId must match run-state");
+  }
+  if (repairPlan.artifact !== "repair-plan.json") {
+    errors.push("repair-plan.json artifact must be repair-plan.json");
+  }
+  if (repairPlan.status !== "READY") {
+    errors.push("repair-plan.json status must be READY");
+  }
+  if (typeof repairPlan.updatedAt !== "string" || repairPlan.updatedAt.trim() === "") {
+    errors.push("repair-plan.json updatedAt is required");
+  }
+  if (
+    !Array.isArray(repairPlan.artifacts) ||
+    !repairPlan.artifacts.includes("repair-plan.md") ||
+    !repairPlan.artifacts.includes("repair-plan.json")
+  ) {
+    errors.push("repair-plan.json artifacts must list repair-plan.md and repair-plan.json");
+  }
+  if (
+    !Array.isArray(repairPlan.sourceArtifacts) ||
+    !repairPlan.sourceArtifacts.includes("review-summary.md") ||
+    !repairPlan.sourceArtifacts.includes("protected-features.md")
+  ) {
+    errors.push("repair-plan.json sourceArtifacts must list review-summary.md and protected-features.md");
+  }
+  for (const field of Object.keys(repairPlan)) {
+    if (FUTURE_REPAIR_FIELDS.has(field)) {
+      errors.push(`repair-plan.json must not include ${field} before V2c`);
+    }
+  }
+  if (!Array.isArray(repairPlan.repairs)) {
+    errors.push("repair-plan.json repairs must be an array");
+    return;
+  }
+
+  const expectedFindingIds = reviewFindings.map((finding) => finding.findingId);
+  const repairIds = new Set();
+  const findingIds = new Set();
+  for (const repair of repairPlan.repairs) {
+    const label = repair.repairId || "unknown repair";
+    if (repairIds.has(repair.repairId)) {
+      errors.push(`repair-plan.json repairId ${repair.repairId} is duplicated`);
+    }
+    repairIds.add(repair.repairId);
+    if (findingIds.has(repair.findingId)) {
+      errors.push(`repair-plan.json findingId ${repair.findingId} is duplicated`);
+    }
+    findingIds.add(repair.findingId);
+
+    for (const field of REQUIRED_REPAIR_FIELDS) {
+      if (typeof repair[field] !== "string" || repair[field].trim() === "") {
+        errors.push(`repair-plan.json repair ${label} is missing ${field}`);
+      }
+    }
+    for (const field of ["priorityRank", "fixOrder"]) {
+      if (typeof repair[field] !== "number" || !Number.isFinite(repair[field])) {
+        errors.push(`repair-plan.json repair ${label} ${field} must be a number`);
+      }
+    }
+    if (repair.status !== "planned") {
+      errors.push(`repair-plan.json repair ${label} status must be planned`);
+    }
+    for (const field of Object.keys(repair)) {
+      if (FUTURE_REPAIR_FIELDS.has(field)) {
+        errors.push(`repair-plan.json repair ${label} must not include ${field} before V2c`);
+      }
+    }
+  }
+
+  const mappedFindingIds = repairPlan.repairs.map((repair) => repair.findingId);
+  if (
+    mappedFindingIds.length !== expectedFindingIds.length ||
+    expectedFindingIds.some((findingId) => !findingIds.has(findingId))
+  ) {
+    errors.push("repair-plan.json must map one-to-one to review-summary findings");
+  }
+}
+
 function validateStateArtifacts(runDir, state, errors) {
   if (!Array.isArray(state.artifacts)) {
     return;
+  }
+
+  if (state.status === "repair_planned") {
+    for (const artifact of ["repair-plan.md", "repair-plan.json"]) {
+      if (!state.artifacts.includes(artifact)) {
+        errors.push(`run-state.json repair_planned state must list ${artifact}`);
+      }
+    }
   }
 
   for (const artifact of state.artifacts) {
@@ -696,13 +840,13 @@ export function schemaCheckRun(projectRoot = process.cwd(), { runPath } = {}) {
   requireMarkdownSections(run.absolutePath, "run-contract.md", ["Summary", "Inputs", "Evidence", "Decisions", "Open Questions", "Next Actions"], errors);
   requireMarkdownSections(run.absolutePath, "context-health.md", ["Summary", "Inputs", "Evidence", "Decisions", "Open Questions", "Next Actions"], errors);
 
-  if (state?.status === "captured" || state?.status === "reviewed" || state?.status === "gated" || state?.status === "protected_ready") {
+  if (state?.status === "captured" || state?.status === "reviewed" || state?.status === "gated" || state?.status === "protected_ready" || state?.status === "repair_planned") {
     if (!existsSync(join(run.absolutePath, "degraded-evidence.md")) && !existsSync(join(run.absolutePath, "screenshot-manifest.json"))) {
       errors.push("capture evidence or degraded evidence is required");
     }
   }
 
-  if (state?.status === "reviewed" || state?.status === "gated" || state?.status === "protected_ready") {
+  if (state?.status === "reviewed" || state?.status === "gated" || state?.status === "protected_ready" || state?.status === "repair_planned") {
     requireMarkdownSections(run.absolutePath, "review-packet.md", ["Summary", "Inputs", "Evidence", "Decisions", "Open Questions", "Next Actions"], errors);
     requireMarkdownSections(run.absolutePath, "review-summary.md", ["Findings"], errors);
     const summary = existsSync(join(run.absolutePath, "review-summary.md"))
@@ -714,6 +858,19 @@ export function schemaCheckRun(projectRoot = process.cwd(), { runPath } = {}) {
   if (state?.status === "protected_ready") {
     requireMarkdownSections(run.absolutePath, "gate-report.md", ["Verdict", "Hard checks", "Warnings", "Required fixes", "Next action"], errors);
     requireMarkdownSections(run.absolutePath, "protected-features.md", ["Summary", "Source Evidence", "Protected Items", "Update Rules", "Next Actions"], errors);
+  }
+
+  if (state?.status === "repair_planned") {
+    requireMarkdownSections(run.absolutePath, "gate-report.md", ["Verdict", "Hard checks", "Warnings", "Required fixes", "Next action"], errors);
+    requireMarkdownSections(run.absolutePath, "protected-features.md", ["Summary", "Source Evidence", "Protected Items", "Update Rules", "Next Actions"], errors);
+    requireMarkdownSections(run.absolutePath, "repair-plan.md", ["Summary", "Source Findings", "Repair Items", "Scope Guardrails", "Next Actions"], errors);
+    const repairPlan = readJsonArtifact(run.absolutePath, "repair-plan.json", errors);
+    if (repairPlan) {
+      const reviewFindings = existsSync(join(run.absolutePath, "review-summary.md"))
+        ? readReviewFindings(run.absolutePath)
+        : [];
+      validateRepairPlan(repairPlan, reviewFindings, state, errors);
+    }
   }
 
   const unique = uniqueErrors(errors);
@@ -837,5 +994,126 @@ export function initializeProtectedFeatures(projectRoot = process.cwd(), { runPa
     previousStatus: null,
     blockedReason: null,
     nextRecommendedAction: "repair-plan",
+  });
+}
+
+export function writeRepairPlan(projectRoot = process.cwd(), { runPath } = {}) {
+  const run = normalizeRunPath(projectRoot, runPath);
+  const state = readState(run.absolutePath);
+  if (state.status !== "protected_ready" && state.status !== "repair_planned") {
+    throw new Error(`repair planning requires status protected_ready, got ${state.status}`);
+  }
+
+  if (state.status === "repair_planned") {
+    const schema = schemaCheckRun(projectRoot, { runPath });
+    if (!schema.ok) {
+      const message = `existing repair plan failed schema-check: ${schema.errors.join("; ")}`;
+      blockRun(run.absolutePath, state, message, "schema-check");
+      throw new Error(message);
+    }
+    return writeState(run.absolutePath, {
+      ...addArtifacts(state, ["repair-plan.md", "repair-plan.json"]),
+      status: "repair_planned",
+      previousStatus: null,
+      blockedReason: null,
+      nextRecommendedAction: "arbiter-route",
+    });
+  }
+
+  if (!existsSync(join(run.absolutePath, "protected-features.md"))) {
+    const message = "protected-features.md is required before repair planning";
+    blockRun(run.absolutePath, state, message, "init-protected-features");
+    throw new Error(message);
+  }
+
+  const sourceSchema = schemaCheckRun(projectRoot, { runPath });
+  if (!sourceSchema.ok) {
+    const message = `protected baseline failed schema-check: ${sourceSchema.errors.join("; ")}`;
+    blockRun(run.absolutePath, state, message, "schema-check");
+    throw new Error(message);
+  }
+
+  const findings = readReviewFindings(run.absolutePath);
+  if (findings.length === 0) {
+    const message = "repair planning requires at least one review finding";
+    blockRun(run.absolutePath, state, message, "review");
+    throw new Error(message);
+  }
+  const findingErrors = [];
+  validateRepairFindings(findings, findingErrors);
+  if (findingErrors.length > 0) {
+    const message = `repair planning requires numeric priorityRank and fixOrder: ${findingErrors.join("; ")}`;
+    blockRun(run.absolutePath, state, message, "review");
+    throw new Error(message);
+  }
+
+  const repairs = findings.map((finding, index) => ({
+    repairId: `RP-${String(index + 1).padStart(3, "0")}`,
+    findingId: finding.findingId,
+    priorityRank: Number(finding.priorityRank),
+    fixOrder: Number(finding.fixOrder),
+    severity: finding.severity,
+    category: finding.category,
+    evidenceRefs: finding.evidenceRefs,
+    affectedScreens: finding.affectedScreens,
+    issue: finding.issue,
+    firstRepairRecommendation: finding.firstRepairRecommendation,
+    status: "planned",
+  }));
+
+  writeMarkdown(
+    run.absolutePath,
+    run.runId,
+    "repair-plan.md",
+    "READY",
+    "repair-plan",
+    [
+      "# Repair Plan",
+      "",
+      "## Summary",
+      "V2b repair plan generated from V1 findings and protected baseline.",
+      "",
+      "## Source Findings",
+      ...repairs.map((repair) => `- ${repair.findingId}`),
+      "",
+      "## Repair Items",
+      ...repairs.flatMap((repair) => [
+        `### ${repair.repairId}`,
+        `- repairId: ${repair.repairId}`,
+        `- findingId: ${repair.findingId}`,
+        `- status: ${repair.status}`,
+        `- fixOrder: ${repair.fixOrder}`,
+        `- firstRepairRecommendation: ${repair.firstRepairRecommendation}`,
+        "",
+      ]),
+      "## Scope Guardrails",
+      "- Do not start arbiter routing in V2b.",
+      "- Do not execute repairs in V2b.",
+      "- Do not write design/ publishing artifacts in V2b.",
+      "",
+      "## Next Actions",
+      "- arbiter-route",
+      "",
+    ].join("\n"),
+  );
+
+  const repairPlan = {
+    schemaVersion: 1,
+    runId: run.runId,
+    artifact: "repair-plan.json",
+    status: "READY",
+    updatedAt: now(),
+    artifacts: ["repair-plan.md", "repair-plan.json"],
+    sourceArtifacts: ["review-summary.md", "protected-features.md"],
+    repairs,
+  };
+  writeFileSync(join(run.absolutePath, "repair-plan.json"), `${JSON.stringify(repairPlan, null, 2)}\n`);
+
+  return writeState(run.absolutePath, {
+    ...addArtifacts(state, ["repair-plan.md", "repair-plan.json"]),
+    status: "repair_planned",
+    previousStatus: null,
+    blockedReason: null,
+    nextRecommendedAction: "arbiter-route",
   });
 }

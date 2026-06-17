@@ -60,6 +60,7 @@ V2 active states:
 
 ```text
 protected_ready
+repair_planned
 ```
 
 Later-version states:
@@ -90,6 +91,11 @@ published
 | Command/action | From | Success to | Failure to | Actor | Idempotent | Required artifacts |
 |---|---|---|---|---|---|---|
 | `init-protected-features` | `gated`, `protected_ready` | `protected_ready` | `blocked` | CLI/user | yes | `protected-features.md` |
+| `repair-plan` | `protected_ready`, `repair_planned` | `repair_planned` | `blocked` | CLI/orchestrator | yes | `repair-plan.md`, `repair-plan.json` |
+
+Failure-to-`blocked` applies after a command starts from a legal source state
+and then cannot produce required artifacts. Calling a command from an illegal
+source state is a command-order error and must not silently mutate run state.
 
 ## Later-Version Transition Table
 

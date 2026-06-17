@@ -8,13 +8,14 @@ import {
   recordBrowserCapture,
   recordDegradedCapture,
   schemaCheckRun,
+  writeRepairPlan,
   writeReviewArtifacts,
 } from "../src/core/v1-runtime.mjs";
 import { createPlaywrightCaptureAdapter } from "../src/tools/playwright-capture.mjs";
 
 const help = `poison-ui
 
-V1 review-first and V2a protected-baseline CLI for the poison UI prototype workflow.
+V1 review-first and V2 protected-baseline/repair-planning CLI for the poison UI prototype workflow.
 
 Usage:
   poison --help
@@ -25,6 +26,7 @@ Usage:
   poison schema-check --run <run-path>
   poison gate --run <run-path>
   poison init-protected-features --run <run-path>
+  poison repair-plan --run <run-path>
 
 See:
   docs/delivery/v1-acceptance.md
@@ -142,6 +144,10 @@ try {
     case "init-protected-features":
       initializeProtectedFeatures(cwd, { runPath: options.run });
       process.stdout.write("init-protected-features: protected baseline written\n");
+      break;
+    case "repair-plan":
+      writeRepairPlan(cwd, { runPath: options.run });
+      process.stdout.write("repair-plan: artifacts written\n");
       break;
     default:
       throw new Error(`Unknown command: ${command}`);

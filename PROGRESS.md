@@ -18,6 +18,7 @@ The repository currently provides:
 - A V1 dependency-free CLI path for `init`, `new-run`, `capture`, `review`,
   `schema-check`, and `gate`.
 - A V2a protected baseline action for `init-protected-features`.
+- A V2b repair planning action for `repair-plan`.
 - Node built-in tests for the dry-run flow, run-state handling, degraded
   evidence reporting, schema checks, and the mechanical gate.
 - An operational `skills/poison/SKILL.md` entrypoint that routes behavior to
@@ -30,8 +31,8 @@ seed/evolve/full/harden modes, or full `design/` publishing.
 
 The most recent completed implementation direction was:
 
-- V2a protected baseline: initialize `protected-features.md` from a gated run
-  without creating repair-plan or design publishing artifacts.
+- V2b repair planning: write `repair-plan.md` and `repair-plan.json` from V1
+  finding IDs without arbiter routing, harden execution, or design publishing.
 
 Recent acceptance checks:
 
@@ -46,8 +47,12 @@ Recent acceptance checks:
 - `init-protected-features` writes `protected-features.md` and moves a run to
   `protected_ready`.
 - V2a does not create repair-plan or `design/` publishing artifacts.
+- `repair-plan` writes ordered repair artifacts mapped to V1 finding IDs and
+  moves a run to `repair_planned`.
+- V2b does not create `currentRepair`, `needsUserDecision`, harden output, or
+  `design/` publishing artifacts.
 
-Do not start V2b repair planning inside the V2a commit.
+Do not start V2c arbiter routing inside the V2b commit.
 
 ## Blocked
 
@@ -61,7 +66,7 @@ These items must not begin implementation yet:
 
 Continue V2 only as a controlled hardening slice:
 
-- Convert one review finding into a bounded repair plan.
+- Route planned repair items through the arbiter.
 - Re-capture and re-gate after repair.
 
 ## Deferred
@@ -134,7 +139,7 @@ Exit gate:
 
 ## V2 Controlled Hardening Loop
 
-Status: V2a implemented; V2b repair planning is next.
+Status: V2a-V2b implemented; V2c arbiter routing is next.
 
 User job:
 
@@ -155,7 +160,8 @@ Prerequisites:
 
 - V1 browser evidence and gate checks are stable.
 - Protected-feature artifacts have tests.
-- Repair-plan artifacts need tests before implementation.
+- Repair-plan artifacts have tests.
+- Arbiter routing artifacts need tests before implementation.
 - Autonomous workflow decisions are traceable to contract owners.
 
 ## V3 Design Package Mode
