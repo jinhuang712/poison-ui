@@ -78,6 +78,7 @@ repair-rounds/001/repair-plan.json
 repair-rounds/001/before-after-evidence.md
 repair-rounds/001/round-summary.md
 repair-rounds/001/regression-results.json
+repair-rounds/001/visual-drift.json
 ```
 
 Later-version artifacts:
@@ -110,6 +111,9 @@ completion-report.md
 - V2e regression results only appear after post-repair gate, map to
   `protected-features.md` items, and do not embed drift or design publishing
   output.
+- V2e visual drift results only appear after regression results. They either
+  reference before/after screenshots or record an explicit evidence gap, and
+  they do not embed design publishing output.
 
 Gate must call `schema-check` or an equivalent core module. Missing schema
 metadata prevents entering `gated`.

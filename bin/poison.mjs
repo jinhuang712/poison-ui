@@ -11,6 +11,7 @@ import {
   routeRepairs,
   schemaCheckRun,
   writeRegressionResults,
+  writeVisualDriftReport,
   writeRepairPlan,
   writeReviewArtifacts,
 } from "../src/core/v1-runtime.mjs";
@@ -18,7 +19,7 @@ import { createPlaywrightCaptureAdapter } from "../src/tools/playwright-capture.
 
 const help = `poison-ui
 
-V1 review-first and V2 protected-baseline/repair-planning/routing/harden/regression CLI for the poison UI prototype workflow.
+V1 review-first and V2 protected-baseline/repair-planning/routing/harden/regression/drift CLI for the poison UI prototype workflow.
 
 Usage:
   poison --help
@@ -33,6 +34,7 @@ Usage:
   poison arbiter-route --run <run-path>
   poison harden --run <run-path>
   poison regression-check --run <run-path>
+  poison visual-drift --run <run-path>
 
 See:
   docs/delivery/v1-acceptance.md
@@ -166,6 +168,10 @@ try {
     case "regression-check":
       writeRegressionResults(cwd, { runPath: options.run });
       process.stdout.write("regression-check: protected feature checks written\n");
+      break;
+    case "visual-drift":
+      writeVisualDriftReport(cwd, { runPath: options.run });
+      process.stdout.write("visual-drift: report written\n");
       break;
     default:
       throw new Error(`Unknown command: ${command}`);

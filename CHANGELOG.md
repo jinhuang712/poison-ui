@@ -4,6 +4,9 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
+- Implemented V2e visual drift reporting with `poison visual-drift`,
+  `repair-rounds/001/visual-drift.json`, screenshot-backed or explicit-absence
+  outputs, schema coverage, and CLI dry-run support without design publishing.
 - Implemented V2e protected-feature regression checks with
   `poison regression-check`, `repair-rounds/001/regression-results.json`,
   schema coverage, and CLI dry-run support without drift or design publishing.

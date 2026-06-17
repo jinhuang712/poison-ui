@@ -13,6 +13,7 @@ import {
   initializeProtectedFeatures,
   routeRepairs,
   writeRegressionResults,
+  writeVisualDriftReport,
   writeRepairPlan,
   writeReviewArtifacts,
   schemaCheckRun,
@@ -1915,4 +1916,92 @@ test("schema check rejects regression results on a gated run without repair roun
   const schema = schemaCheckRun(project, { runPath: run.relativePath });
   assert.equal(schema.ok, false);
   assert.match(schema.errors.join("\n"), /regression-results\.json requires repair-rounds\/001 artifacts/);
+});
+
+test("visual drift report records explicit absence when before and after screenshots are unavailable", () => {
+  const project = makeProject();
+  const run = createRegatedV2Run(project, "visual drift absent");
+  writeRegressionResults(project, { runPath: run.relativePath });
+
+  writeVisualDriftReport(project, { runPath: run.relativePath });
+
+  const drift = readJson(join(run.absolutePath, "repair-rounds", "001", "visual-drift.json"));
+  assert.equal(drift.schemaVersion, 1);
+  assert.equal(drift.runId, run.runId);
+  assert.equal(drift.artifact, "repair-rounds/001/visual-drift.json");
+  assert.equal(drift.status, "ABSENT");
+  assert.equal(drift.roundId, "001");
+  assert.equal(drift.verdict, "NO_VISUAL_EVIDENCE");
+  assert.deepEqual(drift.sourceArtifacts, [
+    "repair-rounds/001/before-after-evidence.md",
+    "repair-rounds/001/regression-results.json",
+  ]);
+  assert.deepEqual(drift.beforeScreenshots, []);
+  assert.deepEqual(drift.afterScreenshots, []);
+  assert.match(drift.evidenceGap, /before and after screenshots are required/);
+  assert.equal("designManifest" in drift, false);
+
+  const state = readJson(join(run.absolutePath, "run-state.json"));
+  assert.equal(state.status, "gated");
+  assert.ok(state.artifacts.includes("repair-rounds/001/visual-drift.json"));
+  assert.equal(existsSync(join(run.absolutePath, "design")), false);
+
+  const schema = schemaCheckRun(project, { runPath: run.relativePath });
+  assert.deepEqual(schema.errors, []);
+});
+
+test("visual drift report records before and after screenshots when browser evidence exists", async () => {
+  const project = makeProject();
+  initPoisonProject(project);
+  const run = createReviewRun(project, { mode: "review", name: "visual drift screenshots" });
+  await recordBrowserCapture(project, {
+    runPath: run.relativePath,
+    url: "http://localhost:5173",
+    adapter: async () => ({
+      screenshot: {
+        fileName: "before.png",
+        bytes: Buffer.from("before"),
+        width: 1280,
+        height: 720,
+      },
+      consoleEntries: [],
+      pageErrors: [],
+    }),
+  });
+  writeReviewArtifacts(project, { runPath: run.relativePath });
+  gateRun(project, { runPath: run.relativePath });
+  initializeProtectedFeatures(project, { runPath: run.relativePath });
+  writeRepairPlan(project, { runPath: run.relativePath });
+  routeRepairs(project, { runPath: run.relativePath });
+  hardenRun(project, { runPath: run.relativePath });
+  await recordBrowserCapture(project, {
+    runPath: run.relativePath,
+    url: "http://localhost:5173",
+    adapter: async () => ({
+      screenshot: {
+        fileName: "after.png",
+        bytes: Buffer.from("after"),
+        width: 1280,
+        height: 720,
+      },
+      consoleEntries: [],
+      pageErrors: [],
+    }),
+  });
+  writeReviewArtifacts(project, { runPath: run.relativePath });
+  gateRun(project, { runPath: run.relativePath });
+  writeRegressionResults(project, { runPath: run.relativePath });
+
+  writeVisualDriftReport(project, { runPath: run.relativePath });
+
+  const drift = readJson(join(run.absolutePath, "repair-rounds", "001", "visual-drift.json"));
+  assert.equal(drift.status, "READY");
+  assert.equal(drift.verdict, "NEEDS_HUMAN_REVIEW");
+  assert.deepEqual(drift.beforeScreenshots, ["screenshots/before.png"]);
+  assert.deepEqual(drift.afterScreenshots, ["screenshots/after.png"]);
+  assert.equal(drift.evidenceGap, null);
+  assert.equal("designManifest" in drift, false);
+
+  const schema = schemaCheckRun(project, { runPath: run.relativePath });
+  assert.deepEqual(schema.errors, []);
 });

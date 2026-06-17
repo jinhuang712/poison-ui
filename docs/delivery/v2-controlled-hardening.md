@@ -26,7 +26,7 @@ work. Any repair must trace to a V1 finding accepted by the arbiter.
 | V2d Single bounded harden loop | implemented | one narrow repair round artifact set | Do not start drift reporting until fresh post-repair evidence exists. |
 | V2d-post Post-repair re-gate | implemented | recapture, review, schema-check, and gate after the bounded round | Do not start V2e checks until the re-gate path preserves round traceability. |
 | V2e Protected regression | implemented | `repair-rounds/001/regression-results.json` after post-repair gate | Do not start visual drift until protected-feature regression checks exist. |
-| V2e Visual drift | next | visual drift only when before/after visual evidence exists | Do not start V3 until a bounded repair can re-gate without scope expansion. |
+| V2e Visual drift | implemented | visual drift report or explicit visual evidence absence | Do not start V3 until a bounded repair can re-gate without scope expansion. |
 
 ## Must Ship
 
@@ -110,6 +110,17 @@ work. Any repair must trace to a V1 finding accepted by the arbiter.
 - Schema checks reject regression results before post-repair gate.
 - This slice must not write drift reports or `design/` publishing artifacts.
 
+## Current V2e Visual Drift Exit Criteria
+
+- `poison visual-drift --run <run-path>` accepts only a post-regression
+  `gated` run that still contains `repair-rounds/001` artifacts.
+- A first successful run writes `repair-rounds/001/visual-drift.json`.
+- If before and after screenshots both exist, the artifact references them and
+  returns `NEEDS_HUMAN_REVIEW` rather than claiming an automated pixel verdict.
+- If before/after screenshots are incomplete, the artifact records
+  `NO_VISUAL_EVIDENCE` and an explicit evidence gap.
+- This slice must not write `design/` publishing artifacts.
+
 ## Weighting
 
 | Area | Weight | Rationale |
@@ -163,6 +174,8 @@ V2d.
   `.poison/runs/<run-id>/repair-rounds/001/before-after-evidence.md`.
 - Fixture run writes
   `.poison/runs/<run-id>/repair-rounds/001/regression-results.json`.
+- Fixture run writes
+  `.poison/runs/<run-id>/repair-rounds/001/visual-drift.json`.
 - Fixture run writes `.poison/runs/<run-id>/repair-rounds/001/round-summary.md`.
 - Post-repair evidence has a new timestamp or step ID distinct from the V1
   source evidence.

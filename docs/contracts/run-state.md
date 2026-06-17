@@ -97,6 +97,7 @@ published
 | `harden` | `repair_routed`, `repaired` | `repaired` | `blocked` | CLI/orchestrator | yes | `repair-rounds/001/repair-plan.md`, `repair-rounds/001/repair-plan.json`, `repair-rounds/001/before-after-evidence.md`, `repair-rounds/001/round-summary.md` |
 | post-repair `capture` / `review` / `gate` | `repaired` through `captured` and `reviewed` | `gated` | `blocked` | CLI/browser adapter/reviewer | yes | fresh evidence, `review-packet.md`, `review-summary.md`, `gate-report.md`, preserved `repair-rounds/001/*` |
 | `regression-check` | post-repair `gated` | `gated` | `blocked` | CLI/orchestrator | yes | `repair-rounds/001/regression-results.json` |
+| `visual-drift` | post-regression `gated` | `gated` | `blocked` | CLI/orchestrator | yes | `repair-rounds/001/visual-drift.json` |
 
 Failure-to-`blocked` applies after a command starts from a legal source state
 and then cannot produce required artifacts. Calling a command from an illegal

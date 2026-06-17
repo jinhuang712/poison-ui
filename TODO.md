@@ -80,19 +80,22 @@ items as they are completed.
 - Schema checks reject regression results before post-repair gate.
 - This slice does not write drift reports or design publishing artifacts.
 
-## Next: V2e Visual Drift
+## Completed: V2e Visual Drift
 
-- Add visual drift reporting only when before/after visual evidence exists.
-- Do not broaden the repair into unrelated redesign or feature work.
-- Do not add optional design publishing to V2.
-- Do not add broad `evolve` behavior to V2.
-- Keep V2 implementation limited to
-  [V2 Controlled Hardening Loop](./docs/delivery/v2-controlled-hardening.md)
-  until one bounded repair loop passes end to end.
+- `poison visual-drift --run <run>` writes
+  `repair-rounds/001/visual-drift.json` after regression checks.
+- Visual drift references before/after screenshots when both exist.
+- When before/after screenshots are incomplete, visual drift records an
+  explicit `NO_VISUAL_EVIDENCE` gap instead of claiming a visual comparison.
+- This slice does not write design publishing artifacts.
 
-## Blocked: V3 Design Publishing
+## Next: V3a Design Publishing
 
-- Do not implement V3 until V2 can repair one bounded slice and re-gate it.
+- Publish only `design/manifest.json` and `design/handoff.md` from a gated V2
+  source run.
+- Require `sourceRunId` and source artifact refs.
+- Do not broaden into full package files, completion percentages, seed/full
+  generation, or adapter maturity.
 - First V3 slice is only `design/manifest.json` and `design/handoff.md` from a
   gated V2 source run.
 - Keep completion percentages, seed generation, full generation, and broad

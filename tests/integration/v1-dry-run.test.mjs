@@ -138,4 +138,14 @@ test("V1 review-first dry-run can initialize V2 protected baseline and repair pl
   assert.equal(regression.verdict, "PASS");
   assert.equal(regression.protectedFeatureChecks[0].item, "none declared yet");
   assert.equal(existsSync(join(runDir, "design")), false);
+
+  const driftOutput = runPoison(project, ["visual-drift", "--run", ".poison/runs/001-poisoned-demo"]);
+  assert.match(driftOutput, /visual-drift: report written/);
+  state = readJson(join(runDir, "run-state.json"));
+  assert.equal(state.status, "gated");
+  assert.ok(state.artifacts.includes("repair-rounds/001/visual-drift.json"));
+  const drift = readJson(join(runDir, "repair-rounds/001/visual-drift.json"));
+  assert.equal(drift.status, "ABSENT");
+  assert.equal(drift.verdict, "NO_VISUAL_EVIDENCE");
+  assert.equal(existsSync(join(runDir, "design")), false);
 });

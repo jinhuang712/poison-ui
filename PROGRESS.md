@@ -26,13 +26,15 @@ The repository currently provides:
   bounded round traceability.
 - A V2e protected regression action for `regression-check` that writes
   `repair-rounds/001/regression-results.json` after post-repair gate.
+- A V2e visual drift action for `visual-drift` that writes
+  `repair-rounds/001/visual-drift.json` or an explicit visual evidence gap.
 - Node built-in tests for the dry-run flow, run-state handling, degraded
   evidence reporting, schema checks, and the mechanical gate.
 - An operational `skills/poison/SKILL.md` entrypoint that routes behavior to
   contract owners.
 
-The repository does not yet provide multi-reviewer review, V2e visual drift
-reporting, later seed/evolve/full modes, or full `design/` publishing.
+The repository does not yet provide multi-reviewer review, V3 `design/`
+publishing, or later seed/evolve/full modes.
 
 ## Active
 
@@ -45,6 +47,8 @@ The most recent completed implementation direction was:
   bounded round while preserving `repair-rounds/001` traceability.
 - V2e protected regression: write regression results after post-repair gate
   without drift reports or design publishing.
+- V2e visual drift: write a screenshot-backed drift report when before/after
+  screenshots exist, or an explicit `NO_VISUAL_EVIDENCE` gap when they do not.
 
 Recent acceptance checks:
 
@@ -79,28 +83,32 @@ Recent acceptance checks:
 - `regression-check` writes `repair-rounds/001/regression-results.json` only
   after post-repair gate and maps checks to `protected-features.md` items.
 - Schema-check rejects regression results before post-repair gate.
+- `visual-drift` writes `repair-rounds/001/visual-drift.json` only after
+  regression checks.
+- Degraded runs record `NO_VISUAL_EVIDENCE` rather than a visual judgment.
+- Browser-evidence runs can reference before and after screenshot paths while
+  leaving the verdict as `NEEDS_HUMAN_REVIEW`.
 
-Do not start V2e visual drift or V3 design publishing inside the protected
-regression commit.
+Do not start V3 design publishing inside the visual-drift commit.
 
 ## Blocked
 
 These items must not begin implementation yet:
 
-- V3 design publishing implementation is blocked until V2 can perform one
-  bounded harden loop and re-gate it.
 - V4 adapter/packaging work is blocked until V3 publish traceability is stable.
 
 ## Next
 
-Continue V2 only as a controlled hardening slice:
+Start V3 only as a minimal publishing slice:
 
-- Add visual drift reporting only when before/after visual evidence exists.
+- Publish `design/manifest.json` and `design/handoff.md` from a gated V2 source
+  run.
+- Keep wider package files, completion percentages, seed/full generation, and
+  adapter maturity blocked until V3a traceability is proven.
 
 ## Deferred
 
 - V2 work beyond one controlled hardening slice.
-- V3 minimal `design/manifest.json` and `design/handoff.md` publishing.
 - V4 adapter parity, package validation, and release distribution.
 - Future VN backlog items such as manual evidence registration, design-system
   extraction, visual intelligence, and code repair automation.
@@ -167,8 +175,8 @@ Exit gate:
 
 ## V2 Controlled Hardening Loop
 
-Status: V2a-V2d, post-repair re-gate, and V2e protected regression implemented;
-V2e visual drift is next.
+Status: V2a-V2d, post-repair re-gate, V2e protected regression, and V2e visual
+drift implemented.
 
 User job:
 
@@ -194,12 +202,12 @@ Prerequisites:
 - Bounded harden artifacts have tests.
 - Post-repair recapture/regate behavior has tests.
 - V2e protected regression behavior has tests.
-- V2e visual drift behavior needs tests before implementation.
+- V2e visual drift behavior has tests.
 - Autonomous workflow decisions are traceable to contract owners.
 
 ## V3 Design Package Mode
 
-Status: blocked until controlled hardening loops are reliable.
+Status: active, V3a minimal evidence-to-design publishing is next.
 
 User job:
 

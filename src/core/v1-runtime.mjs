@@ -68,6 +68,7 @@ const ROUND_ARTIFACTS = [
   "repair-rounds/001/round-summary.md",
 ];
 const REGRESSION_ARTIFACT = "repair-rounds/001/regression-results.json";
+const VISUAL_DRIFT_ARTIFACT = "repair-rounds/001/visual-drift.json";
 const ROUND_ALLOWED_TOP_LEVEL_FIELDS = new Set([
   "schemaVersion",
   "runId",
@@ -96,6 +97,19 @@ const REGRESSION_CHECK_ALLOWED_FIELDS = new Set([
   "source",
   "verdict",
   "evidence",
+]);
+const VISUAL_DRIFT_ALLOWED_TOP_LEVEL_FIELDS = new Set([
+  "schemaVersion",
+  "runId",
+  "artifact",
+  "status",
+  "updatedAt",
+  "roundId",
+  "sourceArtifacts",
+  "verdict",
+  "beforeScreenshots",
+  "afterScreenshots",
+  "evidenceGap",
 ]);
 
 function now() {
@@ -641,6 +655,90 @@ function validateRegressionResults(regression, runDir, runState, errors) {
   }
 }
 
+function markdownSectionLines(content, sectionName) {
+  const section = content.split(new RegExp(`^## ${sectionName}\\s*$`, "m"))[1]?.split(/^## /m)[0] || "";
+  return section
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.startsWith("- "))
+    .map((line) => line.slice(2).trim());
+}
+
+function beforeScreenshotRefs(runDir) {
+  const content = readTextIfExists(join(runDir, "repair-rounds/001/before-after-evidence.md"));
+  return markdownSectionLines(content, "Before Evidence").filter((artifact) => artifact.startsWith("screenshots/"));
+}
+
+function afterScreenshotRefs(runDir) {
+  const manifestPath = join(runDir, "screenshot-manifest.json");
+  if (!existsSync(manifestPath)) {
+    return [];
+  }
+
+  try {
+    const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+    return (manifest.screenshots || [])
+      .map((screenshot) => screenshot.path)
+      .filter((artifact) => typeof artifact === "string" && artifact.startsWith("screenshots/"));
+  } catch {
+    return [];
+  }
+}
+
+function validateVisualDriftReport(drift, runState, errors) {
+  for (const field of Object.keys(drift || {})) {
+    if (!VISUAL_DRIFT_ALLOWED_TOP_LEVEL_FIELDS.has(field)) {
+      errors.push(`repair-rounds/001/visual-drift.json has unknown field ${field}`);
+    }
+  }
+  if (drift.schemaVersion !== 1) {
+    errors.push("repair-rounds/001/visual-drift.json schemaVersion must be 1");
+  }
+  if (drift.runId !== runState.runId) {
+    errors.push("repair-rounds/001/visual-drift.json runId must match run-state");
+  }
+  if (drift.artifact !== VISUAL_DRIFT_ARTIFACT) {
+    errors.push("repair-rounds/001/visual-drift.json artifact must be repair-rounds/001/visual-drift.json");
+  }
+  if (drift.status !== "READY" && drift.status !== "ABSENT") {
+    errors.push("repair-rounds/001/visual-drift.json status must be READY or ABSENT");
+  }
+  if (typeof drift.updatedAt !== "string" || drift.updatedAt.trim() === "") {
+    errors.push("repair-rounds/001/visual-drift.json updatedAt is required");
+  }
+  if (drift.roundId !== "001") {
+    errors.push("repair-rounds/001/visual-drift.json roundId must be 001");
+  }
+  const expectedSourceArtifacts = [
+    "repair-rounds/001/before-after-evidence.md",
+    "repair-rounds/001/regression-results.json",
+  ];
+  if (
+    !Array.isArray(drift.sourceArtifacts) ||
+    JSON.stringify(drift.sourceArtifacts) !== JSON.stringify(expectedSourceArtifacts)
+  ) {
+    errors.push("repair-rounds/001/visual-drift.json sourceArtifacts must exactly list before-after evidence and regression results");
+  }
+  if (drift.verdict !== "NEEDS_HUMAN_REVIEW" && drift.verdict !== "NO_VISUAL_EVIDENCE") {
+    errors.push("repair-rounds/001/visual-drift.json verdict must be NEEDS_HUMAN_REVIEW or NO_VISUAL_EVIDENCE");
+  }
+  if (!Array.isArray(drift.beforeScreenshots)) {
+    errors.push("repair-rounds/001/visual-drift.json beforeScreenshots must be an array");
+  }
+  if (!Array.isArray(drift.afterScreenshots)) {
+    errors.push("repair-rounds/001/visual-drift.json afterScreenshots must be an array");
+  }
+  if (drift.status === "ABSENT" && (typeof drift.evidenceGap !== "string" || drift.evidenceGap.trim() === "")) {
+    errors.push("repair-rounds/001/visual-drift.json ABSENT status requires evidenceGap");
+  }
+  if (drift.status === "READY" && drift.evidenceGap !== null) {
+    errors.push("repair-rounds/001/visual-drift.json READY status requires null evidenceGap");
+  }
+  if ("designManifest" in drift || "designPublishing" in drift) {
+    errors.push("repair-rounds/001/visual-drift.json must not include design publishing output");
+  }
+}
+
 function validateStateArtifacts(runDir, state, errors) {
   if (!Array.isArray(state.artifacts)) {
     return;
@@ -674,6 +772,19 @@ function validateStateArtifacts(runDir, state, errors) {
     for (const artifact of ROUND_ARTIFACTS) {
       if (!state.artifacts.includes(artifact)) {
         errors.push(`regression-results.json requires repair-rounds/001 artifacts: missing ${artifact}`);
+      }
+    }
+  }
+  if (state.artifacts.includes(VISUAL_DRIFT_ARTIFACT)) {
+    if (state.status !== "gated") {
+      errors.push("visual-drift.json requires post-repair gated status");
+    }
+    if (!state.artifacts.includes(REGRESSION_ARTIFACT)) {
+      errors.push("visual-drift.json requires regression-results.json");
+    }
+    for (const artifact of ROUND_ARTIFACTS) {
+      if (!state.artifacts.includes(artifact)) {
+        errors.push(`visual-drift.json requires repair-rounds/001 artifacts: missing ${artifact}`);
       }
     }
   }
@@ -1258,6 +1369,24 @@ export function schemaCheckRun(projectRoot = process.cwd(), { runPath } = {}) {
       validateRegressionResults(regression, run.absolutePath, state, errors);
     }
   }
+  const hasVisualDriftArtifact =
+    (state?.artifacts || []).includes(VISUAL_DRIFT_ARTIFACT) || existsSync(join(run.absolutePath, VISUAL_DRIFT_ARTIFACT));
+  if (hasVisualDriftArtifact) {
+    if (state?.status !== "gated") {
+      errors.push("visual-drift.json requires post-repair gated status");
+    }
+    if (!existsSync(join(run.absolutePath, REGRESSION_ARTIFACT))) {
+      errors.push("visual-drift.json requires regression-results.json");
+    }
+    const missingRoundArtifacts = ROUND_ARTIFACTS.filter((artifact) => !existsSync(join(run.absolutePath, artifact)));
+    if (missingRoundArtifacts.length > 0) {
+      errors.push(`visual-drift.json requires repair-rounds/001 artifacts: missing ${missingRoundArtifacts.join(", ")}`);
+    }
+    const drift = readJsonArtifact(run.absolutePath, VISUAL_DRIFT_ARTIFACT, errors);
+    if (drift) {
+      validateVisualDriftReport(drift, state, errors);
+    }
+  }
 
   const unique = uniqueErrors(errors);
   return {
@@ -1803,6 +1932,65 @@ export function writeRegressionResults(projectRoot = process.cwd(), { runPath } 
   writeFileSync(join(run.absolutePath, REGRESSION_ARTIFACT), `${JSON.stringify(regression, null, 2)}\n`);
   return writeState(run.absolutePath, {
     ...addArtifact(state, REGRESSION_ARTIFACT),
+    status: "gated",
+    previousStatus: null,
+    blockedReason: null,
+    nextRecommendedAction: "complete-or-review-warnings",
+  });
+}
+
+export function writeVisualDriftReport(projectRoot = process.cwd(), { runPath } = {}) {
+  const run = normalizeRunPath(projectRoot, runPath);
+  const state = readState(run.absolutePath);
+  if (state.status !== "gated") {
+    throw new Error(`visual drift requires post-repair gated status, got ${state.status}`);
+  }
+  if (!existsSync(join(run.absolutePath, REGRESSION_ARTIFACT))) {
+    const message = "visual drift requires regression-results.json";
+    blockRun(run.absolutePath, state, message, "regression-check");
+    throw new Error(message);
+  }
+  const hasRound = ROUND_ARTIFACTS.every((artifact) => (
+    (state.artifacts || []).includes(artifact) && existsSync(join(run.absolutePath, artifact))
+  ));
+  if (!hasRound) {
+    const message = "visual drift requires repair-rounds/001 artifacts";
+    blockRun(run.absolutePath, state, message, "harden");
+    throw new Error(message);
+  }
+
+  const sourceSchema = schemaCheckRun(projectRoot, { runPath });
+  if (!sourceSchema.ok) {
+    const message = `visual drift requires valid regression source: ${sourceSchema.errors.join("; ")}`;
+    blockRun(run.absolutePath, state, message, "schema-check");
+    throw new Error(message);
+  }
+
+  const beforeScreenshots = beforeScreenshotRefs(run.absolutePath);
+  const afterScreenshots = afterScreenshotRefs(run.absolutePath);
+  const hasVisualEvidence = beforeScreenshots.length > 0 && afterScreenshots.length > 0;
+  const drift = {
+    schemaVersion: 1,
+    runId: run.runId,
+    artifact: VISUAL_DRIFT_ARTIFACT,
+    status: hasVisualEvidence ? "READY" : "ABSENT",
+    updatedAt: now(),
+    roundId: "001",
+    sourceArtifacts: [
+      "repair-rounds/001/before-after-evidence.md",
+      "repair-rounds/001/regression-results.json",
+    ],
+    verdict: hasVisualEvidence ? "NEEDS_HUMAN_REVIEW" : "NO_VISUAL_EVIDENCE",
+    beforeScreenshots,
+    afterScreenshots,
+    evidenceGap: hasVisualEvidence
+      ? null
+      : "before and after screenshots are required for visual drift reporting",
+  };
+
+  writeFileSync(join(run.absolutePath, VISUAL_DRIFT_ARTIFACT), `${JSON.stringify(drift, null, 2)}\n`);
+  return writeState(run.absolutePath, {
+    ...addArtifact(state, VISUAL_DRIFT_ARTIFACT),
     status: "gated",
     previousStatus: null,
     blockedReason: null,

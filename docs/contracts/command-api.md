@@ -100,6 +100,14 @@ repair round has been recaptured, reviewed, and gated again:
 poison regression-check --run .poison/runs/001-poisoned-demo
 ```
 
+This action writes a visual drift report after protected regression checks. If
+before/after screenshots are missing, it records an explicit absence instead of
+claiming a visual comparison:
+
+```bash
+poison visual-drift --run .poison/runs/001-poisoned-demo
+```
+
 ## Later Deterministic Action Mappings
 
 These actions exist for testing, adapter calls, and dry-run workflows. They are
