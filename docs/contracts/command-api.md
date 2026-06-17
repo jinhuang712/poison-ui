@@ -126,6 +126,16 @@ to the V3a source artifacts:
 poison publish-handoff --run .poison/runs/001-poisoned-demo
 ```
 
+## V3c Deterministic Action Mapping
+
+This action writes run-local completion audit labels after the V3b handoff
+package passes schema-check. It does not publish percentages or write
+`design/review` package output:
+
+```bash
+poison audit-completion --run .poison/runs/001-poisoned-demo
+```
+
 ## Later Deterministic Action Mappings
 
 These actions exist for testing, adapter calls, and dry-run workflows. They are
@@ -141,7 +151,7 @@ poison capture --url http://localhost:5173 --run .poison/runs/001-test-seed
 poison build-review-packet --run .poison/runs/001-test-seed
 poison decision-html --question "choose search layout" --run .poison/runs/001-test-seed
 poison ambiguity-check --run .poison/runs/001-test-seed
-poison audit-completion --design docs/design.md --url http://localhost:5173 --run .poison/runs/001-test-seed
+poison audit-completion --run .poison/runs/001-test-seed
 poison schema-check --run .poison/runs/001-test-seed
 poison gate --run .poison/runs/001-test-seed
 poison update-state --run .poison/runs/001-test-seed

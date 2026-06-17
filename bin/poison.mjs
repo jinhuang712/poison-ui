@@ -14,6 +14,7 @@ import {
   schemaCheckRun,
   writeRegressionResults,
   writeVisualDriftReport,
+  writeCompletionAudit,
   writeRepairPlan,
   writeReviewArtifacts,
 } from "../src/core/v1-runtime.mjs";
@@ -39,6 +40,7 @@ Usage:
   poison visual-drift --run <run-path>
   poison publish-design --run <run-path>
   poison publish-handoff --run <run-path>
+  poison audit-completion --run <run-path>
 
 See:
   docs/delivery/v1-acceptance.md
@@ -184,6 +186,10 @@ try {
     case "publish-handoff":
       publishHandoffPackage(cwd, { runPath: options.run });
       process.stdout.write("publish-handoff: handoff package written\n");
+      break;
+    case "audit-completion":
+      writeCompletionAudit(cwd, { runPath: options.run });
+      process.stdout.write("audit-completion: report written\n");
       break;
     default:
       throw new Error(`Unknown command: ${command}`);

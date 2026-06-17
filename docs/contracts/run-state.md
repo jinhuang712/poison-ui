@@ -114,6 +114,7 @@ source state is a command-order error and must not silently mutate run state.
 | capture generated prototype | `prototype_ready` | `captured` | `blocked` | CLI/browser adapter | yes | screenshots, manifest, console evidence, or degraded evidence artifact |
 | `publish-design` | `gated`, `published` | `published` | `blocked` | CLI/publisher | yes | `design/manifest.json`, `design/handoff.md`, publish manifest with `sourceRunId` |
 | `publish-handoff` | `published` | `published` | `blocked` | CLI/publisher | yes | `design/handoff/implementation-map.md`, `design/handoff/acceptance-checklist.md`, `design/handoff/open-questions.md`, `design/handoff/backlog.md`, manifest `HANDOFF_READY` |
+| `audit-completion` | `published` | `published` | `blocked` | CLI/reviewer | yes | `completion-audit-packet.md`, `completion-report.md`, evidence-backed labels without percentages |
 
 ## Hard Command Rules
 

@@ -4,6 +4,10 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
+- Implemented V3c completion audit with `poison audit-completion`, run-local
+  `completion-audit-packet.md` and `completion-report.md`, evidence-backed
+  labels, schema coverage, and CLI dry-run support without percentages or
+  `design/review`, screen, flow, seed, or full-generation output.
 - Implemented V3b handoff package publishing with `poison publish-handoff`,
   source-mapped `design/handoff/*` files, manifest `HANDOFF_READY` status,
   schema coverage, and CLI dry-run support without completion audit, screen,

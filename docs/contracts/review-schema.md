@@ -151,30 +151,19 @@ completion-audit coverage are not required.
 ```markdown
 # Completion Audit Report
 
-## Verdict
-COMPLETE | PARTIAL | INCOMPLETE | BLOCKED
+## Summary
 
-## Overall Completion
-0-100
+## Completion Labels
+- implemented | partial | missing | deviation | blocked:
+  - requirement:
+  - evidenceRefs:
+  - recommendedNextStep:
 
-## Coverage Matrix
-| Design requirement | Status | Evidence | Severity | Recommended next step |
+## Blocked Output
 
-## Implemented
-
-## Partially implemented
-
-## Missing
-
-## Deviations from design
-
-## Runtime and responsive issues
-
-## Recommended next mode
-evolve | harden | review | none
-
-## Backlog candidates
+## Next Actions
 ```
 
 Completion audit conclusions must be based on design, poison core,
-run-contract, screenshot, runtime output, or source evidence.
+run-contract, screenshot, runtime output, or source evidence. V3c completion
+audit must not publish percentages or a numeric overall completion value.

@@ -178,4 +178,13 @@ test("V1 review-first dry-run can initialize V2 protected baseline and repair pl
   ]);
   assert.match(readFileSync(join(project, "design", "handoff", "implementation-map.md"), "utf8"), /## Implementation Map/);
   assert.equal(existsSync(join(project, "design", "screens")), false);
+
+  const auditOutput = runPoison(project, ["audit-completion", "--run", ".poison/runs/001-poisoned-demo"]);
+  assert.match(auditOutput, /audit-completion: report written/);
+  state = readJson(join(runDir, "run-state.json"));
+  assert.equal(state.status, "published");
+  assert.ok(state.artifacts.includes("completion-audit-packet.md"));
+  assert.ok(state.artifacts.includes("completion-report.md"));
+  assert.match(readFileSync(join(runDir, "completion-report.md"), "utf8"), /## Completion Labels/);
+  assert.equal(existsSync(join(project, "design", "review")), false);
 });

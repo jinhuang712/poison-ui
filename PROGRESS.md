@@ -8,7 +8,8 @@ implementation contracts live under [docs/contracts](./docs/contracts).
 ## Current Status
 
 Poison has moved from V0 documentation scaffold through the V1 review-first
-CLI subset and into the first V2 controlled-hardening slice.
+CLI subset, the bounded V2 controlled-hardening slice, and the V3 design
+package traceability slices.
 
 The repository currently provides:
 
@@ -32,13 +33,16 @@ The repository currently provides:
   `design/manifest.json` and `design/handoff.md`.
 - A V3b handoff publishing action for `publish-handoff` that writes only
   source-mapped files under `design/handoff/`.
+- A V3c completion audit action for `audit-completion` that writes run-local
+  evidence labels without percentages or wider design package output.
 - Node built-in tests for the dry-run flow, run-state handling, degraded
   evidence reporting, schema checks, and the mechanical gate.
 - An operational `skills/poison/SKILL.md` entrypoint that routes behavior to
   contract owners.
 
-The repository does not yet provide multi-reviewer review, completion audit,
-screen/flow/review package expansion, or later seed/evolve/full modes.
+The repository does not yet provide multi-reviewer review, V4 command
+semantics freeze, screen/flow/review package expansion, or later
+seed/evolve/full modes.
 
 ## Active
 
@@ -58,6 +62,8 @@ The most recent completed implementation direction was:
 - V3b handoff package: write source-mapped implementation map, acceptance
   checklist, open questions, and backlog files without completion audit or
   broader design package expansion.
+- V3c completion audit: write run-local audit packet and report labels without
+  percentages or broader design package expansion.
 
 Recent acceptance checks:
 
@@ -102,21 +108,23 @@ Recent acceptance checks:
 - Published design output includes `sourceRunId` and source artifact refs.
 - `publish-handoff` moves the manifest to `HANDOFF_READY` and keeps completion
   percentages, screens, flows, and review package output absent.
+- `audit-completion` writes `completion-audit-packet.md` and
+  `completion-report.md` in the run directory and keeps `design/review`,
+  percentages, screens, and flows absent.
 
 ## Blocked
 
 These items must not begin implementation yet:
 
-- V4 adapter/packaging work is blocked until V3 publish traceability is stable.
+- V4 adapter/packaging work is blocked until V4a command semantics are frozen.
 
 ## Next
 
-Continue V3 only as a narrow completion-audit slice:
+Continue V4 only as a narrow command-semantics freeze:
 
-- Add evidence-backed completion labels only after V3b handoff package
-  schema-check passes.
-- Keep completion percentages, seed/full generation, screen/flow/review
-  expansion, and adapter maturity blocked.
+- Freeze observable CLI behavior for existing V1-V3c commands.
+- Keep adapter parity, packaging, release, seed/full generation, and
+  screen/flow/review expansion blocked.
 
 ## Deferred
 
@@ -219,8 +227,8 @@ Prerequisites:
 
 ## V3 Design Package Mode
 
-Status: active, V3a minimal evidence-to-design publishing and V3b handoff
-package implemented; V3c completion audit is next.
+Status: V3a minimal evidence-to-design publishing, V3b handoff package, and
+V3c completion audit implemented.
 
 User job:
 
@@ -247,6 +255,7 @@ Prerequisites:
 - Optional design files do not become mandatory by accident.
 - V3a minimal publishing has tests.
 - V3b handoff package publishing has tests.
+- V3c completion audit has tests.
 
 ## Active Decisions From Critique
 

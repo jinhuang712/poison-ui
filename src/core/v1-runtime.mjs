@@ -126,6 +126,10 @@ const V3B_HANDOFF_FILES = [
   "design/handoff/open-questions.md",
   "design/handoff/backlog.md",
 ];
+const COMPLETION_AUDIT_ARTIFACTS = [
+  "completion-audit-packet.md",
+  "completion-report.md",
+];
 
 function now() {
   return new Date().toISOString();
@@ -786,6 +790,18 @@ function validateDesignManifest(manifest, runState, errors) {
   }
 }
 
+function validateCompletionReport(runDir, errors) {
+  const path = join(runDir, "completion-report.md");
+  if (!existsSync(path)) {
+    return;
+  }
+
+  const content = readFileSync(path, "utf8");
+  if (/\b\d+\s*%/.test(content) || content.includes("completionPercent")) {
+    errors.push("completion-report.md must not publish percentages");
+  }
+}
+
 function validateStateArtifacts(runDir, state, errors) {
   if (!Array.isArray(state.artifacts)) {
     return;
@@ -832,6 +848,16 @@ function validateStateArtifacts(runDir, state, errors) {
     for (const artifact of ROUND_ARTIFACTS) {
       if (!state.artifacts.includes(artifact)) {
         errors.push(`visual-drift.json requires repair-rounds/001 artifacts: missing ${artifact}`);
+      }
+    }
+  }
+  if (COMPLETION_AUDIT_ARTIFACTS.some((artifact) => state.artifacts.includes(artifact))) {
+    if (state.status !== "published") {
+      errors.push("completion audit artifacts require published status");
+    }
+    for (const artifact of COMPLETION_AUDIT_ARTIFACTS) {
+      if (!state.artifacts.includes(artifact)) {
+        errors.push(`completion audit requires ${artifact}`);
       }
     }
   }
@@ -1436,6 +1462,18 @@ export function schemaCheckRun(projectRoot = process.cwd(), { runPath } = {}) {
     if (drift) {
       validateVisualDriftReport(drift, state, errors);
     }
+  }
+  const hasCompletionAuditArtifacts =
+    COMPLETION_AUDIT_ARTIFACTS.some((artifact) => (
+      (state?.artifacts || []).includes(artifact) || existsSync(join(run.absolutePath, artifact))
+    ));
+  if (hasCompletionAuditArtifacts) {
+    if (state?.status !== "published") {
+      errors.push("completion audit requires published status");
+    }
+    requireMarkdownSections(run.absolutePath, "completion-audit-packet.md", ["Summary", "Source Evidence", "Audit Inputs", "Next Actions"], errors);
+    requireMarkdownSections(run.absolutePath, "completion-report.md", ["Summary", "Completion Labels", "Blocked Output", "Next Actions"], errors);
+    validateCompletionReport(run.absolutePath, errors);
   }
   if (state?.status === "published") {
     const designRoot = join(projectRoot, "design");
@@ -2306,5 +2344,107 @@ export function publishHandoffPackage(projectRoot = process.cwd(), { runPath } =
     previousStatus: null,
     blockedReason: null,
     nextRecommendedAction: "schema-check",
+  });
+}
+
+export function writeCompletionAudit(projectRoot = process.cwd(), { runPath } = {}) {
+  const run = normalizeRunPath(projectRoot, runPath);
+  const state = readState(run.absolutePath);
+  if (state.status !== "published") {
+    throw new Error(`completion audit requires published V3 source, got ${state.status}`);
+  }
+
+  const manifestPath = join(projectRoot, "design", "manifest.json");
+  if (!existsSync(manifestPath)) {
+    const message = "completion audit requires design/manifest.json";
+    blockRun(run.absolutePath, state, message, "publish-design");
+    throw new Error(message);
+  }
+
+  const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+  if (manifest.packageStatus !== "HANDOFF_READY") {
+    const message = "completion audit requires HANDOFF_READY handoff package";
+    blockRun(run.absolutePath, state, message, "publish-handoff");
+    throw new Error(message);
+  }
+
+  const sourceSchema = schemaCheckRun(projectRoot, { runPath });
+  if (!sourceSchema.ok) {
+    const message = `completion audit requires valid V3b package: ${sourceSchema.errors.join("; ")}`;
+    blockRun(run.absolutePath, state, message, "schema-check");
+    throw new Error(message);
+  }
+
+  const auditInputs = [
+    "design/manifest.json",
+    "design/handoff.md",
+    ...V3B_HANDOFF_FILES,
+  ];
+  const sourceEvidence = [
+    ...auditInputs,
+    ...(manifest.sourceArtifacts || []),
+  ];
+
+  writeMarkdown(
+    run.absolutePath,
+    run.runId,
+    "completion-audit-packet.md",
+    "READY",
+    "completion-audit",
+    [
+      "# Completion Audit Packet",
+      "",
+      "## Summary",
+      "V3c assembles deterministic audit inputs from the published V3b handoff package.",
+      "",
+      "## Source Evidence",
+      ...sourceEvidence.map((artifact) => `- ${artifact}`),
+      "",
+      "## Audit Inputs",
+      ...auditInputs.map((artifact) => `- ${artifact}`),
+      "",
+      "## Next Actions",
+      "- review completion-report.md labels before expanding the design package",
+      "",
+    ].join("\n"),
+  );
+
+  writeMarkdown(
+    run.absolutePath,
+    run.runId,
+    "completion-report.md",
+    "READY",
+    "completion-audit",
+    [
+      "# Completion Report",
+      "",
+      "## Summary",
+      "V3c reports evidence-backed completion labels without percentages or broader package generation.",
+      "",
+      "## Completion Labels",
+      "- IMPLEMENTED: V3a minimal design handoff",
+      "- IMPLEMENTED: V3b handoff package",
+      "- BLOCKED: completion percentage requires a deterministic denominator",
+      "- BLOCKED: screen, flow, and review package expansion requires a later gate",
+      "- BLOCKED: seed, full, and broad generation modes remain deferred",
+      "",
+      "## Blocked Output",
+      "- no completion percentage is published",
+      "- no design/screens output is published",
+      "- no design/flows output is published",
+      "- no design/review output is published",
+      "",
+      "## Next Actions",
+      "- keep V3d mode readiness blocked until audit labels are reviewed",
+      "",
+    ].join("\n"),
+  );
+
+  return writeState(run.absolutePath, {
+    ...addArtifacts(state, COMPLETION_AUDIT_ARTIFACTS),
+    status: "published",
+    previousStatus: null,
+    blockedReason: null,
+    nextRecommendedAction: "review-completion-audit",
   });
 }

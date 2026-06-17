@@ -127,6 +127,10 @@ completion-report.md
   V3a files plus handoff package files, validates each handoff file section,
   and still rejects completion percentages, screens, flows, or review package
   output.
+- V3c completion audit validates run-local `completion-audit-packet.md` and
+  `completion-report.md` only when those artifacts exist. The report must use
+  evidence-backed labels and must not publish percentages or create
+  `design/review`, screen, or flow output.
 
 Gate must call `schema-check` or an equivalent core module. Missing schema
 metadata prevents entering `gated`.

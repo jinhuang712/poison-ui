@@ -108,6 +108,12 @@ V3b handoff publishing adds only project-root `design/handoff/` files:
 screens, flows, review package files, completion percentages, seed, or
 full-generation output.
 
+V3c completion audit writes only run-local `completion-audit-packet.md` and
+`completion-report.md`. It labels evidence-backed package coverage and keeps
+`design/manifest.json` unchanged at `HANDOFF_READY`; it does not create
+`design/review`, screens, flows, completion percentages, seed, or
+full-generation output.
+
 ## Generated Evidence
 
 Generated evidence can be ignored by default:

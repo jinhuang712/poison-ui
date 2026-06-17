@@ -23,7 +23,7 @@ useful.
 |---|---|---|---|
 | V3a Evidence-to-design publish | implemented | `design/manifest.json` and `design/handoff.md` from a gated V2 run | Do not start wider package files until the manifest has `sourceRunId` and evidence refs. |
 | V3b Handoff package | implemented | source-mapped `design/handoff/implementation-map.md`, `acceptance-checklist.md`, `open-questions.md`, and `backlog.md` | Do not start completion audit until handoff files pass schema-check. |
-| V3c Completion audit | next | evidence-backed coverage labels only | Do not publish percentages until mapping and evidence are deterministic. |
+| V3c Completion audit | implemented | run-local evidence-backed coverage labels only | Do not publish percentages until mapping and evidence are deterministic. |
 | V3d Mode readiness | deferred | readiness decisions for design-producing modes | Do not run generation while product ambiguity is unresolved. |
 | V3e Generation modes | deferred | one mode at a time, preferably `evolve` before `seed` or `full` | Do not make generation the default first-user path. |
 
@@ -64,11 +64,15 @@ useful.
 - V3b must not write completion percentages, screens, flows, review package,
   seed, full-generation, or adapter-maturity output.
 
-## Current V3c Entry Criteria
+## Current V3c Exit Criteria
 
 - V3b handoff package passes `schema-check`.
-- Completion audit labels can be mapped to source artifacts.
-- Percentages remain blocked until a deterministic denominator exists.
+- `poison audit-completion --run <run-path>` writes only
+  `completion-audit-packet.md` and `completion-report.md` inside the run
+  directory.
+- Completion labels map to source artifacts and do not publish percentages.
+- V3c does not create `design/review`, screens, flows, seed, full-generation,
+  or adapter-maturity output.
 
 ## Weighting
 
@@ -110,6 +114,7 @@ useful.
 
 - V3a can publish a coherent minimal `design/` handoff package.
 - V3b can publish source-mapped handoff files without broader package output.
+- V3c can publish run-local completion labels without percentages.
 - Package files explain implementation scope and evidence source.
 - Completion audit distinguishes implemented, partial, missing, deviation, and
   blocked requirements.

@@ -11,6 +11,7 @@ import {
   recordDegradedCapture,
   hardenRun,
   initializeProtectedFeatures,
+  writeCompletionAudit,
   publishDesignSnapshot,
   publishHandoffPackage,
   routeRepairs,
@@ -2139,4 +2140,82 @@ test("publish handoff package requires V3a manifest first", () => {
   assert.equal(state.previousStatus, "gated");
   assert.equal(state.nextRecommendedAction, "publish-design");
   assert.equal(existsSync(join(project, "design", "handoff")), false);
+});
+
+test("completion audit writes source-backed labels after V3b handoff package", () => {
+  const project = makeProject();
+  const run = createRegatedV2Run(project, "completion audit");
+  writeRegressionResults(project, { runPath: run.relativePath });
+  writeVisualDriftReport(project, { runPath: run.relativePath });
+  publishDesignSnapshot(project, { runPath: run.relativePath });
+  publishHandoffPackage(project, { runPath: run.relativePath });
+
+  writeCompletionAudit(project, { runPath: run.relativePath });
+
+  const packet = readFileSync(join(run.absolutePath, "completion-audit-packet.md"), "utf8");
+  assert.match(packet, /## Source Evidence/);
+  assert.match(packet, /design\/handoff\/implementation-map\.md/);
+  assert.match(packet, /design\/handoff\/acceptance-checklist\.md/);
+
+  const report = readFileSync(join(run.absolutePath, "completion-report.md"), "utf8");
+  assert.match(report, /## Completion Labels/);
+  assert.match(report, /IMPLEMENTED: V3a minimal design handoff/);
+  assert.match(report, /IMPLEMENTED: V3b handoff package/);
+  assert.match(report, /BLOCKED: completion percentage requires a deterministic denominator/);
+  assert.match(report, /BLOCKED: screen, flow, and review package expansion requires a later gate/);
+  assert.doesNotMatch(report, /\d+\s*%/);
+  assert.doesNotMatch(report, /completionPercent/);
+
+  assert.equal(existsSync(join(project, "design", "screens")), false);
+  assert.equal(existsSync(join(project, "design", "flows")), false);
+  assert.equal(existsSync(join(project, "design", "review")), false);
+
+  const state = readJson(join(run.absolutePath, "run-state.json"));
+  assert.equal(state.status, "published");
+  assert.ok(state.artifacts.includes("completion-audit-packet.md"));
+  assert.ok(state.artifacts.includes("completion-report.md"));
+
+  const schema = schemaCheckRun(project, { runPath: run.relativePath });
+  assert.deepEqual(schema.errors, []);
+});
+
+test("completion audit requires V3b handoff package first", () => {
+  const project = makeProject();
+  const run = createRegatedV2Run(project, "completion too early");
+  writeRegressionResults(project, { runPath: run.relativePath });
+  writeVisualDriftReport(project, { runPath: run.relativePath });
+  publishDesignSnapshot(project, { runPath: run.relativePath });
+
+  assert.throws(
+    () => writeCompletionAudit(project, { runPath: run.relativePath }),
+    /completion audit requires HANDOFF_READY handoff package/,
+  );
+  const state = readJson(join(run.absolutePath, "run-state.json"));
+  assert.equal(state.status, "blocked");
+  assert.equal(state.previousStatus, "published");
+  assert.equal(state.nextRecommendedAction, "publish-handoff");
+  assert.equal(existsSync(join(run.absolutePath, "completion-report.md")), false);
+});
+
+test("schema check rejects completion audit percentages", () => {
+  const project = makeProject();
+  const run = createRegatedV2Run(project, "completion percentage");
+  writeRegressionResults(project, { runPath: run.relativePath });
+  writeVisualDriftReport(project, { runPath: run.relativePath });
+  publishDesignSnapshot(project, { runPath: run.relativePath });
+  publishHandoffPackage(project, { runPath: run.relativePath });
+  writeCompletionAudit(project, { runPath: run.relativePath });
+
+  const reportPath = join(run.absolutePath, "completion-report.md");
+  writeFileSync(
+    reportPath,
+    readFileSync(reportPath, "utf8").replace(
+      "## Blocked Output",
+      "## Blocked Output\n- Overall completion: 80%",
+    ),
+  );
+
+  const schema = schemaCheckRun(project, { runPath: run.relativePath });
+  assert.equal(schema.ok, false);
+  assert.match(schema.errors.join("\n"), /completion-report\.md must not publish percentages/);
 });

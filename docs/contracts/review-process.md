@@ -192,7 +192,8 @@ Completion states:
 - `blocked`: design, runtime, screenshots, or evidence are insufficient
 
 Completion audit conclusions must be evidence-backed. Unsupported opinions do
-not count toward completion percentage.
+not count toward completion labels. Percentages require a later deterministic
+denominator and must not be published by V3c.
 
 ## Visual Quality And Memory
 

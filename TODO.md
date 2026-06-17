@@ -107,19 +107,24 @@ items as they are completed.
 - Completion percentages, seed generation, full generation, screens, flows,
   and review package expansion remain deferred.
 
-## Next: V3c Completion Audit
+## Completed: V3c Completion Audit
 
-- Add evidence-backed completion labels only after V3b handoff files pass
-  schema-check.
-- Do not publish percentages until mapping and evidence are deterministic.
-- Keep V3 implementation limited to
-  [V3 Design Package Mode](./docs/delivery/v3-design-package.md) and do not
-  start adapter maturity work until package traceability is stable.
+- `poison audit-completion --run <run>` writes run-local
+  `completion-audit-packet.md` and `completion-report.md`.
+- Completion labels are evidence-backed and do not publish percentages.
+- V3c does not create `design/review`, `design/screens`, `design/flows`, seed,
+  full-generation, or adapter-maturity output.
+
+## Next: V4a Command Semantics Freeze
+
+- Freeze observable CLI behavior for existing V1-V3c commands before adapter
+  parity work starts.
+- Keep V4a limited to command semantics, exit behavior, and blocked-state
+  recovery contracts.
 
 ## Deferred: V4 And VN
 
-- Do not implement adapter parity, package release, or distribution until V3
-  publish traceability is stable.
+- Do not implement adapter parity, package release, or distribution in V4a.
 - Keep manual evidence registration in VN. If V1 automation is unavailable, V1
   records degraded evidence or a blocked state instead of registering manual
   evidence.
