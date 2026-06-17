@@ -18,9 +18,9 @@ them across adapters instead of inventing new workflow behavior.
 
 ## Milestone Ladder
 
-| Slice | Owns | Must-not-start gate |
-|---|---|---|
-| V4a Command semantics freeze | exit codes, error categories, state-transition failures | Do not start adapter parity until the shared CLI/core semantics are stable. |
+| Slice | Status | Owns | Must-not-start gate |
+|---|---|---|---|
+| V4a Command semantics freeze | implemented | exit codes, output channels, state-transition failures, blocked metadata | Do not start adapter parity until the shared CLI/core semantics are stable. |
 | V4b Fixture contract suite | one harness running V1-V3 fixture transcripts | Do not add adapter matrix breadth until one harness catches contract drift. |
 | V4c First adapter parity | one additional adapter using shared command/core modules | Do not package until parity proves no behavior fork. |
 | V4d Harness degradation | missing browser, console, subagent, file capability handling | Do not declare support without degradation transcripts. |
@@ -38,6 +38,18 @@ them across adapters instead of inventing new workflow behavior.
   capabilities.
 - Documentation for how adapters call the shared command/core modules.
 - Package validation report.
+
+## Current V4a Exit Criteria
+
+- Existing V1-V3c commands have frozen success and failure output channels.
+- Usage errors and illegal command ordering exit with stderr and do not mutate
+  run state.
+- `schema-check` failures exit with stdout diagnostics and do not mutate run
+  state.
+- `gate` failures from a legal reviewed state write `gate-report.md`, move to
+  `blocked`, and preserve recovery metadata.
+- V4a does not add adapters, packaging, release docs, package validation, or
+  harness matrices.
 
 ## Weighting
 

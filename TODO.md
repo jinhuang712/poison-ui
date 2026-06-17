@@ -115,16 +115,23 @@ items as they are completed.
 - V3c does not create `design/review`, `design/screens`, `design/flows`, seed,
   full-generation, or adapter-maturity output.
 
-## Next: V4a Command Semantics Freeze
+## Completed: V4a Command Semantics Freeze
 
-- Freeze observable CLI behavior for existing V1-V3c commands before adapter
-  parity work starts.
-- Keep V4a limited to command semantics, exit behavior, and blocked-state
-  recovery contracts.
+- Observable CLI behavior is covered for existing V1-V3c command success and
+  failure classes.
+- Usage errors and illegal command order errors do not mutate run state.
+- `schema-check` and `gate` failure channels and blocked metadata are frozen.
+
+## Next: V4b Fixture Contract Suite
+
+- Add one harness-local fixture transcript suite that catches V1-V3c contract
+  drift.
+- Keep adapter matrix breadth, package release, and external harness parity
+  deferred.
 
 ## Deferred: V4 And VN
 
-- Do not implement adapter parity, package release, or distribution in V4a.
+- Do not implement adapter parity, package release, or distribution in V4b.
 - Keep manual evidence registration in VN. If V1 automation is unavailable, V1
   records degraded evidence or a blocked state instead of registering manual
   evidence.

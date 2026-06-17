@@ -136,6 +136,28 @@ package passes schema-check. It does not publish percentages or write
 poison audit-completion --run .poison/runs/001-poisoned-demo
 ```
 
+## V4a Command Semantics Freeze
+
+V4a freezes observable CLI behavior for the implemented V1-V3c commands so
+future adapters can call shared command/core behavior without inventing private
+semantics.
+
+Current frozen result classes:
+
+| Result class | Exit | stdout | stderr | State mutation |
+|---|---:|---|---|---|
+| Help | 0 | usage text | empty | none |
+| Successful action | 0 | `<command>: ...` | empty | command-specific legal transition |
+| Unknown command | 1 | empty | `Unknown command: <name>` | none |
+| Missing required option | 1 | empty | option error, such as `--run is required` | none |
+| Illegal command order before command starts | 1 | empty | order error | none |
+| `schema-check` failure | 1 | `schema-check: FAIL` plus errors | empty | none |
+| `gate` hard-check failure from a legal source state | 1 | `gate: FAIL` | empty | writes `gate-report.md` and moves to `blocked` |
+| Degraded browser capture fallback | 0 | `capture: degraded evidence recorded` | empty | moves to `captured` with degraded evidence |
+
+When a command moves a run to `blocked`, it must preserve `previousStatus`,
+write a concrete `blockedReason`, and set `nextRecommendedAction`.
+
 ## Later Deterministic Action Mappings
 
 These actions exist for testing, adapter calls, and dry-run workflows. They are

@@ -40,9 +40,8 @@ The repository currently provides:
 - An operational `skills/poison/SKILL.md` entrypoint that routes behavior to
   contract owners.
 
-The repository does not yet provide multi-reviewer review, V4 command
-semantics freeze, screen/flow/review package expansion, or later
-seed/evolve/full modes.
+The repository does not yet provide multi-reviewer review, V4 fixture contract
+suite, screen/flow/review package expansion, or later seed/evolve/full modes.
 
 ## Active
 
@@ -64,6 +63,8 @@ The most recent completed implementation direction was:
   broader design package expansion.
 - V3c completion audit: write run-local audit packet and report labels without
   percentages or broader design package expansion.
+- V4a command semantics freeze: lock observable CLI success/failure channels,
+  illegal command-order behavior, and blocked-state recovery metadata.
 
 Recent acceptance checks:
 
@@ -111,18 +112,20 @@ Recent acceptance checks:
 - `audit-completion` writes `completion-audit-packet.md` and
   `completion-report.md` in the run directory and keeps `design/review`,
   percentages, screens, and flows absent.
+- V4a CLI semantics tests cover help, unknown command, missing `--run`,
+  schema-check failure, gate failure, illegal early gate, and blocked metadata.
 
 ## Blocked
 
 These items must not begin implementation yet:
 
-- V4 adapter/packaging work is blocked until V4a command semantics are frozen.
+- V4 adapter/packaging work is blocked until fixture contract coverage exists.
 
 ## Next
 
-Continue V4 only as a narrow command-semantics freeze:
+Continue V4 only as a narrow fixture contract suite:
 
-- Freeze observable CLI behavior for existing V1-V3c commands.
+- Add one harness-local fixture transcript suite for V1-V3c contract drift.
 - Keep adapter parity, packaging, release, seed/full generation, and
   screen/flow/review expansion blocked.
 

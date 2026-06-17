@@ -4,6 +4,10 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
+- Implemented V4a command semantics freeze with CLI integration tests for
+  help, success/failure output channels, unknown commands, missing options,
+  schema-check failures, gate failures, blocked recovery metadata, and illegal
+  command ordering without adapter parity or packaging work.
 - Implemented V3c completion audit with `poison audit-completion`, run-local
   `completion-audit-packet.md` and `completion-report.md`, evidence-backed
   labels, schema coverage, and CLI dry-run support without percentages or
