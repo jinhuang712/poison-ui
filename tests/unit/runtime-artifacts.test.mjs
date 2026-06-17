@@ -12,6 +12,7 @@ import {
   hardenRun,
   initializeProtectedFeatures,
   publishDesignSnapshot,
+  publishHandoffPackage,
   routeRepairs,
   writeRegressionResults,
   writeVisualDriftReport,
@@ -2068,4 +2069,74 @@ test("publish design snapshot requires gated V2 source artifacts", () => {
   assert.equal(state.previousStatus, "gated");
   assert.equal(state.nextRecommendedAction, "harden");
   assert.equal(existsSync(join(project, "design")), false);
+});
+
+test("publish handoff package expands only source-mapped handoff files after V3a publish", () => {
+  const project = makeProject();
+  const run = createRegatedV2Run(project, "publish handoff package");
+  writeRegressionResults(project, { runPath: run.relativePath });
+  writeVisualDriftReport(project, { runPath: run.relativePath });
+  publishDesignSnapshot(project, { runPath: run.relativePath });
+
+  publishHandoffPackage(project, { runPath: run.relativePath });
+
+  const manifest = readJson(join(project, "design", "manifest.json"));
+  assert.equal(manifest.sourceRunId, run.runId);
+  assert.equal(manifest.packageStatus, "HANDOFF_READY");
+  assert.deepEqual(manifest.files, [
+    "design/manifest.json",
+    "design/handoff.md",
+    "design/handoff/implementation-map.md",
+    "design/handoff/acceptance-checklist.md",
+    "design/handoff/open-questions.md",
+    "design/handoff/backlog.md",
+  ]);
+  assert.equal("completionPercent" in manifest, false);
+
+  const implementationMap = readFileSync(join(project, "design", "handoff", "implementation-map.md"), "utf8");
+  assert.match(implementationMap, new RegExp(`sourceRunId: ${run.runId}`));
+  assert.match(implementationMap, /## Source Evidence/);
+  assert.match(implementationMap, /review-summary\.md/);
+  assert.match(implementationMap, /visual-drift\.json/);
+
+  const checklist = readFileSync(join(project, "design", "handoff", "acceptance-checklist.md"), "utf8");
+  assert.match(checklist, /## Acceptance Checks/);
+  assert.match(checklist, /source evidence remains traceable/);
+
+  const openQuestions = readFileSync(join(project, "design", "handoff", "open-questions.md"), "utf8");
+  assert.match(openQuestions, /## Open Questions/);
+  assert.match(openQuestions, /none/);
+
+  const backlog = readFileSync(join(project, "design", "handoff", "backlog.md"), "utf8");
+  assert.match(backlog, /## Backlog/);
+  assert.match(backlog, /none/);
+
+  assert.equal(existsSync(join(project, "design", "screens")), false);
+  assert.equal(existsSync(join(project, "design", "flows")), false);
+  assert.equal(existsSync(join(project, "design", "review")), false);
+
+  const state = readJson(join(run.absolutePath, "run-state.json"));
+  assert.equal(state.status, "published");
+  assert.ok(state.artifacts.includes("design/handoff/implementation-map.md"));
+  assert.ok(state.artifacts.includes("design/handoff/acceptance-checklist.md"));
+
+  const schema = schemaCheckRun(project, { runPath: run.relativePath });
+  assert.deepEqual(schema.errors, []);
+});
+
+test("publish handoff package requires V3a manifest first", () => {
+  const project = makeProject();
+  const run = createRegatedV2Run(project, "handoff too early");
+  writeRegressionResults(project, { runPath: run.relativePath });
+  writeVisualDriftReport(project, { runPath: run.relativePath });
+
+  assert.throws(
+    () => publishHandoffPackage(project, { runPath: run.relativePath }),
+    /publish handoff package requires design\/manifest\.json/,
+  );
+  const state = readJson(join(run.absolutePath, "run-state.json"));
+  assert.equal(state.status, "blocked");
+  assert.equal(state.previousStatus, "gated");
+  assert.equal(state.nextRecommendedAction, "publish-design");
+  assert.equal(existsSync(join(project, "design", "handoff")), false);
 });

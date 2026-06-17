@@ -102,6 +102,12 @@ V3a minimal publishing writes only project-root `design/manifest.json` and
 `design/screens`, `design/review`, `design/flows`, completion audit, seed, or
 full-generation output.
 
+V3b handoff publishing adds only project-root `design/handoff/` files:
+`implementation-map.md`, `acceptance-checklist.md`, `open-questions.md`, and
+`backlog.md`. It updates the manifest to `HANDOFF_READY` and does not create
+screens, flows, review package files, completion percentages, seed, or
+full-generation output.
+
 ## Generated Evidence
 
 Generated evidence can be ignored by default:

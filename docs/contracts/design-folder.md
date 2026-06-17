@@ -61,6 +61,20 @@ design/
 V3a starts with only these two files. Wider review, screen, flow, interaction,
 ADR, and handoff subtrees are optional later package expansions.
 
+V3b may add only the handoff subtree:
+
+```text
+design/
+  handoff/
+    implementation-map.md
+    acceptance-checklist.md
+    open-questions.md
+    backlog.md
+```
+
+Those files must map back to the V3a source artifacts and must not imply that
+screen, flow, review, completion audit, seed, or full-generation output exists.
+
 If a runnable prototype is part of the handoff, add:
 
 ```text

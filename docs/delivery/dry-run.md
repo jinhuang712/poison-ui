@@ -65,6 +65,9 @@ node bin/poison.mjs visual-drift \
 
 node bin/poison.mjs publish-design \
   --run .poison/runs/001-poisoned-demo
+
+node bin/poison.mjs publish-handoff \
+  --run .poison/runs/001-poisoned-demo
 ```
 
 ## Degraded Evidence Path

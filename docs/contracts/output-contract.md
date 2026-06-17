@@ -86,6 +86,10 @@ Later-version artifacts:
 ```text
 design/manifest.json
 design/handoff.md
+design/handoff/implementation-map.md
+design/handoff/acceptance-checklist.md
+design/handoff/open-questions.md
+design/handoff/backlog.md
 context-pack.md
 scope-assessment.md
 design-rationale.md
@@ -119,6 +123,10 @@ completion-report.md
 - V3a design publishing writes only `design/manifest.json` and
   `design/handoff.md`, both tied to a source run and source artifacts. Missing
   broader design package files must not fail V3a.
+- V3b handoff publishing requires manifest `HANDOFF_READY`, exactly lists the
+  V3a files plus handoff package files, validates each handoff file section,
+  and still rejects completion percentages, screens, flows, or review package
+  output.
 
 Gate must call `schema-check` or an equivalent core module. Missing schema
 metadata prevents entering `gated`.

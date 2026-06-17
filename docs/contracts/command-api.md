@@ -117,6 +117,15 @@ source run:
 poison publish-design --run .poison/runs/001-poisoned-demo
 ```
 
+## V3b Deterministic Action Mapping
+
+This action expands the published handoff package only with files that map back
+to the V3a source artifacts:
+
+```bash
+poison publish-handoff --run .poison/runs/001-poisoned-demo
+```
+
 ## Later Deterministic Action Mappings
 
 These actions exist for testing, adapter calls, and dry-run workflows. They are

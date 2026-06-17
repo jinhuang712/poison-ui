@@ -119,6 +119,13 @@ const DESIGN_MANIFEST_ALLOWED_FIELDS = new Set([
   "files",
   "sourceArtifacts",
 ]);
+const V3A_DESIGN_FILES = ["design/manifest.json", "design/handoff.md"];
+const V3B_HANDOFF_FILES = [
+  "design/handoff/implementation-map.md",
+  "design/handoff/acceptance-checklist.md",
+  "design/handoff/open-questions.md",
+  "design/handoff/backlog.md",
+];
 
 function now() {
   return new Date().toISOString();
@@ -759,20 +766,22 @@ function validateDesignManifest(manifest, runState, errors) {
   if (manifest.sourceRunId !== runState.runId) {
     errors.push("design/manifest.json sourceRunId must match run-state");
   }
-  if (manifest.packageStatus !== "MINIMAL_READY") {
-    errors.push("design/manifest.json packageStatus must be MINIMAL_READY");
+  if (manifest.packageStatus !== "MINIMAL_READY" && manifest.packageStatus !== "HANDOFF_READY") {
+    errors.push("design/manifest.json packageStatus must be MINIMAL_READY or HANDOFF_READY");
   }
   if (typeof manifest.publishedAt !== "string" || manifest.publishedAt.trim() === "") {
     errors.push("design/manifest.json publishedAt is required");
   }
-  const expectedFiles = ["design/manifest.json", "design/handoff.md"];
+  const expectedFiles = manifest.packageStatus === "HANDOFF_READY"
+    ? [...V3A_DESIGN_FILES, ...V3B_HANDOFF_FILES]
+    : V3A_DESIGN_FILES;
   if (!Array.isArray(manifest.files) || JSON.stringify(manifest.files) !== JSON.stringify(expectedFiles)) {
-    errors.push("design/manifest.json files must exactly list minimal V3a files");
+    errors.push(`design/manifest.json files must exactly list ${manifest.packageStatus === "HANDOFF_READY" ? "V3b handoff package" : "minimal V3a"} files`);
   }
   if (!Array.isArray(manifest.sourceArtifacts) || manifest.sourceArtifacts.length === 0) {
     errors.push("design/manifest.json sourceArtifacts must be a non-empty array");
   }
-  if ("completionPercent" in manifest || "screens" in manifest || "flows" in manifest) {
+  if ("completionPercent" in manifest || "screens" in manifest || "flows" in manifest || "review" in manifest) {
     errors.push("design/manifest.json must not include broader V3 package output");
   }
 }
@@ -1433,6 +1442,12 @@ export function schemaCheckRun(projectRoot = process.cwd(), { runPath } = {}) {
     const manifest = readJsonArtifact(projectRoot, "design/manifest.json", errors);
     if (manifest) {
       validateDesignManifest(manifest, state, errors);
+      if (manifest.packageStatus === "HANDOFF_READY") {
+        requireMarkdownSections(designRoot, "handoff/implementation-map.md", ["Summary", "Source Evidence", "Implementation Map", "Next Actions"], errors);
+        requireMarkdownSections(designRoot, "handoff/acceptance-checklist.md", ["Summary", "Source Evidence", "Acceptance Checks", "Next Actions"], errors);
+        requireMarkdownSections(designRoot, "handoff/open-questions.md", ["Summary", "Source Evidence", "Open Questions", "Next Actions"], errors);
+        requireMarkdownSections(designRoot, "handoff/backlog.md", ["Summary", "Source Evidence", "Backlog", "Next Actions"], errors);
+      }
     }
     requireMarkdownSections(designRoot, "handoff.md", ["Implementation Scope", "Source Evidence", "Open Questions", "Next Actions"], errors);
   }
@@ -2125,5 +2140,171 @@ export function publishDesignSnapshot(projectRoot = process.cwd(), { runPath } =
     previousStatus: null,
     blockedReason: null,
     nextRecommendedAction: "review-design-handoff",
+  });
+}
+
+export function publishHandoffPackage(projectRoot = process.cwd(), { runPath } = {}) {
+  const run = normalizeRunPath(projectRoot, runPath);
+  const state = readState(run.absolutePath);
+  const designDir = join(projectRoot, "design");
+  const manifestPath = join(designDir, "manifest.json");
+  const handoffPath = join(designDir, "handoff.md");
+
+  if (!existsSync(manifestPath)) {
+    const message = "publish handoff package requires design/manifest.json";
+    blockRun(run.absolutePath, state, message, "publish-design");
+    throw new Error(message);
+  }
+  if (!existsSync(handoffPath)) {
+    const message = "publish handoff package requires design/handoff.md";
+    blockRun(run.absolutePath, state, message, "publish-design");
+    throw new Error(message);
+  }
+  if (state.status !== "published") {
+    throw new Error(`publish handoff package requires published V3a source, got ${state.status}`);
+  }
+
+  const sourceSchema = schemaCheckRun(projectRoot, { runPath });
+  if (!sourceSchema.ok) {
+    const message = `publish handoff package requires valid V3a source: ${sourceSchema.errors.join("; ")}`;
+    blockRun(run.absolutePath, state, message, "schema-check");
+    throw new Error(message);
+  }
+
+  const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+  const sourceArtifacts = manifest.sourceArtifacts || [];
+  const sourceEvidence = sourceArtifacts.length === 0
+    ? ["none"]
+    : sourceArtifacts.map((artifact) => `- ${artifact}`);
+  const handoffDir = join(designDir, "handoff");
+  ensureDir(handoffDir);
+
+  writeFileSync(join(handoffDir, "implementation-map.md"), [
+    "---",
+    "schemaVersion: 1",
+    `sourceRunId: ${run.runId}`,
+    "artifact: design/handoff/implementation-map.md",
+    "status: READY",
+    "source: publish-handoff",
+    `updatedAt: ${now()}`,
+    "---",
+    "",
+    "# Implementation Map",
+    "",
+    "## Summary",
+    "V3b maps the handoff package back to the gated V2 source artifacts without introducing new product scope.",
+    "",
+    "## Source Evidence",
+    ...sourceEvidence,
+    "",
+    "## Implementation Map",
+    "- review-summary.md: source findings and current implementation concerns",
+    "- gate-report.md: latest hard-gate verdict",
+    "- repair-rounds/001/round-summary.md: bounded repair round outcome",
+    "- repair-rounds/001/regression-results.json: protected feature regression source",
+    "- repair-rounds/001/visual-drift.json: visual drift evidence source",
+    "",
+    "## Next Actions",
+    "- use this map as the source index for the next completion audit",
+    "",
+  ].join("\n"));
+
+  writeFileSync(join(handoffDir, "acceptance-checklist.md"), [
+    "---",
+    "schemaVersion: 1",
+    `sourceRunId: ${run.runId}`,
+    "artifact: design/handoff/acceptance-checklist.md",
+    "status: READY",
+    "source: publish-handoff",
+    `updatedAt: ${now()}`,
+    "---",
+    "",
+    "# Acceptance Checklist",
+    "",
+    "## Summary",
+    "V3b checklist captures only handoff readiness checks that can be traced to existing source artifacts.",
+    "",
+    "## Source Evidence",
+    ...sourceEvidence,
+    "",
+    "## Acceptance Checks",
+    "- source evidence remains traceable",
+    "- design/manifest.json lists only V3a and V3b handoff files",
+    "- no completion percentage is claimed",
+    "- no screens, flows, review package, or generated design assets are introduced",
+    "",
+    "## Next Actions",
+    "- run schema-check before any completion audit",
+    "",
+  ].join("\n"));
+
+  writeFileSync(join(handoffDir, "open-questions.md"), [
+    "---",
+    "schemaVersion: 1",
+    `sourceRunId: ${run.runId}`,
+    "artifact: design/handoff/open-questions.md",
+    "status: READY",
+    "source: publish-handoff",
+    `updatedAt: ${now()}`,
+    "---",
+    "",
+    "# Open Questions",
+    "",
+    "## Summary",
+    "V3b records unresolved handoff questions without expanding the implementation scope.",
+    "",
+    "## Source Evidence",
+    ...sourceEvidence,
+    "",
+    "## Open Questions",
+    "none",
+    "",
+    "## Next Actions",
+    "- add questions here before starting broader V3 package work",
+    "",
+  ].join("\n"));
+
+  writeFileSync(join(handoffDir, "backlog.md"), [
+    "---",
+    "schemaVersion: 1",
+    `sourceRunId: ${run.runId}`,
+    "artifact: design/handoff/backlog.md",
+    "status: READY",
+    "source: publish-handoff",
+    `updatedAt: ${now()}`,
+    "---",
+    "",
+    "# Backlog",
+    "",
+    "## Summary",
+    "V3b keeps non-current handoff expansion out of scope until a later explicit gate.",
+    "",
+    "## Source Evidence",
+    ...sourceEvidence,
+    "",
+    "## Backlog",
+    "none",
+    "",
+    "## Next Actions",
+    "- start the completion audit only after this package passes schema-check",
+    "",
+  ].join("\n"));
+
+  const nextManifest = {
+    ...manifest,
+    sourceRunId: run.runId,
+    packageStatus: "HANDOFF_READY",
+    publishedAt: now(),
+    files: [...V3A_DESIGN_FILES, ...V3B_HANDOFF_FILES],
+    sourceArtifacts,
+  };
+  writeFileSync(manifestPath, `${JSON.stringify(nextManifest, null, 2)}\n`);
+
+  return writeState(run.absolutePath, {
+    ...addArtifacts(state, V3B_HANDOFF_FILES),
+    status: "published",
+    previousStatus: null,
+    blockedReason: null,
+    nextRecommendedAction: "schema-check",
   });
 }

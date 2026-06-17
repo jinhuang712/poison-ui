@@ -160,4 +160,22 @@ test("V1 review-first dry-run can initialize V2 protected baseline and repair pl
   assert.deepEqual(designManifest.files, ["design/manifest.json", "design/handoff.md"]);
   assert.match(readFileSync(join(project, "design", "handoff.md"), "utf8"), /## Source Evidence/);
   assert.equal(existsSync(join(project, "design", "screens")), false);
+
+  const handoffOutput = runPoison(project, ["publish-handoff", "--run", ".poison/runs/001-poisoned-demo"]);
+  assert.match(handoffOutput, /publish-handoff: handoff package written/);
+  state = readJson(join(runDir, "run-state.json"));
+  assert.equal(state.status, "published");
+  assert.ok(state.artifacts.includes("design/handoff/implementation-map.md"));
+  const handoffManifest = readJson(join(project, "design", "manifest.json"));
+  assert.equal(handoffManifest.packageStatus, "HANDOFF_READY");
+  assert.deepEqual(handoffManifest.files, [
+    "design/manifest.json",
+    "design/handoff.md",
+    "design/handoff/implementation-map.md",
+    "design/handoff/acceptance-checklist.md",
+    "design/handoff/open-questions.md",
+    "design/handoff/backlog.md",
+  ]);
+  assert.match(readFileSync(join(project, "design", "handoff", "implementation-map.md"), "utf8"), /## Implementation Map/);
+  assert.equal(existsSync(join(project, "design", "screens")), false);
 });

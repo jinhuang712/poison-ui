@@ -113,6 +113,7 @@ source state is a command-order error and must not silently mutate run state.
 | prototype output ready | `designing` | `prototype_ready` | `blocked` | designer/builder | no | inspectable prototype or design output |
 | capture generated prototype | `prototype_ready` | `captured` | `blocked` | CLI/browser adapter | yes | screenshots, manifest, console evidence, or degraded evidence artifact |
 | `publish-design` | `gated`, `published` | `published` | `blocked` | CLI/publisher | yes | `design/manifest.json`, `design/handoff.md`, publish manifest with `sourceRunId` |
+| `publish-handoff` | `published` | `published` | `blocked` | CLI/publisher | yes | `design/handoff/implementation-map.md`, `design/handoff/acceptance-checklist.md`, `design/handoff/open-questions.md`, `design/handoff/backlog.md`, manifest `HANDOFF_READY` |
 
 ## Hard Command Rules
 

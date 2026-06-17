@@ -4,6 +4,10 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
+- Implemented V3b handoff package publishing with `poison publish-handoff`,
+  source-mapped `design/handoff/*` files, manifest `HANDOFF_READY` status,
+  schema coverage, and CLI dry-run support without completion audit, screen,
+  flow, review, seed, or full-generation output.
 - Implemented V3a minimal design publishing with `poison publish-design`,
   `design/manifest.json`, `design/handoff.md`, source-run traceability, schema
   coverage, and CLI dry-run support without broader package output.

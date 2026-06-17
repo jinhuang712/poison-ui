@@ -98,11 +98,20 @@ items as they are completed.
 - V3a does not write wider screen, flow, review, completion percentage,
   seed/full generation, or adapter-maturity output.
 
-## Next: V3b Handoff Package
+## Completed: V3b Handoff Package
 
-- Add wider handoff files only when they map back to V3a source artifacts.
-- Keep completion percentages, seed generation, full generation, and broad
-  design package expansion deferred.
+- `poison publish-handoff --run <run>` writes only source-mapped handoff files
+  under `design/handoff/`.
+- The manifest moves to `packageStatus: HANDOFF_READY` and exactly lists the
+  V3a files plus V3b handoff files.
+- Completion percentages, seed generation, full generation, screens, flows,
+  and review package expansion remain deferred.
+
+## Next: V3c Completion Audit
+
+- Add evidence-backed completion labels only after V3b handoff files pass
+  schema-check.
+- Do not publish percentages until mapping and evidence are deterministic.
 - Keep V3 implementation limited to
   [V3 Design Package Mode](./docs/delivery/v3-design-package.md) and do not
   start adapter maturity work until package traceability is stable.

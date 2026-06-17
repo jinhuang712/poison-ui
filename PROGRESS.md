@@ -30,13 +30,15 @@ The repository currently provides:
   `repair-rounds/001/visual-drift.json` or an explicit visual evidence gap.
 - A V3a minimal publishing action for `publish-design` that writes only
   `design/manifest.json` and `design/handoff.md`.
+- A V3b handoff publishing action for `publish-handoff` that writes only
+  source-mapped files under `design/handoff/`.
 - Node built-in tests for the dry-run flow, run-state handling, degraded
   evidence reporting, schema checks, and the mechanical gate.
 - An operational `skills/poison/SKILL.md` entrypoint that routes behavior to
   contract owners.
 
-The repository does not yet provide multi-reviewer review, wider V3 handoff
-package files, completion audit, or later seed/evolve/full modes.
+The repository does not yet provide multi-reviewer review, completion audit,
+screen/flow/review package expansion, or later seed/evolve/full modes.
 
 ## Active
 
@@ -53,6 +55,9 @@ The most recent completed implementation direction was:
   screenshots exist, or an explicit `NO_VISUAL_EVIDENCE` gap when they do not.
 - V3a minimal design publishing: write a source-linked manifest and handoff
   from a gated V2 run without broader package output.
+- V3b handoff package: write source-mapped implementation map, acceptance
+  checklist, open questions, and backlog files without completion audit or
+  broader design package expansion.
 
 Recent acceptance checks:
 
@@ -95,8 +100,8 @@ Recent acceptance checks:
 - `publish-design` writes only `design/manifest.json` and `design/handoff.md`
   from a gated V2 source run.
 - Published design output includes `sourceRunId` and source artifact refs.
-
-Do not start V3b wider handoff files inside the V3a commit.
+- `publish-handoff` moves the manifest to `HANDOFF_READY` and keeps completion
+  percentages, screens, flows, and review package output absent.
 
 ## Blocked
 
@@ -106,11 +111,12 @@ These items must not begin implementation yet:
 
 ## Next
 
-Continue V3 only as a narrow handoff slice:
+Continue V3 only as a narrow completion-audit slice:
 
-- Add wider handoff files only when they map back to V3a source artifacts.
-- Keep completion percentages, seed/full generation, and adapter maturity
-  blocked.
+- Add evidence-backed completion labels only after V3b handoff package
+  schema-check passes.
+- Keep completion percentages, seed/full generation, screen/flow/review
+  expansion, and adapter maturity blocked.
 
 ## Deferred
 
@@ -213,8 +219,8 @@ Prerequisites:
 
 ## V3 Design Package Mode
 
-Status: active, V3a minimal evidence-to-design publishing implemented; V3b
-handoff package is next.
+Status: active, V3a minimal evidence-to-design publishing and V3b handoff
+package implemented; V3c completion audit is next.
 
 User job:
 
@@ -231,6 +237,8 @@ Design intent:
 - Add completion audit labels only when evidence mapping is deterministic.
 - Keep `seed`, `full`, and broad generation deferred until publish traceability
   is proven.
+- Keep screen, flow, and review package expansion deferred until completion
+  audit labels are evidence-backed.
 
 Prerequisites:
 
@@ -238,6 +246,7 @@ Prerequisites:
 - `design/` publishing is one-way from `.poison/runs` evidence.
 - Optional design files do not become mandatory by accident.
 - V3a minimal publishing has tests.
+- V3b handoff package publishing has tests.
 
 ## Active Decisions From Critique
 

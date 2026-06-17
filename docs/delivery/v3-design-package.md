@@ -22,8 +22,8 @@ useful.
 | Slice | Status | Owns | Must-not-start gate |
 |---|---|---|---|
 | V3a Evidence-to-design publish | implemented | `design/manifest.json` and `design/handoff.md` from a gated V2 run | Do not start wider package files until the manifest has `sourceRunId` and evidence refs. |
-| V3b Handoff package | next | screens, flows, interactions, and review notes when validated | Do not start completion audit until handoff files map to source evidence. |
-| V3c Completion audit | deferred | evidence-backed coverage labels only | Do not publish percentages until mapping and evidence are deterministic. |
+| V3b Handoff package | implemented | source-mapped `design/handoff/implementation-map.md`, `acceptance-checklist.md`, `open-questions.md`, and `backlog.md` | Do not start completion audit until handoff files pass schema-check. |
+| V3c Completion audit | next | evidence-backed coverage labels only | Do not publish percentages until mapping and evidence are deterministic. |
 | V3d Mode readiness | deferred | readiness decisions for design-producing modes | Do not run generation while product ambiguity is unresolved. |
 | V3e Generation modes | deferred | one mode at a time, preferably `evolve` before `seed` or `full` | Do not make generation the default first-user path. |
 
@@ -35,8 +35,10 @@ useful.
   source.
 - Optional screen, flow, interaction, ADR, review, and handoff files only after
   V3a proves traceability.
-- Completion audit that maps design requirements to runtime/source evidence
-  without unsupported percentages.
+- V3b handoff files that map current implementation notes back to source
+  artifacts without introducing broader package output.
+- Completion audit labels that map design requirements to runtime/source
+  evidence without unsupported percentages.
 - Tests proving optional `design/` files are not treated as mandatory.
 - Tests proving every published snapshot points back to run evidence.
 
@@ -51,6 +53,22 @@ useful.
 - `design/handoff.md` names the source run and source evidence.
 - V3a must not write wider screen, flow, review, completion percentage, seed,
   full-generation, or adapter-maturity output.
+
+## Current V3b Exit Criteria
+
+- `poison publish-handoff --run <run-path>` requires an existing V3a
+  `design/manifest.json` and `design/handoff.md`.
+- A successful run writes only the four files under `design/handoff/`.
+- `design/manifest.json` moves to `packageStatus: HANDOFF_READY` and exactly
+  lists V3a plus V3b files.
+- V3b must not write completion percentages, screens, flows, review package,
+  seed, full-generation, or adapter-maturity output.
+
+## Current V3c Entry Criteria
+
+- V3b handoff package passes `schema-check`.
+- Completion audit labels can be mapped to source artifacts.
+- Percentages remain blocked until a deterministic denominator exists.
 
 ## Weighting
 
@@ -91,6 +109,7 @@ useful.
 ## Exit Criteria
 
 - V3a can publish a coherent minimal `design/` handoff package.
+- V3b can publish source-mapped handoff files without broader package output.
 - Package files explain implementation scope and evidence source.
 - Completion audit distinguishes implemented, partial, missing, deviation, and
   blocked requirements.
