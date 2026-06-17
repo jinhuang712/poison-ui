@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 1,
+  "name": "v1-v3c-happy-path",
+  "runPath": ".poison/runs/001-poisoned-demo",
+  "steps": [
+    {
+      "command": "init",
+      "args": ["init"],
+      "stdoutIncludes": "init: created .poison/context and .poison/runs"
+    },
+    {
+      "command": "new-run",
+      "args": ["new-run", "--mode", "review", "--name", "poisoned-demo"],
+      "stdoutIncludes": "new-run: .poison/runs/001-poisoned-demo"
+    },
+    {
+      "command": "capture",
+      "args": ["capture", "--url", "http://localhost:5173", "--run", ".poison/runs/001-poisoned-demo"],
+      "stdoutIncludes": "capture: degraded evidence recorded"
+    },
+    {
+      "command": "review",
+      "args": ["review", "--run", ".poison/runs/001-poisoned-demo"],
+      "stdoutIncludes": "review: artifacts written"
+    },
+    {
+      "command": "schema-check",
+      "args": ["schema-check", "--run", ".poison/runs/001-poisoned-demo"],
+      "stdoutIncludes": "schema-check: PASS"
+    },
+    {
+      "command": "gate",
+      "args": ["gate", "--run", ".poison/runs/001-poisoned-demo"],
+      "stdoutIncludes": "gate: PASS"
+    },
+    {
+      "command": "init-protected-features",
+      "args": ["init-protected-features", "--run", ".poison/runs/001-poisoned-demo"],
+      "stdoutIncludes": "init-protected-features: protected baseline written"
+    },
+    {
+      "command": "repair-plan",
+      "args": ["repair-plan", "--run", ".poison/runs/001-poisoned-demo"],
+      "stdoutIncludes": "repair-plan: artifacts written"
+    },
+    {
+      "command": "arbiter-route",
+      "args": ["arbiter-route", "--run", ".poison/runs/001-poisoned-demo"],
+      "stdoutIncludes": "arbiter-route: artifacts written"
+    },
+    {
+      "command": "harden",
+      "args": ["harden", "--run", ".poison/runs/001-poisoned-demo"],
+      "stdoutIncludes": "harden: repair round artifacts written"
+    },
+    {
+      "command": "capture",
+      "args": ["capture", "--url", "http://localhost:5173", "--run", ".poison/runs/001-poisoned-demo"],
+      "stdoutIncludes": "capture: degraded evidence recorded"
+    },
+    {
+      "command": "review",
+      "args": ["review", "--run", ".poison/runs/001-poisoned-demo"],
+      "stdoutIncludes": "review: artifacts written"
+    },
+    {
+      "command": "gate",
+      "args": ["gate", "--run", ".poison/runs/001-poisoned-demo"],
+      "stdoutIncludes": "gate: PASS"
+    },
+    {
+      "command": "regression-check",
+      "args": ["regression-check", "--run", ".poison/runs/001-poisoned-demo"],
+      "stdoutIncludes": "regression-check: protected feature checks written"
+    },
+    {
+      "command": "visual-drift",
+      "args": ["visual-drift", "--run", ".poison/runs/001-poisoned-demo"],
+      "stdoutIncludes": "visual-drift: report written"
+    },
+    {
+      "command": "publish-design",
+      "args": ["publish-design", "--run", ".poison/runs/001-poisoned-demo"],
+      "stdoutIncludes": "publish-design: minimal design handoff written"
+    },
+    {
+      "command": "publish-handoff",
+      "args": ["publish-handoff", "--run", ".poison/runs/001-poisoned-demo"],
+      "stdoutIncludes": "publish-handoff: handoff package written"
+    },
+    {
+      "command": "audit-completion",
+      "args": ["audit-completion", "--run", ".poison/runs/001-poisoned-demo"],
+      "stdoutIncludes": "audit-completion: report written"
+    },
+    {
+      "command": "schema-check",
+      "args": ["schema-check", "--run", ".poison/runs/001-poisoned-demo"],
+      "stdoutIncludes": "schema-check: PASS"
+    }
+  ]
+}

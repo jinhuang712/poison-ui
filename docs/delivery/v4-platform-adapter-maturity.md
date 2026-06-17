@@ -21,8 +21,8 @@ them across adapters instead of inventing new workflow behavior.
 | Slice | Status | Owns | Must-not-start gate |
 |---|---|---|---|
 | V4a Command semantics freeze | implemented | exit codes, output channels, state-transition failures, blocked metadata | Do not start adapter parity until the shared CLI/core semantics are stable. |
-| V4b Fixture contract suite | one harness running V1-V3 fixture transcripts | Do not add adapter matrix breadth until one harness catches contract drift. |
-| V4c First adapter parity | one additional adapter using shared command/core modules | Do not package until parity proves no behavior fork. |
+| V4b Fixture contract suite | implemented | one harness running V1-V3 fixture transcripts | Do not add adapter matrix breadth until one harness catches contract drift. |
+| V4c First adapter parity | next | one additional adapter using shared command/core modules | Do not package until parity proves no behavior fork. |
 | V4d Harness degradation | missing browser, console, subagent, file capability handling | Do not declare support without degradation transcripts. |
 | V4e Packaging and release | package validation and release docs | Do not release while any adapter owns private schemas or hidden contracts. |
 
@@ -50,6 +50,23 @@ them across adapters instead of inventing new workflow behavior.
   `blocked`, and preserve recovery metadata.
 - V4a does not add adapters, packaging, release docs, package validation, or
   harness matrices.
+
+## Current V4b Exit Criteria
+
+- A harness-local transcript can run V1-V3c happy-path commands through the
+  public CLI.
+- The transcript runner verifies exit codes, stdout/stderr expectations, final
+  state, and critical artifacts.
+- V4b does not add adapter matrix breadth, packaging, release docs, or external
+  harness parity.
+
+## Current V4c Entry Criteria
+
+- The first adapter must call `poison` or shared core modules instead of
+  defining private schemas, modes, state transitions, or gate rules.
+- Only one additional adapter or adapter-facing contract may be added in V4c.
+- Package validation and release remain blocked until parity proves no behavior
+  fork.
 
 ## Weighting
 

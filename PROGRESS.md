@@ -40,8 +40,8 @@ The repository currently provides:
 - An operational `skills/poison/SKILL.md` entrypoint that routes behavior to
   contract owners.
 
-The repository does not yet provide multi-reviewer review, V4 fixture contract
-suite, screen/flow/review package expansion, or later seed/evolve/full modes.
+The repository does not yet provide multi-reviewer review, adapter parity,
+screen/flow/review package expansion, or later seed/evolve/full modes.
 
 ## Active
 
@@ -65,6 +65,8 @@ The most recent completed implementation direction was:
   percentages or broader design package expansion.
 - V4a command semantics freeze: lock observable CLI success/failure channels,
   illegal command-order behavior, and blocked-state recovery metadata.
+- V4b fixture contract suite: run one harness-local V1-V3c happy-path
+  transcript through the CLI to catch contract drift.
 
 Recent acceptance checks:
 
@@ -114,19 +116,22 @@ Recent acceptance checks:
   percentages, screens, and flows absent.
 - V4a CLI semantics tests cover help, unknown command, missing `--run`,
   schema-check failure, gate failure, illegal early gate, and blocked metadata.
+- V4b transcript tests cover V1-V3c command sequence, final `published` state,
+  completion artifacts, and absence of `design/review`.
 
 ## Blocked
 
 These items must not begin implementation yet:
 
-- V4 adapter/packaging work is blocked until fixture contract coverage exists.
+- V4 packaging work is blocked until first adapter parity exists.
 
 ## Next
 
-Continue V4 only as a narrow fixture contract suite:
+Continue V4 only as a narrow first-adapter parity slice:
 
-- Add one harness-local fixture transcript suite for V1-V3c contract drift.
-- Keep adapter parity, packaging, release, seed/full generation, and
+- Add one additional adapter or adapter-facing contract that calls shared
+  command/core behavior.
+- Keep packaging, release, broad adapter matrix, seed/full generation, and
   screen/flow/review expansion blocked.
 
 ## Deferred

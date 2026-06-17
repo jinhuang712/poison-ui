@@ -4,6 +4,9 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
+- Implemented V4b fixture contract suite with a harness-local V1-V3c happy-path
+  transcript, transcript runner, final state/artifact assertions, and no
+  adapter matrix or packaging work.
 - Implemented V4a command semantics freeze with CLI integration tests for
   help, success/failure output channels, unknown commands, missing options,
   schema-check failures, gate failures, blocked recovery metadata, and illegal

@@ -34,20 +34,20 @@ and learn what to fix first.
 | V1 Review-first detector | complete | I have an AI-made local UI demo; tell me what is poisoned and what to fix first | [v1-review-first.md](./v1-review-first.md) |
 | V2 Controlled hardening | complete | improve this prototype without breaking what already works | [v2-controlled-hardening.md](./v2-controlled-hardening.md) |
 | V3 Design package | complete | publish a traceable handoff from evidence-backed runs | [v3-design-package.md](./v3-design-package.md) |
-| V4 Platform and adapter maturity | active, V4b next | use the same Poison contract across harnesses | [v4-platform-adapter-maturity.md](./v4-platform-adapter-maturity.md) |
+| V4 Platform and adapter maturity | active, V4c next | use the same Poison contract across harnesses | [v4-platform-adapter-maturity.md](./v4-platform-adapter-maturity.md) |
 | VN Backlog | parked | future items awaiting a narrow owner and gate | [vn-backlog.md](./vn-backlog.md) |
 
 ## Current Active Sequence
 
-1. Add V4b fixture contract suite for existing V1-V3c workflows.
-2. Keep adapter parity, package release, screen/flow/review expansion, and
-   generation modes deferred.
+1. Add V4c first adapter parity or adapter-facing contract.
+2. Keep package release, broad adapter matrix, screen/flow/review expansion,
+   and generation modes deferred.
 
 ## Must Not Start Yet
 
 - Completion percentages before a deterministic denominator exists.
 - Screen/flow/review package expansion before completion-audit labels are
   evidence-backed.
-- V4 adapter parity or packaging before fixture contract coverage exists.
+- V4 packaging before first adapter parity exists.
 - VN items before they have one user job, one artifact owner, one gate behavior,
   and pass/fail tests.

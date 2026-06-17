@@ -122,16 +122,24 @@ items as they are completed.
 - Usage errors and illegal command order errors do not mutate run state.
 - `schema-check` and `gate` failure channels and blocked metadata are frozen.
 
-## Next: V4b Fixture Contract Suite
+## Completed: V4b Fixture Contract Suite
 
-- Add one harness-local fixture transcript suite that catches V1-V3c contract
-  drift.
-- Keep adapter matrix breadth, package release, and external harness parity
+- A harness-local V1-V3c happy-path fixture transcript runs through the CLI.
+- The transcript runner verifies exit codes, stdout/stderr expectations, final
+  run state, and completion artifacts.
+- Adapter matrix breadth, package release, and external harness parity remain
   deferred.
+
+## Next: V4c First Adapter Parity
+
+- Add one additional adapter or adapter-facing contract only after it can call
+  shared command/core modules without private behavior.
+- Do not start package release or broad adapter matrix work in the same slice.
 
 ## Deferred: V4 And VN
 
-- Do not implement adapter parity, package release, or distribution in V4b.
+- Do not implement package release, distribution, or broad adapter matrix work
+  in V4c.
 - Keep manual evidence registration in VN. If V1 automation is unavailable, V1
   records degraded evidence or a blocked state instead of registering manual
   evidence.
