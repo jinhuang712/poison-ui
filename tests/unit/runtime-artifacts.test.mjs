@@ -26,6 +26,35 @@ function readJson(path) {
   return JSON.parse(readFileSync(path, "utf8"));
 }
 
+function appendSecondReviewFinding(run) {
+  const reviewSummaryPath = join(run.absolutePath, "review-summary.md");
+  const reviewSummary = readFileSync(reviewSummaryPath, "utf8");
+  writeFileSync(
+    reviewSummaryPath,
+    reviewSummary.replace(
+      "\n## Backlog items",
+      [
+        "",
+        "### Finding 2",
+        "- findingId: V1-F002",
+        "- priorityRank: 2",
+        "- fixOrder: 66",
+        "- severity: minor",
+        "- category: evidence",
+        "- evidence source: degraded-evidence.md",
+        "- evidenceRefs: degraded-evidence.md",
+        "- affectedScreens: unknown",
+        "- evidence level: E2",
+        "- issue: second bounded repair input",
+        "- why it feels poisoned: it verifies backlog routing remains deferred",
+        "- firstRepairRecommendation: keep this item out of the current harden round",
+        "",
+        "## Backlog items",
+      ].join("\n"),
+    ),
+  );
+}
+
 test("run-state transitions preserve recoverable blocked metadata for degraded capture", () => {
   const project = makeProject();
   initPoisonProject(project);
@@ -1481,32 +1510,7 @@ test("harden writes one bounded repair round from current repair only", () => {
     reason: "Automated browser capture is unavailable in this runtime.",
   });
   writeReviewArtifacts(project, { runPath: run.relativePath });
-  const reviewSummaryPath = join(run.absolutePath, "review-summary.md");
-  const reviewSummary = readFileSync(reviewSummaryPath, "utf8");
-  writeFileSync(
-    reviewSummaryPath,
-    reviewSummary.replace(
-      "\n## Backlog items",
-      [
-        "",
-        "### Finding 2",
-        "- findingId: V1-F002",
-        "- priorityRank: 2",
-        "- fixOrder: 66",
-        "- severity: minor",
-        "- category: evidence",
-        "- evidence source: degraded-evidence.md",
-        "- evidenceRefs: degraded-evidence.md",
-        "- affectedScreens: unknown",
-        "- evidence level: E2",
-        "- issue: second bounded repair input",
-        "- why it feels poisoned: it verifies backlog routing remains deferred",
-        "- firstRepairRecommendation: keep this item out of the current harden round",
-        "",
-        "## Backlog items",
-      ].join("\n"),
-    ),
-  );
+  appendSecondReviewFinding(run);
   gateRun(project, { runPath: run.relativePath });
   initializeProtectedFeatures(project, { runPath: run.relativePath });
   writeRepairPlan(project, { runPath: run.relativePath });
@@ -1688,4 +1692,82 @@ test("schema check still validates repair round artifacts after post-repair capt
   assert.equal(schema.ok, false);
   assert.match(schema.errors.join("\n"), /repair-rounds\/001\/repair-plan\.json sourceRepair must exactly match arbiter-routing currentRepair/);
   assert.match(schema.errors.join("\n"), /repair-rounds\/001\/repair-plan\.json has unknown field designPublishing/);
+});
+
+test("post-repair review and gate preserve bounded round traceability", () => {
+  const project = makeProject();
+  initPoisonProject(project);
+  const run = createReviewRun(project, { mode: "review", name: "post repair gate" });
+  recordDegradedCapture(project, {
+    runPath: run.relativePath,
+    url: "http://localhost:5173",
+    reason: "Automated browser capture is unavailable in this runtime.",
+  });
+  writeReviewArtifacts(project, { runPath: run.relativePath });
+  gateRun(project, { runPath: run.relativePath });
+  initializeProtectedFeatures(project, { runPath: run.relativePath });
+  writeRepairPlan(project, { runPath: run.relativePath });
+  routeRepairs(project, { runPath: run.relativePath });
+  hardenRun(project, { runPath: run.relativePath });
+  recordDegradedCapture(project, {
+    runPath: run.relativePath,
+    url: "http://localhost:5173",
+    reason: "Post-repair automated browser capture is unavailable in this runtime.",
+  });
+
+  writeReviewArtifacts(project, { runPath: run.relativePath });
+  const reviewSummary = readFileSync(join(run.absolutePath, "review-summary.md"), "utf8");
+  assert.match(reviewSummary, /post-repair review/i);
+  assert.match(reviewSummary, /repair-rounds\/001\/round-summary\.md/);
+
+  const schema = schemaCheckRun(project, { runPath: run.relativePath });
+  assert.deepEqual(schema.errors, []);
+
+  const gate = gateRun(project, { runPath: run.relativePath });
+  assert.equal(gate.verdict, "PASS");
+  const state = readJson(join(run.absolutePath, "run-state.json"));
+  assert.equal(state.status, "gated");
+  assert.equal(state.nextRecommendedAction, "complete-or-review-warnings");
+  assert.ok(state.artifacts.includes("repair-rounds/001/repair-plan.md"));
+  assert.ok(state.artifacts.includes("repair-rounds/001/repair-plan.json"));
+  assert.ok(state.artifacts.includes("repair-rounds/001/before-after-evidence.md"));
+  assert.ok(state.artifacts.includes("repair-rounds/001/round-summary.md"));
+  assert.equal(existsSync(join(run.absolutePath, "repair-rounds", "001", "regression-results.json")), false);
+  assert.equal(existsSync(join(run.absolutePath, "design")), false);
+});
+
+test("post-repair review preserves multi-finding repair-plan mapping", () => {
+  const project = makeProject();
+  initPoisonProject(project);
+  const run = createReviewRun(project, { mode: "review", name: "post repair multi finding" });
+  recordDegradedCapture(project, {
+    runPath: run.relativePath,
+    url: "http://localhost:5173",
+    reason: "Automated browser capture is unavailable in this runtime.",
+  });
+  writeReviewArtifacts(project, { runPath: run.relativePath });
+  appendSecondReviewFinding(run);
+  gateRun(project, { runPath: run.relativePath });
+  initializeProtectedFeatures(project, { runPath: run.relativePath });
+  writeRepairPlan(project, { runPath: run.relativePath });
+  routeRepairs(project, { runPath: run.relativePath });
+  hardenRun(project, { runPath: run.relativePath });
+  recordDegradedCapture(project, {
+    runPath: run.relativePath,
+    url: "http://localhost:5173",
+    reason: "Post-repair automated browser capture is unavailable in this runtime.",
+  });
+
+  writeReviewArtifacts(project, { runPath: run.relativePath });
+
+  const reviewSummary = readFileSync(join(run.absolutePath, "review-summary.md"), "utf8");
+  assert.match(reviewSummary, /findingId: V1-F001/);
+  assert.match(reviewSummary, /findingId: V1-F002/);
+  assert.match(reviewSummary, /post-repair review/i);
+  assert.match(reviewSummary, /repair-rounds\/001\/round-summary\.md/);
+
+  const schema = schemaCheckRun(project, { runPath: run.relativePath });
+  assert.deepEqual(schema.errors, []);
+  const gate = gateRun(project, { runPath: run.relativePath });
+  assert.equal(gate.verdict, "PASS");
 });

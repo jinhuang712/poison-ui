@@ -96,6 +96,14 @@ During implementation:
 - Avoid unrelated refactors.
 - Update docs when behavior, contracts, or usage changes.
 
+## Subagent Workflow
+
+Use subagents only when parallel review or independent parallel work will
+materially improve the outcome. Do not spawn exactly one subagent as a token
+expensive substitute for direct work. When delegation is useful, spawn multiple
+subagents with distinct scopes so their feedback or output can be compared and
+synthesized.
+
 ## Verification Workflow
 
 Before claiming work is complete, run the checks appropriate to the change.

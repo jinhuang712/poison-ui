@@ -105,6 +105,8 @@ completion-report.md
 - V2 arbiter-routing bucket shape and one-time routing of every repair item.
 - V2d repair-round shape, source repair traceability to arbiter routing, and no
   embedded regression, drift, or design publishing output.
+- Post-repair review and gate preserve `repair-rounds/001` traceability without
+  adding new repair-plan findings.
 
 Gate must call `schema-check` or an equivalent core module. Missing schema
 metadata prevents entering `gated`.

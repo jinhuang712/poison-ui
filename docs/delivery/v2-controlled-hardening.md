@@ -24,6 +24,7 @@ work. Any repair must trace to a V1 finding accepted by the arbiter.
 | V2b Repair planning | implemented | ordered `repair-plan.md` and `repair-plan.json` from V1 finding IDs | Do not start arbiter routing until repair items map one-to-one to findings or declared backlog items. |
 | V2c Arbiter routing | implemented | `currentRepair`, `backlog`, `needsUserDecision`, `rejected` only | Do not start hardening while any item is ambiguously routed. |
 | V2d Single bounded harden loop | implemented | one narrow repair round artifact set | Do not start drift reporting until fresh post-repair evidence exists. |
+| V2d-post Post-repair re-gate | implemented | recapture, review, schema-check, and gate after the bounded round | Do not start V2e checks until the re-gate path preserves round traceability. |
 | V2e Regression and drift | next | protected-feature regression first; visual drift only when evidence exists | Do not start V3 until a bounded repair can re-gate without scope expansion. |
 
 ## Must Ship
@@ -84,6 +85,17 @@ work. Any repair must trace to a V1 finding accepted by the arbiter.
 - Run state moves to `repaired` with `nextRecommendedAction: capture`.
 - V2d must not write regression verdicts, drift reports, or `design/`
   publishing artifacts.
+
+## Current Post-Repair Re-Gate Exit Criteria
+
+- After `harden`, `capture`, `review`, `schema-check`, and `gate` can run on
+  the same V2 run.
+- Post-repair review preserves `repair-rounds/001` traceability without adding
+  new repair-plan findings.
+- Schema-check continues to validate repair-round artifacts after recapture.
+- Gate can return the run to `gated` while preserving round artifacts.
+- This slice must not write `regression-results.json`, drift reports, or
+  `design/` publishing artifacts.
 
 ## Weighting
 

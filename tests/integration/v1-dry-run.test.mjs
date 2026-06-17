@@ -107,4 +107,25 @@ test("V1 review-first dry-run can initialize V2 protected baseline and repair pl
   assert.equal(readJson(join(runDir, "repair-rounds/001/repair-plan.json")).sourceRepair.repairId, "RP-001");
   assert.match(readFileSync(join(runDir, "repair-rounds/001/before-after-evidence.md"), "utf8"), /pending recapture/);
   assert.match(readFileSync(join(runDir, "repair-rounds/001/round-summary.md"), "utf8"), /bounded harden round is planned/);
+
+  runPoison(project, ["capture", "--url", "http://localhost:5173", "--run", ".poison/runs/001-poisoned-demo"]);
+  state = readJson(join(runDir, "run-state.json"));
+  assert.equal(state.status, "captured");
+  assert.equal(state.nextRecommendedAction, "review");
+  assert.ok(state.artifacts.includes("repair-rounds/001/round-summary.md"));
+
+  runPoison(project, ["review", "--run", ".poison/runs/001-poisoned-demo"]);
+  state = readJson(join(runDir, "run-state.json"));
+  assert.equal(state.status, "reviewed");
+  assert.match(readFileSync(join(runDir, "review-summary.md"), "utf8"), /Post-repair review/);
+  assert.match(readFileSync(join(runDir, "review-summary.md"), "utf8"), /repair-rounds\/001\/round-summary\.md/);
+
+  const postRepairSchemaOutput = runPoison(project, ["schema-check", "--run", ".poison/runs/001-poisoned-demo"]);
+  assert.match(postRepairSchemaOutput, /schema-check: PASS/);
+
+  const postRepairGateOutput = runPoison(project, ["gate", "--run", ".poison/runs/001-poisoned-demo"]);
+  assert.match(postRepairGateOutput, /gate: PASS/);
+  state = readJson(join(runDir, "run-state.json"));
+  assert.equal(state.status, "gated");
+  assert.ok(state.artifacts.includes("repair-rounds/001/repair-plan.json"));
 });

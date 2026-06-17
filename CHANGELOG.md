@@ -4,6 +4,9 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
+- Implemented post-repair capture, review, schema-check, and gate traceability
+  after the bounded harden round without writing regression, drift, or design
+  publishing artifacts.
 - Implemented V2d bounded harden round artifacts with `poison harden`,
   `repair-rounds/001/repair-plan.md`, `repair-rounds/001/repair-plan.json`,
   `before-after-evidence.md`, `round-summary.md`, `repaired` state, schema

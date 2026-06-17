@@ -95,6 +95,7 @@ published
 | `repair-plan` | `protected_ready`, `repair_planned` | `repair_planned` | `blocked` | CLI/orchestrator | yes | `repair-plan.md`, `repair-plan.json` |
 | `arbiter-route` | `repair_planned`, `repair_routed` | `repair_routed` | `blocked` | CLI/orchestrator | yes | `arbiter-routing.md`, `arbiter-routing.json` |
 | `harden` | `repair_routed`, `repaired` | `repaired` | `blocked` | CLI/orchestrator | yes | `repair-rounds/001/repair-plan.md`, `repair-rounds/001/repair-plan.json`, `repair-rounds/001/before-after-evidence.md`, `repair-rounds/001/round-summary.md` |
+| post-repair `capture` / `review` / `gate` | `repaired` through `captured` and `reviewed` | `gated` | `blocked` | CLI/browser adapter/reviewer | yes | fresh evidence, `review-packet.md`, `review-summary.md`, `gate-report.md`, preserved `repair-rounds/001/*` |
 
 Failure-to-`blocked` applies after a command starts from a legal source state
 and then cannot produce required artifacts. Calling a command from an illegal

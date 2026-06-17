@@ -39,15 +39,14 @@ and learn what to fix first.
 
 ## Current Active Sequence
 
-1. Add post-repair capture and re-gate flow from the V2d `repaired` state.
-2. Add V2e protected-feature regression and drift checks only after fresh
+1. Add V2e protected-feature regression and drift checks only after fresh
    post-repair evidence exists.
-3. Keep V2 limited to one controlled hardening slice before V3.
+2. Keep V2 limited to one controlled hardening slice before V3.
 
 ## Must Not Start Yet
 
 - V3 publishing before V2 performs one bounded harden loop and re-gates.
-- V2e regression/drift before V2d produces fresh post-repair evidence.
+- V2e drift reporting before protected-feature regression checks exist.
 - V4 adapter parity or packaging before V3 publish traceability is stable.
 - VN items before they have one user job, one artifact owner, one gate behavior,
   and pass/fail tests.

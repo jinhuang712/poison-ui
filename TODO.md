@@ -62,10 +62,19 @@ items as they are completed.
 - Run state moves to `repaired` with `nextRecommendedAction: capture`.
 - The round does not write regression, drift, or design publishing artifacts.
 
-## Next: Post-Repair Capture And Gate
+## Completed: Post-Repair Capture And Gate
 
 - Re-capture after the bounded repair round.
 - Re-review and re-gate using the fresh evidence.
+- Post-repair review preserves `repair-rounds/001` traceability without adding
+  new repair-plan findings.
+- Post-repair gate preserves round artifacts and does not write regression,
+  drift, or design publishing artifacts.
+
+## Next: V2e Regression And Drift
+
+- Add protected-feature regression checks after post-repair evidence exists.
+- Add visual drift reporting only when before/after visual evidence exists.
 - Do not broaden the repair into unrelated redesign or feature work.
 - Do not add optional design publishing to V2.
 - Do not add broad `evolve` behavior to V2.

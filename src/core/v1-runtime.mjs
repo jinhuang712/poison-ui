@@ -634,6 +634,7 @@ function requireEvidenceArtifact(runDir, artifacts, artifact, message) {
 
 function evidenceContext(runDir, state) {
   const artifacts = state.artifacts || [];
+  const hasRepairRound = ROUND_ARTIFACTS.every((artifact) => artifacts.includes(artifact) && existsSync(join(runDir, artifact)));
   if (artifacts.includes("screenshot-manifest.json") && existsSync(join(runDir, "screenshot-manifest.json"))) {
     const manifest = JSON.parse(readFileSync(join(runDir, "screenshot-manifest.json"), "utf8"));
     const screenshotPath = manifest.screenshots?.[0]?.path;
@@ -655,6 +656,7 @@ function evidenceContext(runDir, state) {
       why: "UI observations can now be tied to screenshot and console artifacts",
       recommendation: "use the referenced screenshot and console evidence for review findings",
       backlogItems: ["none"],
+      hasRepairRound,
     };
   }
 
@@ -672,7 +674,19 @@ function evidenceContext(runDir, state) {
     why: "UI quality cannot be assessed from runtime screenshots in this run",
     recommendation: "provide screenshots or enable a browser adapter before making visual claims",
     backlogItems: ["Capture real screenshot and console evidence before making visual findings."],
+    hasRepairRound,
   };
+}
+
+function preservedReviewFindingSections(runDir) {
+  const summaryPath = join(runDir, "review-summary.md");
+  if (!existsSync(summaryPath)) {
+    return null;
+  }
+
+  const content = readFileSync(summaryPath, "utf8");
+  const findings = content.match(/^## Findings[\s\S]*$/m)?.[0]?.trim();
+  return findings || null;
 }
 
 export function initPoisonProject(projectRoot = process.cwd()) {
@@ -925,6 +939,7 @@ export function writeReviewArtifacts(projectRoot = process.cwd(), { runPath } = 
     throw new Error(`review requires status captured, got ${state.status}`);
   }
   const evidence = evidenceContext(run.absolutePath, state);
+  const preservedFindings = evidence.hasRepairRound ? preservedReviewFindingSections(run.absolutePath) : null;
 
   writeMarkdown(
     run.absolutePath,
@@ -940,9 +955,11 @@ export function writeReviewArtifacts(projectRoot = process.cwd(), { runPath } = 
       "",
       "## Inputs",
       ...evidence.inputs.map((input) => `- ${input}`),
+      ...(evidence.hasRepairRound ? ROUND_ARTIFACTS.map((artifact) => `- ${artifact}`) : []),
       "",
       "## Evidence",
       ...evidence.evidenceRefs.map((artifact) => `- ${artifact}`),
+      ...(evidence.hasRepairRound ? ["- repair-rounds/001/round-summary.md"] : []),
       "",
       "## Decisions",
       "none",
@@ -965,13 +982,15 @@ export function writeReviewArtifacts(projectRoot = process.cwd(), { runPath } = 
       "# Review Summary",
       "",
       "## Target",
-      evidence.summaryTarget,
+      evidence.hasRepairRound ? `Post-repair review for ${evidence.summaryTarget}` : evidence.summaryTarget,
       "",
       "## Vote tally",
       "PASS_WITH_FIXES: 1",
       "",
       "## Majority position",
-      evidence.majorityPosition,
+      evidence.hasRepairRound
+        ? `${evidence.majorityPosition} Post-repair review preserves the bounded repair round traceability via repair-rounds/001/round-summary.md.`
+        : evidence.majorityPosition,
       "",
       "## Minority concerns",
       "none",
@@ -982,26 +1001,28 @@ export function writeReviewArtifacts(projectRoot = process.cwd(), { runPath } = 
       "## Designer discretion items",
       "none",
       "",
-      "## Findings",
-      "### Finding 1",
-      "- findingId: V1-F001",
-      "- priorityRank: 1",
-      "- fixOrder: 65",
-      "- severity: minor",
-      "- category: evidence",
-      `- evidence source: ${evidence.evidenceRefs[0]}`,
-      `- evidenceRefs: ${evidence.evidenceRefs.join(", ")}`,
-      `- affectedScreens: ${evidence.affectedScreens}`,
-      "- evidence level: E2",
-      `- issue: ${evidence.issue}`,
-      `- why it feels poisoned: ${evidence.why}`,
-      `- firstRepairRecommendation: ${evidence.recommendation}`,
-      "",
-      "## Backlog items",
-      ...evidence.backlogItems.map((item) => (item === "none" ? "none" : `- ${item}`)),
-      "",
-      "## Rejected personal-taste findings",
-      "none",
+      preservedFindings || [
+        "## Findings",
+        "### Finding 1",
+        "- findingId: V1-F001",
+        "- priorityRank: 1",
+        "- fixOrder: 65",
+        "- severity: minor",
+        "- category: evidence",
+        `- evidence source: ${evidence.evidenceRefs[0]}`,
+        `- evidenceRefs: ${evidence.evidenceRefs.join(", ")}`,
+        `- affectedScreens: ${evidence.affectedScreens}`,
+        "- evidence level: E2",
+        `- issue: ${evidence.issue}`,
+        `- why it feels poisoned: ${evidence.why}`,
+        `- firstRepairRecommendation: ${evidence.recommendation}`,
+        "",
+        "## Backlog items",
+        ...evidence.backlogItems.map((item) => (item === "none" ? "none" : `- ${item}`)),
+        "",
+        "## Rejected personal-taste findings",
+        "none",
+      ].join("\n"),
       "",
     ].join("\n"),
   );
