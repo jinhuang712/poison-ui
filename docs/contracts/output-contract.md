@@ -71,6 +71,8 @@ V2 active artifacts:
 protected-features.md
 repair-plan.md
 repair-plan.json
+arbiter-routing.md
+arbiter-routing.json
 ```
 
 Later-version artifacts:
@@ -97,8 +99,9 @@ completion-report.md
 - Required Markdown sections.
 - JSON parseability.
 - Required JSON fields.
-- V2 repair-plan item shape, planned-only status, duplicate IDs, future routing
-  fields, and one-to-one mapping to V1 findings.
+- V2 repair-plan item shape, planned-only status, duplicate IDs, no embedded
+  routing fields, and one-to-one mapping to V1 findings.
+- V2 arbiter-routing bucket shape and one-time routing of every repair item.
 
 Gate must call `schema-check` or an equivalent core module. Missing schema
 metadata prevents entering `gated`.

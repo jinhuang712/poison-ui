@@ -4,6 +4,9 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
+- Implemented V2c arbiter routing with `arbiter-routing.md`,
+  `arbiter-routing.json`, `repair_routed` state, schema coverage, and CLI
+  support for `arbiter-route`.
 - Implemented V2b repair planning with `repair-plan.md`,
   `repair-plan.json`, `repair_planned` state, schema coverage, and CLI support
   for `repair-plan`.

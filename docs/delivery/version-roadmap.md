@@ -32,21 +32,21 @@ and learn what to fix first.
 |---|---|---|---|
 | V0 Documentation scaffold | complete | make the repository implementable without a monolithic plan | [PROGRESS.md](../../PROGRESS.md#v0-documentation-migration) |
 | V1 Review-first detector | complete | I have an AI-made local UI demo; tell me what is poisoned and what to fix first | [v1-review-first.md](./v1-review-first.md) |
-| V2 Controlled hardening | active, V2c next | improve this prototype without breaking what already works | [v2-controlled-hardening.md](./v2-controlled-hardening.md) |
+| V2 Controlled hardening | active, V2d next | improve this prototype without breaking what already works | [v2-controlled-hardening.md](./v2-controlled-hardening.md) |
 | V3 Design package | blocked | publish a traceable handoff from evidence-backed runs | [v3-design-package.md](./v3-design-package.md) |
 | V4 Platform and adapter maturity | deferred | use the same Poison contract across harnesses | [v4-platform-adapter-maturity.md](./v4-platform-adapter-maturity.md) |
 | VN Backlog | parked | future items awaiting a narrow owner and gate | [vn-backlog.md](./vn-backlog.md) |
 
 ## Current Active Sequence
 
-1. Start V2c arbiter routing from planned repair items.
+1. Start V2d bounded harden loop from routed current repair.
 2. Keep V2 limited to one controlled hardening slice before V3.
 
 ## Must Not Start Yet
 
 - V3 publishing before V2 performs one bounded harden loop and re-gates.
-- V2d hardening before V2c routes every repair item to `currentRepair`,
-  `backlog`, `needsUserDecision`, or `rejected`.
+- V2e regression/drift before V2d executes one routed current repair and
+  produces fresh evidence.
 - V4 adapter parity or packaging before V3 publish traceability is stable.
 - VN items before they have one user job, one artifact owner, one gate behavior,
   and pass/fail tests.

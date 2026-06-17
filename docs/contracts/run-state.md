@@ -61,6 +61,7 @@ V2 active states:
 ```text
 protected_ready
 repair_planned
+repair_routed
 ```
 
 Later-version states:
@@ -92,6 +93,7 @@ published
 |---|---|---|---|---|---|---|
 | `init-protected-features` | `gated`, `protected_ready` | `protected_ready` | `blocked` | CLI/user | yes | `protected-features.md` |
 | `repair-plan` | `protected_ready`, `repair_planned` | `repair_planned` | `blocked` | CLI/orchestrator | yes | `repair-plan.md`, `repair-plan.json` |
+| `arbiter-route` | `repair_planned`, `repair_routed` | `repair_routed` | `blocked` | CLI/orchestrator | yes | `arbiter-routing.md`, `arbiter-routing.json` |
 
 Failure-to-`blocked` applies after a command starts from a legal source state
 and then cannot produce required artifacts. Calling a command from an illegal

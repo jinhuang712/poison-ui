@@ -89,4 +89,12 @@ test("V1 review-first dry-run can initialize V2 protected baseline and repair pl
   assert.equal(state.nextRecommendedAction, "arbiter-route");
   assert.match(readFileSync(join(runDir, "repair-plan.md"), "utf8"), /findingId: V1-F001/);
   assert.equal(readJson(join(runDir, "repair-plan.json")).repairs[0].findingId, "V1-F001");
+
+  const routingOutput = runPoison(project, ["arbiter-route", "--run", ".poison/runs/001-poisoned-demo"]);
+  assert.match(routingOutput, /arbiter-route: artifacts written/);
+  state = readJson(join(runDir, "run-state.json"));
+  assert.equal(state.status, "repair_routed");
+  assert.equal(state.nextRecommendedAction, "harden");
+  assert.match(readFileSync(join(runDir, "arbiter-routing.md"), "utf8"), /RP-001/);
+  assert.equal(readJson(join(runDir, "arbiter-routing.json")).currentRepair.repairId, "RP-001");
 });

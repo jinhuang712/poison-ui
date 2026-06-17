@@ -73,6 +73,15 @@ protected baseline is ready:
 poison repair-plan --run .poison/runs/001-poisoned-demo
 ```
 
+## V2c Deterministic Action Mapping
+
+This action routes planned repair items into the arbiter buckets without
+executing repairs:
+
+```bash
+poison arbiter-route --run .poison/runs/001-poisoned-demo
+```
+
 ## Later Deterministic Action Mappings
 
 These actions exist for testing, adapter calls, and dry-run workflows. They are

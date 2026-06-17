@@ -8,7 +8,7 @@ import {
 } from "node:fs";
 import { basename, join, relative, resolve } from "node:path";
 
-const STATE_STATUSES = new Set(["created", "captured", "reviewed", "gated", "completed", "blocked", "protected_ready", "repair_planned"]);
+const STATE_STATUSES = new Set(["created", "captured", "reviewed", "gated", "completed", "blocked", "protected_ready", "repair_planned", "repair_routed"]);
 const REQUIRED_STATE_FIELDS = [
   "schemaVersion",
   "runId",
@@ -44,7 +44,22 @@ const REQUIRED_REPAIR_FIELDS = [
   "firstRepairRecommendation",
   "status",
 ];
-const FUTURE_REPAIR_FIELDS = new Set(["currentRepair", "backlog", "needsUserDecision", "rejected"]);
+const ROUTING_REPAIR_FIELDS = new Set(["currentRepair", "backlog", "needsUserDecision", "rejected"]);
+const ROUTING_BUCKETS = ["currentRepair", "backlog", "needsUserDecision", "rejected"];
+const ROUTING_ALLOWED_TOP_LEVEL_FIELDS = new Set([
+  "schemaVersion",
+  "runId",
+  "artifact",
+  "status",
+  "updatedAt",
+  "artifacts",
+  "sourceArtifacts",
+  "buckets",
+  "currentRepair",
+  "backlog",
+  "needsUserDecision",
+  "rejected",
+]);
 
 function now() {
   return new Date().toISOString();
@@ -294,8 +309,8 @@ function validateRepairPlan(repairPlan, reviewFindings, runState, errors) {
     errors.push("repair-plan.json sourceArtifacts must list review-summary.md and protected-features.md");
   }
   for (const field of Object.keys(repairPlan)) {
-    if (FUTURE_REPAIR_FIELDS.has(field)) {
-      errors.push(`repair-plan.json must not include ${field} before V2c`);
+    if (ROUTING_REPAIR_FIELDS.has(field)) {
+      errors.push(`repair-plan.json must not include ${field}`);
     }
   }
   if (!Array.isArray(repairPlan.repairs)) {
@@ -331,8 +346,8 @@ function validateRepairPlan(repairPlan, reviewFindings, runState, errors) {
       errors.push(`repair-plan.json repair ${label} status must be planned`);
     }
     for (const field of Object.keys(repair)) {
-      if (FUTURE_REPAIR_FIELDS.has(field)) {
-        errors.push(`repair-plan.json repair ${label} must not include ${field} before V2c`);
+      if (ROUTING_REPAIR_FIELDS.has(field)) {
+        errors.push(`repair-plan.json repair ${label} must not include ${field}`);
       }
     }
   }
@@ -346,6 +361,76 @@ function validateRepairPlan(repairPlan, reviewFindings, runState, errors) {
   }
 }
 
+function validateArbiterRouting(routing, repairPlan, runState, errors) {
+  for (const field of Object.keys(routing || {})) {
+    if (!ROUTING_ALLOWED_TOP_LEVEL_FIELDS.has(field)) {
+      errors.push(`arbiter-routing.json has unknown field ${field}`);
+    }
+  }
+  if (routing.schemaVersion !== 1) {
+    errors.push("arbiter-routing.json schemaVersion must be 1");
+  }
+  if (routing.runId !== runState.runId) {
+    errors.push("arbiter-routing.json runId must match run-state");
+  }
+  if (routing.artifact !== "arbiter-routing.json") {
+    errors.push("arbiter-routing.json artifact must be arbiter-routing.json");
+  }
+  if (routing.status !== "READY") {
+    errors.push("arbiter-routing.json status must be READY");
+  }
+  if (typeof routing.updatedAt !== "string" || routing.updatedAt.trim() === "") {
+    errors.push("arbiter-routing.json updatedAt is required");
+  }
+  if (
+    !Array.isArray(routing.artifacts) ||
+    !routing.artifacts.includes("arbiter-routing.md") ||
+    !routing.artifacts.includes("arbiter-routing.json")
+  ) {
+    errors.push("arbiter-routing.json artifacts must list arbiter-routing.md and arbiter-routing.json");
+  }
+  if (
+    !Array.isArray(routing.sourceArtifacts) ||
+    !routing.sourceArtifacts.includes("repair-plan.json") ||
+    !routing.sourceArtifacts.includes("protected-features.md")
+  ) {
+    errors.push("arbiter-routing.json sourceArtifacts must list repair-plan.json and protected-features.md");
+  }
+  if (!Array.isArray(routing.buckets) || JSON.stringify(routing.buckets) !== JSON.stringify(ROUTING_BUCKETS)) {
+    errors.push("arbiter-routing.json buckets must exactly list currentRepair, backlog, needsUserDecision, rejected");
+  }
+  for (const bucket of ["backlog", "needsUserDecision", "rejected"]) {
+    if (!Array.isArray(routing[bucket])) {
+      errors.push(`arbiter-routing.json ${bucket} must be an array`);
+    }
+  }
+  if (!routing.currentRepair || typeof routing.currentRepair !== "object" || Array.isArray(routing.currentRepair)) {
+    errors.push("arbiter-routing.json currentRepair must be an object");
+  }
+  if ("repairRound" in routing || "repairRounds" in routing) {
+    errors.push("arbiter-routing.json must not include repair round output before V2d");
+  }
+
+  const repairIds = new Set((repairPlan?.repairs || []).map((repair) => repair.repairId));
+  const routedIds = [];
+  if (routing.currentRepair?.repairId) {
+    routedIds.push(routing.currentRepair.repairId);
+  }
+  for (const bucket of ["backlog", "needsUserDecision", "rejected"]) {
+    if (Array.isArray(routing[bucket])) {
+      routedIds.push(...routing[bucket].map((repair) => repair.repairId));
+    }
+  }
+  for (const repairId of routedIds) {
+    if (!repairIds.has(repairId)) {
+      errors.push(`arbiter-routing.json routes unknown repair ${repairId}`);
+    }
+  }
+  if (routedIds.length !== repairIds.size || routedIds.some((repairId, index) => routedIds.indexOf(repairId) !== index)) {
+    errors.push("arbiter-routing.json must route each repair-plan item exactly once");
+  }
+}
+
 function validateStateArtifacts(runDir, state, errors) {
   if (!Array.isArray(state.artifacts)) {
     return;
@@ -355,6 +440,13 @@ function validateStateArtifacts(runDir, state, errors) {
     for (const artifact of ["repair-plan.md", "repair-plan.json"]) {
       if (!state.artifacts.includes(artifact)) {
         errors.push(`run-state.json repair_planned state must list ${artifact}`);
+      }
+    }
+  }
+  if (state.status === "repair_routed") {
+    for (const artifact of ["repair-plan.md", "repair-plan.json", "arbiter-routing.md", "arbiter-routing.json"]) {
+      if (!state.artifacts.includes(artifact)) {
+        errors.push(`run-state.json repair_routed state must list ${artifact}`);
       }
     }
   }
@@ -840,13 +932,13 @@ export function schemaCheckRun(projectRoot = process.cwd(), { runPath } = {}) {
   requireMarkdownSections(run.absolutePath, "run-contract.md", ["Summary", "Inputs", "Evidence", "Decisions", "Open Questions", "Next Actions"], errors);
   requireMarkdownSections(run.absolutePath, "context-health.md", ["Summary", "Inputs", "Evidence", "Decisions", "Open Questions", "Next Actions"], errors);
 
-  if (state?.status === "captured" || state?.status === "reviewed" || state?.status === "gated" || state?.status === "protected_ready" || state?.status === "repair_planned") {
+  if (state?.status === "captured" || state?.status === "reviewed" || state?.status === "gated" || state?.status === "protected_ready" || state?.status === "repair_planned" || state?.status === "repair_routed") {
     if (!existsSync(join(run.absolutePath, "degraded-evidence.md")) && !existsSync(join(run.absolutePath, "screenshot-manifest.json"))) {
       errors.push("capture evidence or degraded evidence is required");
     }
   }
 
-  if (state?.status === "reviewed" || state?.status === "gated" || state?.status === "protected_ready" || state?.status === "repair_planned") {
+  if (state?.status === "reviewed" || state?.status === "gated" || state?.status === "protected_ready" || state?.status === "repair_planned" || state?.status === "repair_routed") {
     requireMarkdownSections(run.absolutePath, "review-packet.md", ["Summary", "Inputs", "Evidence", "Decisions", "Open Questions", "Next Actions"], errors);
     requireMarkdownSections(run.absolutePath, "review-summary.md", ["Findings"], errors);
     const summary = existsSync(join(run.absolutePath, "review-summary.md"))
@@ -860,16 +952,28 @@ export function schemaCheckRun(projectRoot = process.cwd(), { runPath } = {}) {
     requireMarkdownSections(run.absolutePath, "protected-features.md", ["Summary", "Source Evidence", "Protected Items", "Update Rules", "Next Actions"], errors);
   }
 
-  if (state?.status === "repair_planned") {
+  let repairPlan = null;
+  if (state?.status === "repair_planned" || state?.status === "repair_routed") {
     requireMarkdownSections(run.absolutePath, "gate-report.md", ["Verdict", "Hard checks", "Warnings", "Required fixes", "Next action"], errors);
     requireMarkdownSections(run.absolutePath, "protected-features.md", ["Summary", "Source Evidence", "Protected Items", "Update Rules", "Next Actions"], errors);
     requireMarkdownSections(run.absolutePath, "repair-plan.md", ["Summary", "Source Findings", "Repair Items", "Scope Guardrails", "Next Actions"], errors);
-    const repairPlan = readJsonArtifact(run.absolutePath, "repair-plan.json", errors);
+    repairPlan = readJsonArtifact(run.absolutePath, "repair-plan.json", errors);
     if (repairPlan) {
       const reviewFindings = existsSync(join(run.absolutePath, "review-summary.md"))
         ? readReviewFindings(run.absolutePath)
         : [];
       validateRepairPlan(repairPlan, reviewFindings, state, errors);
+    }
+  }
+
+  const hasResidualRoutingArtifact =
+    state?.status === "repair_planned" &&
+    (existsSync(join(run.absolutePath, "arbiter-routing.md")) || existsSync(join(run.absolutePath, "arbiter-routing.json")));
+  if (state?.status === "repair_routed" || hasResidualRoutingArtifact) {
+    requireMarkdownSections(run.absolutePath, "arbiter-routing.md", ["Summary", "Current Repair", "Backlog", "Needs User Decision", "Rejected", "Scope Guardrails", "Next Actions"], errors);
+    const routing = readJsonArtifact(run.absolutePath, "arbiter-routing.json", errors);
+    if (routing) {
+      validateArbiterRouting(routing, repairPlan, state, errors);
     }
   }
 
@@ -1115,5 +1219,105 @@ export function writeRepairPlan(projectRoot = process.cwd(), { runPath } = {}) {
     previousStatus: null,
     blockedReason: null,
     nextRecommendedAction: "arbiter-route",
+  });
+}
+
+export function routeRepairs(projectRoot = process.cwd(), { runPath } = {}) {
+  const run = normalizeRunPath(projectRoot, runPath);
+  const state = readState(run.absolutePath);
+  if (state.status !== "repair_planned" && state.status !== "repair_routed") {
+    throw new Error(`arbiter routing requires status repair_planned, got ${state.status}`);
+  }
+
+  const schema = schemaCheckRun(projectRoot, { runPath });
+  if (!schema.ok) {
+    const message = `arbiter routing requires valid repair plan: ${schema.errors.join("; ")}`;
+    blockRun(run.absolutePath, state, message, "schema-check");
+    throw new Error(message);
+  }
+
+  if (
+    state.status === "repair_routed" &&
+    existsSync(join(run.absolutePath, "arbiter-routing.md")) &&
+    existsSync(join(run.absolutePath, "arbiter-routing.json"))
+  ) {
+    return writeState(run.absolutePath, {
+      ...addArtifacts(state, ["arbiter-routing.md", "arbiter-routing.json"]),
+      status: "repair_routed",
+      previousStatus: null,
+      blockedReason: null,
+      nextRecommendedAction: "harden",
+    });
+  }
+
+  const repairPlan = JSON.parse(readFileSync(join(run.absolutePath, "repair-plan.json"), "utf8"));
+  const sortedRepairs = [...repairPlan.repairs].sort((left, right) => left.fixOrder - right.fixOrder);
+  const currentRepair = sortedRepairs[0] || null;
+  if (!currentRepair) {
+    const message = "arbiter routing requires at least one planned repair";
+    blockRun(run.absolutePath, state, message, "repair-plan");
+    throw new Error(message);
+  }
+  const backlog = sortedRepairs.slice(1);
+  const needsUserDecision = [];
+  const rejected = [];
+
+  writeMarkdown(
+    run.absolutePath,
+    run.runId,
+    "arbiter-routing.md",
+    "READY",
+    "arbiter-route",
+    [
+      "# Arbiter Routing",
+      "",
+      "## Summary",
+      "V2c arbiter routing selected one current repair from the V2b repair plan and parked remaining repairs.",
+      "",
+      "## Current Repair",
+      `- ${currentRepair.repairId}: ${currentRepair.findingId}`,
+      "",
+      "## Backlog",
+      backlog.length === 0 ? "none" : backlog.map((repair) => `- ${repair.repairId}: ${repair.findingId}`).join("\n"),
+      "",
+      "## Needs User Decision",
+      "none",
+      "",
+      "## Rejected",
+      "none",
+      "",
+      "## Scope Guardrails",
+      "- Do not start harden execution in V2c.",
+      "- Do not write later repair-round artifacts in V2c.",
+      "- Do not write design publishing artifacts in V2c.",
+      "",
+      "## Next Actions",
+      "- harden",
+      "",
+    ].join("\n"),
+  );
+
+  const routing = {
+    schemaVersion: 1,
+    runId: run.runId,
+    artifact: "arbiter-routing.json",
+    status: "READY",
+    updatedAt: now(),
+    artifacts: ["arbiter-routing.md", "arbiter-routing.json"],
+    sourceArtifacts: ["repair-plan.json", "protected-features.md"],
+    buckets: ROUTING_BUCKETS,
+    currentRepair,
+    backlog,
+    needsUserDecision,
+    rejected,
+  };
+  writeFileSync(join(run.absolutePath, "arbiter-routing.json"), `${JSON.stringify(routing, null, 2)}\n`);
+
+  return writeState(run.absolutePath, {
+    ...addArtifacts(state, ["arbiter-routing.md", "arbiter-routing.json"]),
+    status: "repair_routed",
+    previousStatus: null,
+    blockedReason: null,
+    nextRecommendedAction: "harden",
   });
 }

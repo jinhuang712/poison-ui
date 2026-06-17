@@ -65,6 +65,8 @@ By default, `.poison/context` is trackable repository state.
   direction-synthesis.md
   repair-plan.md
   repair-plan.json
+  arbiter-routing.md
+  arbiter-routing.json
   gate-report.md
   completion-audit-packet.md
   completion-report.md
@@ -77,8 +79,9 @@ current state.
 V1 review-first runs require only the subset needed for capture, review,
 schema-check, and mechanical gate. V2b repair-planning runs add only the
 root-level `protected-features.md`, `repair-plan.md`, and `repair-plan.json`.
-Later seed/evolve/full/harden runs may create the broader inventory or
-`repair-rounds/` artifacts.
+V2c arbiter-routing runs add only root-level `arbiter-routing.md` and
+`arbiter-routing.json`. Later seed/evolve/full/harden runs may create the
+broader inventory or `repair-rounds/` artifacts.
 
 ## Generated Evidence
 

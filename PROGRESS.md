@@ -19,6 +19,7 @@ The repository currently provides:
   `schema-check`, and `gate`.
 - A V2a protected baseline action for `init-protected-features`.
 - A V2b repair planning action for `repair-plan`.
+- A V2c arbiter routing action for `arbiter-route`.
 - Node built-in tests for the dry-run flow, run-state handling, degraded
   evidence reporting, schema checks, and the mechanical gate.
 - An operational `skills/poison/SKILL.md` entrypoint that routes behavior to
@@ -31,8 +32,9 @@ seed/evolve/full/harden modes, or full `design/` publishing.
 
 The most recent completed implementation direction was:
 
-- V2b repair planning: write `repair-plan.md` and `repair-plan.json` from V1
-  finding IDs without arbiter routing, harden execution, or design publishing.
+- V2c arbiter routing: write `arbiter-routing.md` and
+  `arbiter-routing.json` from planned repairs without harden execution,
+  recapture, regression, or design publishing.
 
 Recent acceptance checks:
 
@@ -51,8 +53,12 @@ Recent acceptance checks:
   moves a run to `repair_planned`.
 - V2b does not create `currentRepair`, `needsUserDecision`, harden output, or
   `design/` publishing artifacts.
+- `arbiter-route` routes repair items to `currentRepair`, `backlog`,
+  `needsUserDecision`, or `rejected` and moves a run to `repair_routed`.
+- V2c does not create repair-round artifacts, recapture evidence, regression
+  output, or `design/` publishing artifacts.
 
-Do not start V2c arbiter routing inside the V2b commit.
+Do not start V2d harden execution inside the V2c commit.
 
 ## Blocked
 
@@ -66,7 +72,7 @@ These items must not begin implementation yet:
 
 Continue V2 only as a controlled hardening slice:
 
-- Route planned repair items through the arbiter.
+- Execute one bounded harden round from the routed current repair.
 - Re-capture and re-gate after repair.
 
 ## Deferred
@@ -139,7 +145,7 @@ Exit gate:
 
 ## V2 Controlled Hardening Loop
 
-Status: V2a-V2b implemented; V2c arbiter routing is next.
+Status: V2a-V2c implemented; V2d bounded harden loop is next.
 
 User job:
 
@@ -161,7 +167,8 @@ Prerequisites:
 - V1 browser evidence and gate checks are stable.
 - Protected-feature artifacts have tests.
 - Repair-plan artifacts have tests.
-- Arbiter routing artifacts need tests before implementation.
+- Arbiter routing artifacts have tests.
+- Bounded harden artifacts need tests before implementation.
 - Autonomous workflow decisions are traceable to contract owners.
 
 ## V3 Design Package Mode

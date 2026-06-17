@@ -45,12 +45,20 @@ items as they are completed.
 - Run state moves to `repair_planned` without arbiter routing, harden
   execution, or design publishing.
 
-## Next: V2c Arbiter Routing
+## Completed: V2c Arbiter Routing
 
-- Do not start arbiter routing until repair items map one-to-one to findings or
-  declared backlog items.
+- `poison arbiter-route --run <run>` writes `arbiter-routing.md` and
+  `arbiter-routing.json`.
 - Route repair items only to `currentRepair`, `backlog`, `needsUserDecision`,
   or `rejected`.
+- Run state moves to `repair_routed` without harden execution, recapture,
+  regression, or design publishing.
+
+## Next: V2d Bounded Harden Loop
+
+- Do not start harden until repair items are routed.
+- Execute only the routed `currentRepair`.
+- Do not broaden the repair into unrelated redesign or feature work.
 - Do not add optional design publishing to V2.
 - Do not add broad `evolve` behavior to V2.
 - Keep V2 implementation limited to

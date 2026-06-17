@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
@@ -10,6 +10,7 @@ import {
   recordBrowserCapture,
   recordDegradedCapture,
   initializeProtectedFeatures,
+  routeRepairs,
   writeRepairPlan,
   writeReviewArtifacts,
   schemaCheckRun,
@@ -1123,10 +1124,10 @@ test("schema check fails when repair-plan json repair item has invalid planning 
 
   const schema = schemaCheckRun(project, { runPath: run.relativePath });
   assert.equal(schema.ok, false);
-  assert.match(schema.errors.join("\n"), /repair-plan\.json must not include backlog before V2c/);
+  assert.match(schema.errors.join("\n"), /repair-plan\.json must not include backlog/);
   assert.match(schema.errors.join("\n"), /repair-plan\.json repair RP-001 status must be planned/);
   assert.match(schema.errors.join("\n"), /repair-plan\.json repair RP-001 priorityRank must be a number/);
-  assert.match(schema.errors.join("\n"), /repair-plan\.json repair RP-001 must not include currentRepair before V2c/);
+  assert.match(schema.errors.join("\n"), /repair-plan\.json repair RP-001 must not include currentRepair/);
 });
 
 test("schema check fails when repair-plan json does not map one-to-one to findings", () => {
@@ -1176,4 +1177,228 @@ test("schema check fails when repair-planned state omits repair artifacts", () =
   assert.equal(schema.ok, false);
   assert.match(schema.errors.join("\n"), /run-state.json repair_planned state must list repair-plan.md/);
   assert.match(schema.errors.join("\n"), /run-state.json repair_planned state must list repair-plan.json/);
+});
+
+test("arbiter routing blocks instead of overwriting residual invalid routing artifacts", () => {
+  const project = makeProject();
+  initPoisonProject(project);
+  const run = createReviewRun(project, { mode: "review", name: "residual invalid routing" });
+  recordDegradedCapture(project, {
+    runPath: run.relativePath,
+    url: "http://localhost:5173",
+    reason: "Automated browser capture is unavailable in this runtime.",
+  });
+  writeReviewArtifacts(project, { runPath: run.relativePath });
+  gateRun(project, { runPath: run.relativePath });
+  initializeProtectedFeatures(project, { runPath: run.relativePath });
+  writeRepairPlan(project, { runPath: run.relativePath });
+  writeFileSync(join(run.absolutePath, "arbiter-routing.md"), "# Arbiter Routing\n\n## Summary\nstale\n");
+  writeFileSync(join(run.absolutePath, "arbiter-routing.json"), '{"schemaVersion":1,"currentRepair":null}\n');
+
+  assert.throws(
+    () => routeRepairs(project, { runPath: run.relativePath }),
+    /arbiter routing requires valid repair plan/,
+  );
+
+  const state = readJson(join(run.absolutePath, "run-state.json"));
+  assert.equal(state.status, "blocked");
+  assert.equal(state.previousStatus, "repair_planned");
+  assert.match(state.blockedReason, /arbiter-routing\.json currentRepair must be an object/);
+  assert.equal(state.nextRecommendedAction, "schema-check");
+  assert.equal(readFileSync(join(run.absolutePath, "arbiter-routing.json"), "utf8"), '{"schemaVersion":1,"currentRepair":null}\n');
+});
+
+test("arbiter routing requires a completed repair plan", () => {
+  const project = makeProject();
+  initPoisonProject(project);
+  const run = createReviewRun(project, { mode: "review", name: "route too early" });
+
+  assert.throws(
+    () => routeRepairs(project, { runPath: run.relativePath }),
+    /arbiter routing requires status repair_planned/,
+  );
+});
+
+test("arbiter routing writes routing artifacts without starting harden", () => {
+  const project = makeProject();
+  initPoisonProject(project);
+  const run = createReviewRun(project, { mode: "review", name: "route repairs" });
+  recordDegradedCapture(project, {
+    runPath: run.relativePath,
+    url: "http://localhost:5173",
+    reason: "Automated browser capture is unavailable in this runtime.",
+  });
+  writeReviewArtifacts(project, { runPath: run.relativePath });
+  gateRun(project, { runPath: run.relativePath });
+  initializeProtectedFeatures(project, { runPath: run.relativePath });
+  writeRepairPlan(project, { runPath: run.relativePath });
+
+  routeRepairs(project, { runPath: run.relativePath });
+
+  const routingMarkdown = readFileSync(join(run.absolutePath, "arbiter-routing.md"), "utf8");
+  assert.match(routingMarkdown, /# Arbiter Routing/);
+  assert.match(routingMarkdown, /## Current Repair/);
+  assert.match(routingMarkdown, /RP-001/);
+  assert.match(routingMarkdown, /## Backlog/);
+  assert.match(routingMarkdown, /## Needs User Decision/);
+  assert.match(routingMarkdown, /## Rejected/);
+  assert.match(routingMarkdown, /Do not start harden execution in V2c/);
+  assert.doesNotMatch(routingMarkdown, /repair-rounds/);
+  assert.doesNotMatch(routingMarkdown, /design\/manifest/);
+
+  const routingJson = readJson(join(run.absolutePath, "arbiter-routing.json"));
+  assert.equal(routingJson.schemaVersion, 1);
+  assert.equal(routingJson.runId, run.runId);
+  assert.equal(routingJson.artifact, "arbiter-routing.json");
+  assert.equal(routingJson.status, "READY");
+  assert.deepEqual(routingJson.sourceArtifacts, ["repair-plan.json", "protected-features.md"]);
+  assert.equal(routingJson.currentRepair.repairId, "RP-001");
+  assert.equal(routingJson.currentRepair.findingId, "V1-F001");
+  assert.deepEqual(routingJson.backlog, []);
+  assert.deepEqual(routingJson.needsUserDecision, []);
+  assert.deepEqual(routingJson.rejected, []);
+  assert.equal("repairRound" in routingJson, false);
+
+  const state = readJson(join(run.absolutePath, "run-state.json"));
+  assert.equal(state.status, "repair_routed");
+  assert.equal(state.nextRecommendedAction, "harden");
+  assert.ok(state.artifacts.includes("arbiter-routing.md"));
+  assert.ok(state.artifacts.includes("arbiter-routing.json"));
+  assert.equal(existsSync(join(run.absolutePath, "repair-rounds")), false);
+
+  const schema = schemaCheckRun(project, { runPath: run.relativePath });
+  assert.deepEqual(schema.errors, []);
+});
+
+test("schema check rejects unknown arbiter routing fields", () => {
+  const project = makeProject();
+  initPoisonProject(project);
+  const run = createReviewRun(project, { mode: "review", name: "unknown routing field" });
+  recordDegradedCapture(project, {
+    runPath: run.relativePath,
+    url: "http://localhost:5173",
+    reason: "Automated browser capture is unavailable in this runtime.",
+  });
+  writeReviewArtifacts(project, { runPath: run.relativePath });
+  gateRun(project, { runPath: run.relativePath });
+  initializeProtectedFeatures(project, { runPath: run.relativePath });
+  writeRepairPlan(project, { runPath: run.relativePath });
+  routeRepairs(project, { runPath: run.relativePath });
+
+  const routingPath = join(run.absolutePath, "arbiter-routing.json");
+  const routing = readJson(routingPath);
+  routing.deferred = [routing.currentRepair];
+  writeFileSync(routingPath, `${JSON.stringify(routing, null, 2)}\n`);
+
+  const schema = schemaCheckRun(project, { runPath: run.relativePath });
+  assert.equal(schema.ok, false);
+  assert.match(schema.errors.join("\n"), /arbiter-routing\.json has unknown field deferred/);
+});
+
+test("schema check rejects non-exact arbiter routing bucket lists", () => {
+  const project = makeProject();
+  initPoisonProject(project);
+  const run = createReviewRun(project, { mode: "review", name: "wrong routing buckets" });
+  recordDegradedCapture(project, {
+    runPath: run.relativePath,
+    url: "http://localhost:5173",
+    reason: "Automated browser capture is unavailable in this runtime.",
+  });
+  writeReviewArtifacts(project, { runPath: run.relativePath });
+  gateRun(project, { runPath: run.relativePath });
+  initializeProtectedFeatures(project, { runPath: run.relativePath });
+  writeRepairPlan(project, { runPath: run.relativePath });
+  routeRepairs(project, { runPath: run.relativePath });
+
+  const routingPath = join(run.absolutePath, "arbiter-routing.json");
+  const routing = readJson(routingPath);
+  routing.buckets = ["currentRepair", "backlog", "deferred"];
+  writeFileSync(routingPath, `${JSON.stringify(routing, null, 2)}\n`);
+
+  const schema = schemaCheckRun(project, { runPath: run.relativePath });
+  assert.equal(schema.ok, false);
+  assert.match(schema.errors.join("\n"), /arbiter-routing\.json buckets must exactly list currentRepair, backlog, needsUserDecision, rejected/);
+});
+
+test("schema check fails when routed run loses arbiter routing artifact", () => {
+  const project = makeProject();
+  initPoisonProject(project);
+  const run = createReviewRun(project, { mode: "review", name: "broken routing" });
+  recordDegradedCapture(project, {
+    runPath: run.relativePath,
+    url: "http://localhost:5173",
+    reason: "Automated browser capture is unavailable in this runtime.",
+  });
+  writeReviewArtifacts(project, { runPath: run.relativePath });
+  gateRun(project, { runPath: run.relativePath });
+  initializeProtectedFeatures(project, { runPath: run.relativePath });
+  writeRepairPlan(project, { runPath: run.relativePath });
+  routeRepairs(project, { runPath: run.relativePath });
+  rmSync(join(run.absolutePath, "arbiter-routing.json"));
+
+  const schema = schemaCheckRun(project, { runPath: run.relativePath });
+  assert.equal(schema.ok, false);
+  assert.match(schema.errors.join("\n"), /missing artifact: arbiter-routing\.json/);
+});
+
+test("arbiter routing rerun blocks when existing routing artifact fails schema", () => {
+  const project = makeProject();
+  initPoisonProject(project);
+  const run = createReviewRun(project, { mode: "review", name: "invalid routing rerun" });
+  recordDegradedCapture(project, {
+    runPath: run.relativePath,
+    url: "http://localhost:5173",
+    reason: "Automated browser capture is unavailable in this runtime.",
+  });
+  writeReviewArtifacts(project, { runPath: run.relativePath });
+  gateRun(project, { runPath: run.relativePath });
+  initializeProtectedFeatures(project, { runPath: run.relativePath });
+  writeRepairPlan(project, { runPath: run.relativePath });
+  routeRepairs(project, { runPath: run.relativePath });
+
+  const routingPath = join(run.absolutePath, "arbiter-routing.json");
+  const routing = readJson(routingPath);
+  routing.currentRepair = null;
+  writeFileSync(routingPath, `${JSON.stringify(routing, null, 2)}\n`);
+
+  assert.throws(
+    () => routeRepairs(project, { runPath: run.relativePath }),
+    /arbiter routing requires valid repair plan/,
+  );
+  const state = readJson(join(run.absolutePath, "run-state.json"));
+  assert.equal(state.status, "blocked");
+  assert.equal(state.previousStatus, "repair_routed");
+  assert.match(state.blockedReason, /arbiter-routing\.json currentRepair must be an object/);
+  assert.equal(state.nextRecommendedAction, "schema-check");
+});
+
+test("arbiter routing rerun blocks when routed state omits routing artifacts", () => {
+  const project = makeProject();
+  initPoisonProject(project);
+  const run = createReviewRun(project, { mode: "review", name: "missing routed state artifact" });
+  recordDegradedCapture(project, {
+    runPath: run.relativePath,
+    url: "http://localhost:5173",
+    reason: "Automated browser capture is unavailable in this runtime.",
+  });
+  writeReviewArtifacts(project, { runPath: run.relativePath });
+  gateRun(project, { runPath: run.relativePath });
+  initializeProtectedFeatures(project, { runPath: run.relativePath });
+  writeRepairPlan(project, { runPath: run.relativePath });
+  routeRepairs(project, { runPath: run.relativePath });
+
+  const statePath = join(run.absolutePath, "run-state.json");
+  const state = readJson(statePath);
+  state.artifacts = state.artifacts.filter((artifact) => artifact !== "arbiter-routing.md");
+  writeFileSync(statePath, `${JSON.stringify(state, null, 2)}\n`);
+
+  assert.throws(
+    () => routeRepairs(project, { runPath: run.relativePath }),
+    /arbiter routing requires valid repair plan/,
+  );
+  const blockedState = readJson(statePath);
+  assert.equal(blockedState.status, "blocked");
+  assert.equal(blockedState.previousStatus, "repair_routed");
+  assert.match(blockedState.blockedReason, /run-state\.json repair_routed state must list arbiter-routing\.md/);
+  assert.equal(blockedState.nextRecommendedAction, "schema-check");
 });
