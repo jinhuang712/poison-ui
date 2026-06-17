@@ -3,6 +3,7 @@
 import {
   createReviewRun,
   gateRun,
+  hardenRun,
   initializeProtectedFeatures,
   initPoisonProject,
   recordBrowserCapture,
@@ -16,7 +17,7 @@ import { createPlaywrightCaptureAdapter } from "../src/tools/playwright-capture.
 
 const help = `poison-ui
 
-V1 review-first and V2 protected-baseline/repair-planning/routing CLI for the poison UI prototype workflow.
+V1 review-first and V2 protected-baseline/repair-planning/routing/harden CLI for the poison UI prototype workflow.
 
 Usage:
   poison --help
@@ -29,6 +30,7 @@ Usage:
   poison init-protected-features --run <run-path>
   poison repair-plan --run <run-path>
   poison arbiter-route --run <run-path>
+  poison harden --run <run-path>
 
 See:
   docs/delivery/v1-acceptance.md
@@ -154,6 +156,10 @@ try {
     case "arbiter-route":
       routeRepairs(cwd, { runPath: options.run });
       process.stdout.write("arbiter-route: artifacts written\n");
+      break;
+    case "harden":
+      hardenRun(cwd, { runPath: options.run });
+      process.stdout.write("harden: repair round artifacts written\n");
       break;
     default:
       throw new Error(`Unknown command: ${command}`);

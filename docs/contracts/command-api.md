@@ -82,6 +82,15 @@ executing repairs:
 poison arbiter-route --run .poison/runs/001-poisoned-demo
 ```
 
+## V2d Deterministic Action Mapping
+
+This action writes one bounded harden round from the arbiter-selected current
+repair and then returns the run to capture for fresh evidence:
+
+```bash
+poison harden --run .poison/runs/001-poisoned-demo
+```
+
 ## Later Deterministic Action Mappings
 
 These actions exist for testing, adapter calls, and dry-run workflows. They are

@@ -28,7 +28,7 @@ node bin/poison.mjs gate \
 ## V2 Controlled Hardening Slice
 
 After the V1 gate passes, V2 may initialize the protected baseline, generate a
-repair plan, and route the planned repairs:
+repair plan, route the planned repairs, and write one bounded harden round:
 
 ```bash
 node bin/poison.mjs init-protected-features \
@@ -38,6 +38,9 @@ node bin/poison.mjs repair-plan \
   --run .poison/runs/001-poisoned-demo
 
 node bin/poison.mjs arbiter-route \
+  --run .poison/runs/001-poisoned-demo
+
+node bin/poison.mjs harden \
   --run .poison/runs/001-poisoned-demo
 ```
 

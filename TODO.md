@@ -54,10 +54,18 @@ items as they are completed.
 - Run state moves to `repair_routed` without harden execution, recapture,
   regression, or design publishing.
 
-## Next: V2d Bounded Harden Loop
+## Completed: V2d Bounded Harden Round
 
-- Do not start harden until repair items are routed.
-- Execute only the routed `currentRepair`.
+- `poison harden --run <run>` writes one `repair-rounds/001` artifact set.
+- The round consumes only `arbiter-routing.json.currentRepair`.
+- Backlog, needs-user-decision, and rejected repairs stay deferred.
+- Run state moves to `repaired` with `nextRecommendedAction: capture`.
+- The round does not write regression, drift, or design publishing artifacts.
+
+## Next: Post-Repair Capture And Gate
+
+- Re-capture after the bounded repair round.
+- Re-review and re-gate using the fresh evidence.
 - Do not broaden the repair into unrelated redesign or feature work.
 - Do not add optional design publishing to V2.
 - Do not add broad `evolve` behavior to V2.

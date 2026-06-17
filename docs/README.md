@@ -6,8 +6,8 @@ contracts for Poison.
 ## Current Status
 
 Poison has a complete V1 review-first CLI subset, V2a protected-baseline,
-V2b repair-planning, and V2c arbiter-routing actions, and a split contract
-documentation structure. See
+V2b repair-planning, V2c arbiter-routing, and V2d bounded harden round actions,
+plus a split contract documentation structure. See
 [Progress](../PROGRESS.md) and the [Version Roadmap](./delivery/version-roadmap.md).
 
 ## Ownership Rule

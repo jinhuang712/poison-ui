@@ -97,4 +97,14 @@ test("V1 review-first dry-run can initialize V2 protected baseline and repair pl
   assert.equal(state.nextRecommendedAction, "harden");
   assert.match(readFileSync(join(runDir, "arbiter-routing.md"), "utf8"), /RP-001/);
   assert.equal(readJson(join(runDir, "arbiter-routing.json")).currentRepair.repairId, "RP-001");
+
+  const hardenOutput = runPoison(project, ["harden", "--run", ".poison/runs/001-poisoned-demo"]);
+  assert.match(hardenOutput, /harden: repair round artifacts written/);
+  state = readJson(join(runDir, "run-state.json"));
+  assert.equal(state.status, "repaired");
+  assert.equal(state.nextRecommendedAction, "capture");
+  assert.match(readFileSync(join(runDir, "repair-rounds/001/repair-plan.md"), "utf8"), /RP-001/);
+  assert.equal(readJson(join(runDir, "repair-rounds/001/repair-plan.json")).sourceRepair.repairId, "RP-001");
+  assert.match(readFileSync(join(runDir, "repair-rounds/001/before-after-evidence.md"), "utf8"), /pending recapture/);
+  assert.match(readFileSync(join(runDir, "repair-rounds/001/round-summary.md"), "utf8"), /bounded harden round is planned/);
 });

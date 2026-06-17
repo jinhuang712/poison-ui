@@ -73,6 +73,10 @@ repair-plan.md
 repair-plan.json
 arbiter-routing.md
 arbiter-routing.json
+repair-rounds/001/repair-plan.md
+repair-rounds/001/repair-plan.json
+repair-rounds/001/before-after-evidence.md
+repair-rounds/001/round-summary.md
 ```
 
 Later-version artifacts:
@@ -83,9 +87,6 @@ scope-assessment.md
 design-rationale.md
 user-ambiguity-check.md
 direction-synthesis.md
-repair-rounds/001/repair-plan.md
-repair-rounds/001/repair-plan.json
-repair-rounds/001/before-after-evidence.md
 repair-rounds/001/regression-results.json
 completion-audit-packet.md
 completion-report.md
@@ -102,6 +103,8 @@ completion-report.md
 - V2 repair-plan item shape, planned-only status, duplicate IDs, no embedded
   routing fields, and one-to-one mapping to V1 findings.
 - V2 arbiter-routing bucket shape and one-time routing of every repair item.
+- V2d repair-round shape, source repair traceability to arbiter routing, and no
+  embedded regression, drift, or design publishing output.
 
 Gate must call `schema-check` or an equivalent core module. Missing schema
 metadata prevents entering `gated`.

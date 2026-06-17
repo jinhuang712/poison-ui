@@ -62,6 +62,7 @@ V2 active states:
 protected_ready
 repair_planned
 repair_routed
+repaired
 ```
 
 Later-version states:
@@ -71,7 +72,6 @@ context_ready
 scope_assessed
 designing
 prototype_ready
-repaired
 published
 ```
 
@@ -80,7 +80,7 @@ published
 | Command/action | From | Success to | Failure to | Actor | Idempotent | Required artifacts |
 |---|---|---|---|---|---|---|
 | `new-run --mode review` | none | `created` | none | CLI | no | `run-state.json`, `run-contract.md`, `context-health.md` |
-| `capture --url <url>` | `created`, `blocked` | `captured` | `blocked` | CLI/browser adapter | yes | `screenshots/`, `screenshot-manifest.json`, console evidence, or degraded evidence artifact |
+| `capture --url <url>` | `created`, `blocked`, `repaired` | `captured` | `blocked` | CLI/browser adapter | yes | `screenshots/`, `screenshot-manifest.json`, console evidence, or degraded evidence artifact |
 | `review` | `captured` | `reviewed` | `blocked` | reviewer/orchestrator | yes | `review-packet.md`, `review-summary.md` |
 | `schema-check` | `created`, `captured`, `reviewed`, `gated`, `blocked` | same state | `blocked` | CLI | yes | schema report or inline validation result |
 | `gate` | `reviewed` | `gated` | `blocked` | CLI | yes | `gate-report.md` |
@@ -94,6 +94,7 @@ published
 | `init-protected-features` | `gated`, `protected_ready` | `protected_ready` | `blocked` | CLI/user | yes | `protected-features.md` |
 | `repair-plan` | `protected_ready`, `repair_planned` | `repair_planned` | `blocked` | CLI/orchestrator | yes | `repair-plan.md`, `repair-plan.json` |
 | `arbiter-route` | `repair_planned`, `repair_routed` | `repair_routed` | `blocked` | CLI/orchestrator | yes | `arbiter-routing.md`, `arbiter-routing.json` |
+| `harden` | `repair_routed`, `repaired` | `repaired` | `blocked` | CLI/orchestrator | yes | `repair-rounds/001/repair-plan.md`, `repair-rounds/001/repair-plan.json`, `repair-rounds/001/before-after-evidence.md`, `repair-rounds/001/round-summary.md` |
 
 Failure-to-`blocked` applies after a command starts from a legal source state
 and then cannot produce required artifacts. Calling a command from an illegal
@@ -108,8 +109,6 @@ source state is a command-order error and must not silently mutate run state.
 | design generation | `scope_assessed` | `designing` | `blocked` | designer | no | design work log or design rationale |
 | prototype output ready | `designing` | `prototype_ready` | `blocked` | designer/builder | no | inspectable prototype or design output |
 | capture generated prototype | `prototype_ready` | `captured` | `blocked` | CLI/browser adapter | yes | screenshots, manifest, console evidence, or degraded evidence artifact |
-| repair execution | `reviewed`, `gated` | `repaired` | `blocked` | builder/arbiter | no | `repair-plan.md` or no-repair decision |
-| post-repair capture | `repaired` | `captured` | `blocked` | CLI/browser adapter | yes | updated evidence |
 | publish design snapshot | `gated`, `completed` | `published` | `blocked` | CLI/publisher | yes | `design/README.md`, publish manifest with `sourceRunId` |
 
 ## Hard Command Rules

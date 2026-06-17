@@ -23,8 +23,8 @@ work. Any repair must trace to a V1 finding accepted by the arbiter.
 | V2a Protected baseline | implemented | `protected-features.md`, update rules, source evidence | Do not start repair planning until protected items have ownership and evidence. |
 | V2b Repair planning | implemented | ordered `repair-plan.md` and `repair-plan.json` from V1 finding IDs | Do not start arbiter routing until repair items map one-to-one to findings or declared backlog items. |
 | V2c Arbiter routing | implemented | `currentRepair`, `backlog`, `needsUserDecision`, `rejected` only | Do not start hardening while any item is ambiguously routed. |
-| V2d Single bounded harden loop | next | one narrow repair round, recapture, review, gate | Do not start drift reporting until a before/after repair round exists. |
-| V2e Regression and drift | blocked | protected-feature regression first; visual drift only when evidence exists | Do not start V3 until a bounded repair can re-gate without scope expansion. |
+| V2d Single bounded harden loop | implemented | one narrow repair round artifact set | Do not start drift reporting until fresh post-repair evidence exists. |
+| V2e Regression and drift | next | protected-feature regression first; visual drift only when evidence exists | Do not start V3 until a bounded repair can re-gate without scope expansion. |
 
 ## Must Ship
 
@@ -71,6 +71,20 @@ work. Any repair must trace to a V1 finding accepted by the arbiter.
 - V2c must not write `repair-rounds/`, recapture, regression, or `design/`
   artifacts.
 
+## Current V2d Slice Exit Criteria
+
+- `poison harden --run <run-path>` accepts only a complete `repair_routed` or
+  `repaired` run.
+- A first successful run writes only `repair-rounds/001/repair-plan.md`,
+  `repair-rounds/001/repair-plan.json`,
+  `repair-rounds/001/before-after-evidence.md`, and
+  `repair-rounds/001/round-summary.md`.
+- The round consumes only `arbiter-routing.json.currentRepair`; backlog,
+  `needsUserDecision`, and rejected repairs remain deferred.
+- Run state moves to `repaired` with `nextRecommendedAction: capture`.
+- V2d must not write regression verdicts, drift reports, or `design/`
+  publishing artifacts.
+
 ## Weighting
 
 | Area | Weight | Rationale |
@@ -109,8 +123,8 @@ work. Any repair must trace to a V1 finding accepted by the arbiter.
 
 ## Exit Criteria
 
-These are the full V2 exit criteria after V2c-V2e land. They are not required
-for V2b.
+These are the full V2 exit criteria after V2e lands. They are not required for
+V2d.
 
 - A run can move from review findings to a bounded repair plan.
 - V2c arbiter routing maps repair items only to `currentRepair`, `backlog`,

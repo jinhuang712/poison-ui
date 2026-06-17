@@ -4,6 +4,10 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
+- Implemented V2d bounded harden round artifacts with `poison harden`,
+  `repair-rounds/001/repair-plan.md`, `repair-rounds/001/repair-plan.json`,
+  `before-after-evidence.md`, `round-summary.md`, `repaired` state, schema
+  coverage, and CLI dry-run support.
 - Implemented V2c arbiter routing with `arbiter-routing.md`,
   `arbiter-routing.json`, `repair_routed` state, schema coverage, and CLI
   support for `arbiter-route`.

@@ -20,21 +20,24 @@ The repository currently provides:
 - A V2a protected baseline action for `init-protected-features`.
 - A V2b repair planning action for `repair-plan`.
 - A V2c arbiter routing action for `arbiter-route`.
+- A V2d bounded harden action for `harden` that writes one repair-round
+  artifact set and returns the run to capture.
 - Node built-in tests for the dry-run flow, run-state handling, degraded
   evidence reporting, schema checks, and the mechanical gate.
 - An operational `skills/poison/SKILL.md` entrypoint that routes behavior to
   contract owners.
 
-The repository does not yet provide multi-reviewer review, repair loops, later
-seed/evolve/full/harden modes, or full `design/` publishing.
+The repository does not yet provide multi-reviewer review, post-repair
+regression/drift checks, later seed/evolve/full modes, or full `design/`
+publishing.
 
 ## Active
 
 The most recent completed implementation direction was:
 
-- V2c arbiter routing: write `arbiter-routing.md` and
-  `arbiter-routing.json` from planned repairs without harden execution,
-  recapture, regression, or design publishing.
+- V2d bounded harden round: write `repair-rounds/001` artifacts from the
+  routed `currentRepair` and return the run to capture without regression,
+  drift, or design publishing.
 
 Recent acceptance checks:
 
@@ -57,8 +60,14 @@ Recent acceptance checks:
   `needsUserDecision`, or `rejected` and moves a run to `repair_routed`.
 - V2c does not create repair-round artifacts, recapture evidence, regression
   output, or `design/` publishing artifacts.
+- `harden` writes only `repair-rounds/001/repair-plan.md`,
+  `repair-rounds/001/repair-plan.json`,
+  `repair-rounds/001/before-after-evidence.md`, and
+  `repair-rounds/001/round-summary.md` from the routed current repair.
+- V2d moves a run to `repaired` with `nextRecommendedAction: capture` and does
+  not execute backlog repairs, regression/drift verdicts, or design publishing.
 
-Do not start V2d harden execution inside the V2c commit.
+Do not start V2e regression or V3 design publishing inside the V2d commit.
 
 ## Blocked
 
@@ -72,8 +81,9 @@ These items must not begin implementation yet:
 
 Continue V2 only as a controlled hardening slice:
 
-- Execute one bounded harden round from the routed current repair.
-- Re-capture and re-gate after repair.
+- Re-capture and re-gate after the bounded repair round.
+- Add protected-feature regression checks only after fresh post-repair evidence
+  exists.
 
 ## Deferred
 
@@ -145,7 +155,8 @@ Exit gate:
 
 ## V2 Controlled Hardening Loop
 
-Status: V2a-V2c implemented; V2d bounded harden loop is next.
+Status: V2a-V2d implemented; post-repair capture/regate and V2e regression
+checks are next.
 
 User job:
 
@@ -168,7 +179,8 @@ Prerequisites:
 - Protected-feature artifacts have tests.
 - Repair-plan artifacts have tests.
 - Arbiter routing artifacts have tests.
-- Bounded harden artifacts need tests before implementation.
+- Bounded harden artifacts have tests.
+- Post-repair recapture/regate behavior needs tests before implementation.
 - Autonomous workflow decisions are traceable to contract owners.
 
 ## V3 Design Package Mode
