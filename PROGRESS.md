@@ -24,13 +24,15 @@ The repository currently provides:
   artifact set and returns the run to capture.
 - A post-repair capture, review, schema-check, and gate path that preserves
   bounded round traceability.
+- A V2e protected regression action for `regression-check` that writes
+  `repair-rounds/001/regression-results.json` after post-repair gate.
 - Node built-in tests for the dry-run flow, run-state handling, degraded
   evidence reporting, schema checks, and the mechanical gate.
 - An operational `skills/poison/SKILL.md` entrypoint that routes behavior to
   contract owners.
 
-The repository does not yet provide multi-reviewer review, V2e regression/drift
-checks, later seed/evolve/full modes, or full `design/` publishing.
+The repository does not yet provide multi-reviewer review, V2e visual drift
+reporting, later seed/evolve/full modes, or full `design/` publishing.
 
 ## Active
 
@@ -41,6 +43,8 @@ The most recent completed implementation direction was:
   drift, or design publishing.
 - Post-repair re-gate: recapture, review, schema-check, and gate after the
   bounded round while preserving `repair-rounds/001` traceability.
+- V2e protected regression: write regression results after post-repair gate
+  without drift reports or design publishing.
 
 Recent acceptance checks:
 
@@ -72,9 +76,12 @@ Recent acceptance checks:
 - Post-repair review and gate preserve `repair-rounds/001` artifacts and do
   not add new repair-plan findings, regression results, drift reports, or
   design publishing.
+- `regression-check` writes `repair-rounds/001/regression-results.json` only
+  after post-repair gate and maps checks to `protected-features.md` items.
+- Schema-check rejects regression results before post-repair gate.
 
-Do not start V2e regression/drift or V3 design publishing inside the post-repair
-re-gate commit.
+Do not start V2e visual drift or V3 design publishing inside the protected
+regression commit.
 
 ## Blocked
 
@@ -88,8 +95,7 @@ These items must not begin implementation yet:
 
 Continue V2 only as a controlled hardening slice:
 
-- Add protected-feature regression checks only after fresh post-repair evidence
-  exists.
+- Add visual drift reporting only when before/after visual evidence exists.
 
 ## Deferred
 
@@ -161,8 +167,8 @@ Exit gate:
 
 ## V2 Controlled Hardening Loop
 
-Status: V2a-V2d and post-repair re-gate implemented; V2e regression checks are
-next.
+Status: V2a-V2d, post-repair re-gate, and V2e protected regression implemented;
+V2e visual drift is next.
 
 User job:
 
@@ -187,7 +193,8 @@ Prerequisites:
 - Arbiter routing artifacts have tests.
 - Bounded harden artifacts have tests.
 - Post-repair recapture/regate behavior has tests.
-- V2e regression/drift behavior needs tests before implementation.
+- V2e protected regression behavior has tests.
+- V2e visual drift behavior needs tests before implementation.
 - Autonomous workflow decisions are traceable to contract owners.
 
 ## V3 Design Package Mode

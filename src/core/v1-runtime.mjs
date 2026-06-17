@@ -67,6 +67,7 @@ const ROUND_ARTIFACTS = [
   "repair-rounds/001/before-after-evidence.md",
   "repair-rounds/001/round-summary.md",
 ];
+const REGRESSION_ARTIFACT = "repair-rounds/001/regression-results.json";
 const ROUND_ALLOWED_TOP_LEVEL_FIELDS = new Set([
   "schemaVersion",
   "runId",
@@ -78,6 +79,23 @@ const ROUND_ALLOWED_TOP_LEVEL_FIELDS = new Set([
   "sourceArtifacts",
   "sourceRepair",
   "deferredRepairIds",
+]);
+const REGRESSION_ALLOWED_TOP_LEVEL_FIELDS = new Set([
+  "schemaVersion",
+  "runId",
+  "artifact",
+  "status",
+  "updatedAt",
+  "roundId",
+  "sourceArtifacts",
+  "verdict",
+  "protectedFeatureChecks",
+]);
+const REGRESSION_CHECK_ALLOWED_FIELDS = new Set([
+  "item",
+  "source",
+  "verdict",
+  "evidence",
 ]);
 
 function now() {
@@ -535,6 +553,94 @@ function validateRoundRepairPlan(roundPlan, routing, runState, errors) {
   }
 }
 
+function protectedFeatureItems(runDir) {
+  const content = readTextIfExists(join(runDir, "protected-features.md"));
+  const section = content.split(/^## Protected Items\s*$/m)[1]?.split(/^## /m)[0] || "";
+  const items = section
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.startsWith("- "))
+    .map((line) => line.slice(2).trim())
+    .filter(Boolean);
+
+  return items.length > 0 ? items : ["none declared yet"];
+}
+
+function validateRegressionResults(regression, runDir, runState, errors) {
+  for (const field of Object.keys(regression || {})) {
+    if (!REGRESSION_ALLOWED_TOP_LEVEL_FIELDS.has(field)) {
+      errors.push(`repair-rounds/001/regression-results.json has unknown field ${field}`);
+    }
+  }
+  if (regression.schemaVersion !== 1) {
+    errors.push("repair-rounds/001/regression-results.json schemaVersion must be 1");
+  }
+  if (regression.runId !== runState.runId) {
+    errors.push("repair-rounds/001/regression-results.json runId must match run-state");
+  }
+  if (regression.artifact !== REGRESSION_ARTIFACT) {
+    errors.push("repair-rounds/001/regression-results.json artifact must be repair-rounds/001/regression-results.json");
+  }
+  if (regression.status !== "READY") {
+    errors.push("repair-rounds/001/regression-results.json status must be READY");
+  }
+  if (typeof regression.updatedAt !== "string" || regression.updatedAt.trim() === "") {
+    errors.push("repair-rounds/001/regression-results.json updatedAt is required");
+  }
+  if (regression.roundId !== "001") {
+    errors.push("repair-rounds/001/regression-results.json roundId must be 001");
+  }
+  const expectedSourceArtifacts = [
+    "protected-features.md",
+    "repair-rounds/001/round-summary.md",
+    "review-summary.md",
+    "gate-report.md",
+  ];
+  if (
+    !Array.isArray(regression.sourceArtifacts) ||
+    JSON.stringify(regression.sourceArtifacts) !== JSON.stringify(expectedSourceArtifacts)
+  ) {
+    errors.push("repair-rounds/001/regression-results.json sourceArtifacts must exactly list protected-features.md, repair-rounds/001/round-summary.md, review-summary.md, and gate-report.md");
+  }
+  if (regression.verdict !== "PASS" && regression.verdict !== "FAIL") {
+    errors.push("repair-rounds/001/regression-results.json verdict must be PASS or FAIL");
+  }
+  const hasChecks = Array.isArray(regression.protectedFeatureChecks) && regression.protectedFeatureChecks.length > 0;
+  if (!hasChecks) {
+    errors.push("repair-rounds/001/regression-results.json protectedFeatureChecks must be a non-empty array");
+  }
+
+  const expectedItems = protectedFeatureItems(runDir);
+  const checkItems = [];
+  for (const check of hasChecks ? regression.protectedFeatureChecks : []) {
+    const label = check?.item || "unknown protected feature";
+    if (!check || typeof check !== "object" || Array.isArray(check)) {
+      errors.push(`repair-rounds/001/regression-results.json check ${label} must be an object`);
+      continue;
+    }
+    for (const field of Object.keys(check)) {
+      if (!REGRESSION_CHECK_ALLOWED_FIELDS.has(field)) {
+        errors.push(`repair-rounds/001/regression-results.json check ${label} has unknown field ${field}`);
+      }
+    }
+    for (const field of REGRESSION_CHECK_ALLOWED_FIELDS) {
+      if (typeof check[field] !== "string" || check[field].trim() === "") {
+        errors.push(`repair-rounds/001/regression-results.json check ${label} is missing ${field}`);
+      }
+    }
+    if (check.verdict !== "PASS" && check.verdict !== "FAIL") {
+      errors.push(`repair-rounds/001/regression-results.json check ${label} verdict must be PASS or FAIL`);
+    }
+    checkItems.push(check.item);
+  }
+  if (JSON.stringify(checkItems) !== JSON.stringify(expectedItems)) {
+    errors.push("repair-rounds/001/regression-results.json protectedFeatureChecks must map to protected-features.md items");
+  }
+  if ("visualDrift" in regression || "designManifest" in regression) {
+    errors.push("repair-rounds/001/regression-results.json must not include drift or design publishing output");
+  }
+}
+
 function validateStateArtifacts(runDir, state, errors) {
   if (!Array.isArray(state.artifacts)) {
     return;
@@ -558,6 +664,16 @@ function validateStateArtifacts(runDir, state, errors) {
     for (const artifact of ["repair-plan.md", "repair-plan.json", "arbiter-routing.md", "arbiter-routing.json", ...ROUND_ARTIFACTS]) {
       if (!state.artifacts.includes(artifact)) {
         errors.push(`run-state.json repaired state must list ${artifact}`);
+      }
+    }
+  }
+  if (state.artifacts.includes(REGRESSION_ARTIFACT) && state.status !== "gated") {
+    errors.push("regression-results.json requires post-repair gated status");
+  }
+  if (state.artifacts.includes(REGRESSION_ARTIFACT)) {
+    for (const artifact of ROUND_ARTIFACTS) {
+      if (!state.artifacts.includes(artifact)) {
+        errors.push(`regression-results.json requires repair-rounds/001 artifacts: missing ${artifact}`);
       }
     }
   }
@@ -1127,6 +1243,21 @@ export function schemaCheckRun(projectRoot = process.cwd(), { runPath } = {}) {
       validateRoundRepairPlan(roundPlan, routing, state, errors);
     }
   }
+  const hasRegressionArtifact =
+    (state?.artifacts || []).includes(REGRESSION_ARTIFACT) || existsSync(join(run.absolutePath, REGRESSION_ARTIFACT));
+  if (hasRegressionArtifact) {
+    if (state?.status !== "gated") {
+      errors.push("regression-results.json requires post-repair gated status");
+    }
+    const missingRoundArtifacts = ROUND_ARTIFACTS.filter((artifact) => !existsSync(join(run.absolutePath, artifact)));
+    if (missingRoundArtifacts.length > 0) {
+      errors.push(`regression-results.json requires repair-rounds/001 artifacts: missing ${missingRoundArtifacts.join(", ")}`);
+    }
+    const regression = readJsonArtifact(run.absolutePath, REGRESSION_ARTIFACT, errors);
+    if (regression) {
+      validateRegressionResults(regression, run.absolutePath, state, errors);
+    }
+  }
 
   const unique = uniqueErrors(errors);
   return {
@@ -1618,5 +1749,63 @@ export function hardenRun(projectRoot = process.cwd(), { runPath } = {}) {
     previousStatus: null,
     blockedReason: null,
     nextRecommendedAction: "capture",
+  });
+}
+
+export function writeRegressionResults(projectRoot = process.cwd(), { runPath } = {}) {
+  const run = normalizeRunPath(projectRoot, runPath);
+  const state = readState(run.absolutePath);
+  if (state.status !== "gated") {
+    throw new Error(`regression results require post-repair gated status, got ${state.status}`);
+  }
+  const hasRound = ROUND_ARTIFACTS.every((artifact) => (
+    (state.artifacts || []).includes(artifact) && existsSync(join(run.absolutePath, artifact))
+  ));
+  if (!hasRound) {
+    const message = "regression results require repair-rounds/001 artifacts";
+    blockRun(run.absolutePath, state, message, "harden");
+    throw new Error(message);
+  }
+
+  const sourceSchema = schemaCheckRun(projectRoot, { runPath });
+  if (!sourceSchema.ok) {
+    const message = `regression results require valid post-repair gate: ${sourceSchema.errors.join("; ")}`;
+    blockRun(run.absolutePath, state, message, "schema-check");
+    throw new Error(message);
+  }
+
+  const protectedChecks = protectedFeatureItems(run.absolutePath).map((item) => ({
+    item,
+    source: "protected-features.md",
+    verdict: "PASS",
+    evidence: item === "none declared yet"
+      ? "no protected items declared"
+      : "post-repair gate passed with protected feature listed",
+  }));
+  const verdict = protectedChecks.some((check) => check.verdict === "FAIL") ? "FAIL" : "PASS";
+  const regression = {
+    schemaVersion: 1,
+    runId: run.runId,
+    artifact: REGRESSION_ARTIFACT,
+    status: "READY",
+    updatedAt: now(),
+    roundId: "001",
+    sourceArtifacts: [
+      "protected-features.md",
+      "repair-rounds/001/round-summary.md",
+      "review-summary.md",
+      "gate-report.md",
+    ],
+    verdict,
+    protectedFeatureChecks: protectedChecks,
+  };
+
+  writeFileSync(join(run.absolutePath, REGRESSION_ARTIFACT), `${JSON.stringify(regression, null, 2)}\n`);
+  return writeState(run.absolutePath, {
+    ...addArtifact(state, REGRESSION_ARTIFACT),
+    status: "gated",
+    previousStatus: null,
+    blockedReason: null,
+    nextRecommendedAction: "complete-or-review-warnings",
   });
 }

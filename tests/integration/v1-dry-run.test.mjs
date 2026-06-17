@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, readFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
@@ -128,4 +128,14 @@ test("V1 review-first dry-run can initialize V2 protected baseline and repair pl
   state = readJson(join(runDir, "run-state.json"));
   assert.equal(state.status, "gated");
   assert.ok(state.artifacts.includes("repair-rounds/001/repair-plan.json"));
+
+  const regressionOutput = runPoison(project, ["regression-check", "--run", ".poison/runs/001-poisoned-demo"]);
+  assert.match(regressionOutput, /regression-check: protected feature checks written/);
+  state = readJson(join(runDir, "run-state.json"));
+  assert.equal(state.status, "gated");
+  assert.ok(state.artifacts.includes("repair-rounds/001/regression-results.json"));
+  const regression = readJson(join(runDir, "repair-rounds/001/regression-results.json"));
+  assert.equal(regression.verdict, "PASS");
+  assert.equal(regression.protectedFeatureChecks[0].item, "none declared yet");
+  assert.equal(existsSync(join(runDir, "design")), false);
 });

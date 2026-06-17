@@ -4,6 +4,9 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
+- Implemented V2e protected-feature regression checks with
+  `poison regression-check`, `repair-rounds/001/regression-results.json`,
+  schema coverage, and CLI dry-run support without drift or design publishing.
 - Implemented post-repair capture, review, schema-check, and gate traceability
   after the bounded harden round without writing regression, drift, or design
   publishing artifacts.

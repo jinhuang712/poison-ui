@@ -71,6 +71,7 @@ By default, `.poison/context` is trackable repository state.
   repair-rounds/001/repair-plan.json
   repair-rounds/001/before-after-evidence.md
   repair-rounds/001/round-summary.md
+  repair-rounds/001/regression-results.json
   gate-report.md
   completion-audit-packet.md
   completion-report.md
@@ -87,8 +88,11 @@ V2c arbiter-routing runs add only root-level `arbiter-routing.md` and
 `arbiter-routing.json`. V2d bounded harden runs add only
 `repair-rounds/001/repair-plan.md`, `repair-rounds/001/repair-plan.json`,
 `repair-rounds/001/before-after-evidence.md`, and
-`repair-rounds/001/round-summary.md`; post-repair capture and regression
-artifacts belong to later V2 slices.
+`repair-rounds/001/round-summary.md`. Post-repair re-gate reuses V1 capture,
+review, schema-check, and gate artifacts while preserving the round artifacts.
+V2e protected regression adds only
+`repair-rounds/001/regression-results.json`; drift reports belong to the later
+visual-drift slice.
 
 ## Generated Evidence
 

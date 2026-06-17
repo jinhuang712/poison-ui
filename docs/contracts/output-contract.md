@@ -77,6 +77,7 @@ repair-rounds/001/repair-plan.md
 repair-rounds/001/repair-plan.json
 repair-rounds/001/before-after-evidence.md
 repair-rounds/001/round-summary.md
+repair-rounds/001/regression-results.json
 ```
 
 Later-version artifacts:
@@ -87,7 +88,6 @@ scope-assessment.md
 design-rationale.md
 user-ambiguity-check.md
 direction-synthesis.md
-repair-rounds/001/regression-results.json
 completion-audit-packet.md
 completion-report.md
 ```
@@ -107,6 +107,9 @@ completion-report.md
   embedded regression, drift, or design publishing output.
 - Post-repair review and gate preserve `repair-rounds/001` traceability without
   adding new repair-plan findings.
+- V2e regression results only appear after post-repair gate, map to
+  `protected-features.md` items, and do not embed drift or design publishing
+  output.
 
 Gate must call `schema-check` or an equivalent core module. Missing schema
 metadata prevents entering `gated`.

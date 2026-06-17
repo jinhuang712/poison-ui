@@ -25,7 +25,8 @@ work. Any repair must trace to a V1 finding accepted by the arbiter.
 | V2c Arbiter routing | implemented | `currentRepair`, `backlog`, `needsUserDecision`, `rejected` only | Do not start hardening while any item is ambiguously routed. |
 | V2d Single bounded harden loop | implemented | one narrow repair round artifact set | Do not start drift reporting until fresh post-repair evidence exists. |
 | V2d-post Post-repair re-gate | implemented | recapture, review, schema-check, and gate after the bounded round | Do not start V2e checks until the re-gate path preserves round traceability. |
-| V2e Regression and drift | next | protected-feature regression first; visual drift only when evidence exists | Do not start V3 until a bounded repair can re-gate without scope expansion. |
+| V2e Protected regression | implemented | `repair-rounds/001/regression-results.json` after post-repair gate | Do not start visual drift until protected-feature regression checks exist. |
+| V2e Visual drift | next | visual drift only when before/after visual evidence exists | Do not start V3 until a bounded repair can re-gate without scope expansion. |
 
 ## Must Ship
 
@@ -96,6 +97,18 @@ work. Any repair must trace to a V1 finding accepted by the arbiter.
 - Gate can return the run to `gated` while preserving round artifacts.
 - This slice must not write `regression-results.json`, drift reports, or
   `design/` publishing artifacts.
+
+## Current V2e Protected Regression Exit Criteria
+
+- `poison regression-check --run <run-path>` accepts only a post-repair
+  `gated` run that still contains `repair-rounds/001` artifacts.
+- A first successful run writes
+  `repair-rounds/001/regression-results.json`.
+- Regression results map one check to each `protected-features.md` item. When
+  no protected item has been declared, the artifact records the explicit
+  `none declared yet` baseline instead of inventing a feature.
+- Schema checks reject regression results before post-repair gate.
+- This slice must not write drift reports or `design/` publishing artifacts.
 
 ## Weighting
 

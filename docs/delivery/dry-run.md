@@ -23,6 +23,9 @@ node bin/poison.mjs schema-check \
 
 node bin/poison.mjs gate \
   --run .poison/runs/001-poisoned-demo
+
+node bin/poison.mjs regression-check \
+  --run .poison/runs/001-poisoned-demo
 ```
 
 ## V2 Controlled Hardening Slice

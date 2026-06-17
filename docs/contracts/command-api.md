@@ -91,6 +91,15 @@ repair and then returns the run to capture for fresh evidence:
 poison harden --run .poison/runs/001-poisoned-demo
 ```
 
+## V2e Deterministic Action Mapping
+
+This action writes protected-feature regression results after the bounded
+repair round has been recaptured, reviewed, and gated again:
+
+```bash
+poison regression-check --run .poison/runs/001-poisoned-demo
+```
+
 ## Later Deterministic Action Mappings
 
 These actions exist for testing, adapter calls, and dry-run workflows. They are

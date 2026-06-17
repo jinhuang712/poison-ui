@@ -12,6 +12,7 @@ import {
   hardenRun,
   initializeProtectedFeatures,
   routeRepairs,
+  writeRegressionResults,
   writeRepairPlan,
   writeReviewArtifacts,
   schemaCheckRun,
@@ -53,6 +54,30 @@ function appendSecondReviewFinding(run) {
       ].join("\n"),
     ),
   );
+}
+
+function createRegatedV2Run(project, name = "regated v2") {
+  initPoisonProject(project);
+  const run = createReviewRun(project, { mode: "review", name });
+  recordDegradedCapture(project, {
+    runPath: run.relativePath,
+    url: "http://localhost:5173",
+    reason: "Automated browser capture is unavailable in this runtime.",
+  });
+  writeReviewArtifacts(project, { runPath: run.relativePath });
+  gateRun(project, { runPath: run.relativePath });
+  initializeProtectedFeatures(project, { runPath: run.relativePath });
+  writeRepairPlan(project, { runPath: run.relativePath });
+  routeRepairs(project, { runPath: run.relativePath });
+  hardenRun(project, { runPath: run.relativePath });
+  recordDegradedCapture(project, {
+    runPath: run.relativePath,
+    url: "http://localhost:5173",
+    reason: "Post-repair automated browser capture is unavailable in this runtime.",
+  });
+  writeReviewArtifacts(project, { runPath: run.relativePath });
+  gateRun(project, { runPath: run.relativePath });
+  return run;
 }
 
 test("run-state transitions preserve recoverable blocked metadata for degraded capture", () => {
@@ -1770,4 +1795,124 @@ test("post-repair review preserves multi-finding repair-plan mapping", () => {
   assert.deepEqual(schema.errors, []);
   const gate = gateRun(project, { runPath: run.relativePath });
   assert.equal(gate.verdict, "PASS");
+});
+
+test("regression results require a post-repair gated run and preserve protected feature traceability", () => {
+  const project = makeProject();
+  const run = createRegatedV2Run(project, "regression results");
+
+  writeRegressionResults(project, { runPath: run.relativePath });
+
+  const regressionPath = join(run.absolutePath, "repair-rounds", "001", "regression-results.json");
+  const regression = readJson(regressionPath);
+  assert.equal(regression.schemaVersion, 1);
+  assert.equal(regression.runId, run.runId);
+  assert.equal(regression.artifact, "repair-rounds/001/regression-results.json");
+  assert.equal(regression.status, "READY");
+  assert.equal(regression.roundId, "001");
+  assert.deepEqual(regression.sourceArtifacts, [
+    "protected-features.md",
+    "repair-rounds/001/round-summary.md",
+    "review-summary.md",
+    "gate-report.md",
+  ]);
+  assert.equal(regression.verdict, "PASS");
+  assert.deepEqual(regression.protectedFeatureChecks, [
+    {
+      item: "none declared yet",
+      source: "protected-features.md",
+      verdict: "PASS",
+      evidence: "no protected items declared",
+    },
+  ]);
+  assert.equal("visualDrift" in regression, false);
+  assert.equal("designManifest" in regression, false);
+
+  const state = readJson(join(run.absolutePath, "run-state.json"));
+  assert.equal(state.status, "gated");
+  assert.equal(state.nextRecommendedAction, "complete-or-review-warnings");
+  assert.ok(state.artifacts.includes("repair-rounds/001/regression-results.json"));
+  assert.equal(existsSync(join(run.absolutePath, "design")), false);
+
+  const schema = schemaCheckRun(project, { runPath: run.relativePath });
+  assert.deepEqual(schema.errors, []);
+});
+
+test("schema check rejects regression results before post-repair gate", () => {
+  const project = makeProject();
+  initPoisonProject(project);
+  const run = createReviewRun(project, { mode: "review", name: "early regression" });
+  recordDegradedCapture(project, {
+    runPath: run.relativePath,
+    url: "http://localhost:5173",
+    reason: "Automated browser capture is unavailable in this runtime.",
+  });
+  writeReviewArtifacts(project, { runPath: run.relativePath });
+  gateRun(project, { runPath: run.relativePath });
+  initializeProtectedFeatures(project, { runPath: run.relativePath });
+  writeRepairPlan(project, { runPath: run.relativePath });
+  routeRepairs(project, { runPath: run.relativePath });
+  hardenRun(project, { runPath: run.relativePath });
+  const roundDir = join(run.absolutePath, "repair-rounds", "001");
+  writeFileSync(join(roundDir, "regression-results.json"), `${JSON.stringify({
+    schemaVersion: 1,
+    runId: run.runId,
+    artifact: "repair-rounds/001/regression-results.json",
+    status: "READY",
+    updatedAt: "2026-06-17T00:00:00.000Z",
+    roundId: "001",
+    sourceArtifacts: [
+      "protected-features.md",
+      "repair-rounds/001/round-summary.md",
+      "review-summary.md",
+      "gate-report.md",
+    ],
+    verdict: "PASS",
+    protectedFeatureChecks: [],
+  }, null, 2)}\n`);
+
+  const schema = schemaCheckRun(project, { runPath: run.relativePath });
+  assert.equal(schema.ok, false);
+  assert.match(schema.errors.join("\n"), /regression-results\.json requires post-repair gated status/);
+});
+
+test("schema check rejects regression results on a gated run without repair round artifacts", () => {
+  const project = makeProject();
+  initPoisonProject(project);
+  const run = createReviewRun(project, { mode: "review", name: "regression without round" });
+  recordDegradedCapture(project, {
+    runPath: run.relativePath,
+    url: "http://localhost:5173",
+    reason: "Automated browser capture is unavailable in this runtime.",
+  });
+  writeReviewArtifacts(project, { runPath: run.relativePath });
+  gateRun(project, { runPath: run.relativePath });
+  mkdirSync(join(run.absolutePath, "repair-rounds", "001"), { recursive: true });
+  writeFileSync(join(run.absolutePath, "repair-rounds", "001", "regression-results.json"), `${JSON.stringify({
+    schemaVersion: 1,
+    runId: run.runId,
+    artifact: "repair-rounds/001/regression-results.json",
+    status: "READY",
+    updatedAt: "2026-06-17T00:00:00.000Z",
+    roundId: "001",
+    sourceArtifacts: [
+      "protected-features.md",
+      "repair-rounds/001/round-summary.md",
+      "review-summary.md",
+      "gate-report.md",
+    ],
+    verdict: "PASS",
+    protectedFeatureChecks: [
+      {
+        item: "none declared yet",
+        source: "protected-features.md",
+        verdict: "PASS",
+        evidence: "no protected items declared",
+      },
+    ],
+  }, null, 2)}\n`);
+
+  const schema = schemaCheckRun(project, { runPath: run.relativePath });
+  assert.equal(schema.ok, false);
+  assert.match(schema.errors.join("\n"), /regression-results\.json requires repair-rounds\/001 artifacts/);
 });

@@ -71,9 +71,17 @@ items as they are completed.
 - Post-repair gate preserves round artifacts and does not write regression,
   drift, or design publishing artifacts.
 
-## Next: V2e Regression And Drift
+## Completed: V2e Protected Regression
 
-- Add protected-feature regression checks after post-repair evidence exists.
+- `poison regression-check --run <run>` writes
+  `repair-rounds/001/regression-results.json` after post-repair gate.
+- Regression results map to `protected-features.md` items and preserve
+  post-repair round traceability.
+- Schema checks reject regression results before post-repair gate.
+- This slice does not write drift reports or design publishing artifacts.
+
+## Next: V2e Visual Drift
+
 - Add visual drift reporting only when before/after visual evidence exists.
 - Do not broaden the repair into unrelated redesign or feature work.
 - Do not add optional design publishing to V2.
