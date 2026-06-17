@@ -34,14 +34,15 @@ The current repository implements the dependency-free V1 dry-run path through:
 - `tests/integration/v1-dry-run.test.mjs`
 
 It creates runtime folders, review-run artifacts, explicit degraded evidence,
-review packet and summary files, schema-check output, and a mechanical gate
-report.
+review packet and summary files, schema-check output, a mechanical gate report,
+and deterministic gate failure fixtures for missing artifacts, invalid required
+JSON, captured browser pageerrors, and console errors.
 
 ## Remaining V1 Work
 
-The main remaining V1 enhancement is V1d mechanical gate fixture coverage for
-missing artifacts and severe captured runtime errors. V1 must keep subjective
-visual, UX, and taste concerns outside hard gate behavior.
+No additional V1 implementation slice is active. V1 must stay focused on the
+review-first detector and keep subjective visual, UX, and taste concerns outside
+hard gate behavior.
 
 ## Non-Goals
 

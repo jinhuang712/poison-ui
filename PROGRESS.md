@@ -22,46 +22,48 @@ The repository currently provides:
 - An operational `skills/poison/SKILL.md` entrypoint that routes behavior to
   contract owners.
 
-The repository does not yet provide complete V1d gate failure fixtures,
-multi-reviewer review, repair loops, later seed/evolve/full/harden modes, or
-full `design/` publishing.
+The repository does not yet provide multi-reviewer review, repair loops, later
+seed/evolve/full/harden modes, or full `design/` publishing.
 
 ## Active
 
-The most recent implementation direction was:
+The most recent completed implementation direction was:
 
-- V1c review packet: generate review packets and summaries only from available
-  evidence artifacts.
+- V1d mechanical gate: fail deterministically for missing artifacts, invalid
+  required JSON, and severe captured runtime errors.
 
-V1c acceptance checks:
+V1 acceptance checks:
 
 - Browser evidence review packets reference `screenshot-manifest.json`,
   `console.log`, and the captured screenshot.
 - Degraded evidence review packets reference only `degraded-evidence.md`.
 - Review summaries point findings to existing evidence artifacts.
+- Gate fails on missing referenced artifacts.
+- Gate fails on invalid required V1 JSON artifacts.
+- Gate fails on captured `pageerror` or console `error` evidence.
+- Gate does not fail on warning-level console evidence.
 
-Do not start V1d implementation inside the V1c review packet commit.
+Do not start V2 implementation in the V1d commit.
 
 ## Blocked
 
 These items must not begin implementation yet:
 
-- V2 controlled hardening implementation is blocked until V1b/V1c/V1d fixtures
-  pass with real and degraded evidence.
 - V3 design publishing implementation is blocked until V2 can perform one
   bounded harden loop and re-gate it.
 - V4 adapter/packaging work is blocked until V3 publish traceability is stable.
 
 ## Next
 
-When V1c review packet is committed, move to:
+Move to V2 only as a controlled hardening slice:
 
-- V1d mechanical gate: deterministic pass/fail checks for missing artifacts and
-  severe runtime errors.
+- Initialize protected-feature artifacts.
+- Convert one review finding into a bounded repair plan.
+- Re-capture and re-gate after repair.
 
 ## Deferred
 
-- V2 protected-feature repair loops.
+- V2 work beyond one controlled hardening slice.
 - V3 minimal `design/manifest.json` and `design/handoff.md` publishing.
 - V4 adapter parity, package validation, and release distribution.
 - Future VN backlog items such as manual evidence registration, design-system
@@ -90,7 +92,7 @@ Residual rule:
 
 ## V1 Review-First Detector
 
-Status: V1a-V1c implemented; V1d gate failure fixtures remain.
+Status: V1a-V1d implemented.
 
 User job:
 
@@ -114,22 +116,22 @@ Implemented:
   `gated`.
 - Tests cover runtime artifact helpers, run-state validation, browser evidence,
   degraded evidence reporting, evidence-aware review artifacts, schema checking,
-  gate behavior, and the V1 dry-run flow.
+  mechanical gate pass/fail behavior, and the V1 dry-run flow.
 
 Remaining:
 
-- Add V1d fixture coverage for missing-artifact gate failures and severe
-  runtime-error gate failures without making subjective review warnings hard
-  failures.
+- Keep V1 focused on review-first behavior. Do not add repair loops, design
+  publishing, broad generation modes, or subjective visual hard gates to V1.
 
 Exit gate:
 
-- V1 is ready when the dry-run works with both degraded evidence and real
-  browser evidence, and the gate remains mechanical rather than subjective.
+- V1 is ready for the next version when the dry-run works with both degraded
+  evidence and real browser evidence, and the gate remains mechanical rather
+  than subjective.
 
 ## V2 Controlled Hardening Loop
 
-Status: blocked until V1 evidence, review, and gate fixtures pass.
+Status: next, limited to one controlled hardening slice.
 
 User job:
 

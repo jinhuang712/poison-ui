@@ -85,6 +85,21 @@ function readState(runDir) {
   return JSON.parse(readFileSync(statePath(runDir), "utf8"));
 }
 
+function readJsonArtifact(runDir, artifact, errors) {
+  const path = join(runDir, artifact);
+  if (!existsSync(path)) {
+    errors.push(`${artifact} is missing`);
+    return null;
+  }
+
+  try {
+    return JSON.parse(readFileSync(path, "utf8"));
+  } catch (error) {
+    errors.push(`${artifact} failed to parse: ${error.message}`);
+    return null;
+  }
+}
+
 function writeState(runDir, nextState) {
   const state = {
     ...nextState,
@@ -195,14 +210,53 @@ function validateReviewFindings(summary, errors) {
   }
 }
 
+function validateStateArtifacts(runDir, state, errors) {
+  if (!Array.isArray(state.artifacts)) {
+    return;
+  }
+
+  for (const artifact of state.artifacts) {
+    if (!existsSync(join(runDir, artifact))) {
+      errors.push(`missing artifact: ${artifact}`);
+    }
+  }
+
+  if (state.artifacts.includes("screenshot-manifest.json")) {
+    const manifest = readJsonArtifact(runDir, "screenshot-manifest.json", errors);
+    if (!manifest) {
+      return;
+    }
+    const screenshotPath = manifest?.screenshots?.[0]?.path;
+    if (!screenshotPath) {
+      errors.push("screenshot-manifest.json is missing screenshots[0].path");
+    } else if (!existsSync(join(runDir, screenshotPath))) {
+      errors.push(`missing artifact: ${screenshotPath}`);
+    }
+    if (manifest?.console?.path && !existsSync(join(runDir, manifest.console.path))) {
+      errors.push(`missing artifact: ${manifest.console.path}`);
+    }
+    if (manifest?.pageErrors?.path && !existsSync(join(runDir, manifest.pageErrors.path))) {
+      errors.push(`missing artifact: ${manifest.pageErrors.path}`);
+    }
+  }
+}
+
+function uniqueErrors(errors) {
+  return Array.from(new Set(errors));
+}
+
 function readTextIfExists(path) {
   return existsSync(path) ? readFileSync(path, "utf8") : "";
+}
+
+function lineHasConsoleErrorLevel(line) {
+  return /^\s*(?:\S+\s+)?\[error\](?=\s|$)/i.test(line);
 }
 
 function severeRuntimeErrors(runDir) {
   const errors = [];
   const consoleLog = readTextIfExists(join(runDir, "console.log"));
-  if (/(^|\n)\s*(\[error\]|error:|console\.error\b)/i.test(consoleLog)) {
+  if (consoleLog.split("\n").some((line) => lineHasConsoleErrorLevel(line))) {
     errors.push("severe-runtime-error: console evidence contains level error");
   }
 
@@ -619,13 +673,7 @@ export function writeReviewArtifacts(projectRoot = process.cwd(), { runPath } = 
 export function schemaCheckRun(projectRoot = process.cwd(), { runPath } = {}) {
   const run = normalizeRunPath(projectRoot, runPath);
   const errors = [];
-  let state;
-
-  try {
-    state = readState(run.absolutePath);
-  } catch (error) {
-    errors.push(`run-state.json failed to parse: ${error.message}`);
-  }
+  const state = readJsonArtifact(run.absolutePath, "run-state.json", errors);
 
   if (state) {
     for (const field of REQUIRED_STATE_FIELDS) {
@@ -642,6 +690,7 @@ export function schemaCheckRun(projectRoot = process.cwd(), { runPath } = {}) {
     if (!Array.isArray(state.artifacts)) {
       errors.push("run-state.json artifacts must be an array");
     }
+    validateStateArtifacts(run.absolutePath, state, errors);
   }
 
   requireMarkdownSections(run.absolutePath, "run-contract.md", ["Summary", "Inputs", "Evidence", "Decisions", "Open Questions", "Next Actions"], errors);
@@ -662,9 +711,10 @@ export function schemaCheckRun(projectRoot = process.cwd(), { runPath } = {}) {
     validateReviewFindings(summary, errors);
   }
 
+  const unique = uniqueErrors(errors);
   return {
-    ok: errors.length === 0,
-    errors,
+    ok: unique.length === 0,
+    errors: unique,
   };
 }
 
@@ -679,7 +729,7 @@ export function gateRun(projectRoot = process.cwd(), { runPath } = {}) {
   }
 
   const schema = schemaCheckRun(projectRoot, { runPath });
-  const hardErrors = [...schema.errors, ...severeRuntimeErrors(run.absolutePath)];
+  const hardErrors = uniqueErrors([...schema.errors, ...severeRuntimeErrors(run.absolutePath)]);
   const verdict = hardErrors.length === 0 ? "PASS" : "FAIL";
   writeMarkdown(
     run.absolutePath,

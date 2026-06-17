@@ -4,6 +4,9 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
+- Implemented V1d mechanical gate failure fixtures for missing referenced
+  artifacts, invalid required JSON artifacts, browser pageerrors, console
+  errors, and warning-level console pass behavior.
 - Implemented V1b browser evidence capture with an optional Playwright adapter,
   screenshot manifest, console evidence, and degraded fallback when browser
   automation is unavailable.

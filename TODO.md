@@ -20,20 +20,19 @@ items as they are completed.
 - Review summaries do not claim visual or runtime observations without
   matching evidence artifacts.
 
-## Next: V1d Mechanical Gate
+## Completed: V1d Mechanical Gate
 
-- Add fixtures and tests for severe console/runtime gate failures and missing
-  artifact failures.
-- Keep V1 hard gates mechanical.
-- Keep V1 implementation limited to [V1 Review-First Detector](./docs/delivery/v1-review-first.md)
-  until browser evidence passes both degraded and successful capture tests.
+- Gate fails deterministically for missing referenced artifacts.
+- Gate fails deterministically for invalid required V1 JSON artifacts.
+- Gate fails for captured browser `pageerror` evidence and console `error`
+  evidence.
+- Gate does not fail on warning-level console evidence.
 
-## Blocked: V2 Controlled Hardening
+## Next: V2 Controlled Hardening
 
-- Do not implement V2 until V1 browser evidence, review summary, and gate
-  failure fixtures pass.
-- Prepare only design notes for protected-feature initialization, repair-plan
-  artifacts, arbiter routing, and one bounded harden loop.
+- Implement only the first bounded hardening slice.
+- Start with protected-feature initialization, repair-plan artifacts, arbiter
+  routing, and one bounded harden loop.
 - Do not add optional design publishing to V2.
 - Do not add broad `evolve` behavior to V2.
 - Keep V2 implementation limited to

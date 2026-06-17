@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
@@ -382,17 +382,173 @@ test("schema check requires issue and why-it-feels-poisoned fields", () => {
   assert.match(schema.errors.join("\n"), /why it feels poisoned/);
 });
 
-test("gate fails when captured console evidence contains a severe runtime error", () => {
+test("gate fails when a referenced browser evidence artifact is missing", async () => {
+  const project = makeProject();
+  initPoisonProject(project);
+  const run = createReviewRun(project, { mode: "review", name: "missing browser artifact" });
+  await recordBrowserCapture(project, {
+    runPath: run.relativePath,
+    url: "http://localhost:5173",
+    adapter: async () => ({
+      screenshot: {
+        fileName: "home.png",
+        bytes: Buffer.from("browser"),
+        width: 1280,
+        height: 720,
+      },
+      consoleEntries: [{ level: "info", text: "ready" }],
+      pageErrors: [],
+    }),
+  });
+  writeReviewArtifacts(project, { runPath: run.relativePath });
+  rmSync(join(run.absolutePath, "screenshots", "home.png"));
+
+  const gate = gateRun(project, { runPath: run.relativePath });
+  assert.equal(gate.verdict, "FAIL");
+  assert.match(gate.errors.join("\n"), /missing artifact: screenshots\/home\.png/);
+  assert.equal(gate.errors.filter((error) => error === "missing artifact: screenshots/home.png").length, 1);
+  assert.match(readFileSync(join(run.absolutePath, "gate-report.md"), "utf8"), /FAIL: missing artifact: screenshots\/home\.png/);
+  const state = readJson(join(run.absolutePath, "run-state.json"));
+  assert.equal(state.status, "blocked");
+  assert.equal(state.previousStatus, "reviewed");
+  assert.equal(state.nextRecommendedAction, "schema-check");
+});
+
+test("gate fails when a required V1 JSON artifact no longer parses", async () => {
+  const project = makeProject();
+  initPoisonProject(project);
+  const run = createReviewRun(project, { mode: "review", name: "broken manifest" });
+  await recordBrowserCapture(project, {
+    runPath: run.relativePath,
+    url: "http://localhost:5173",
+    adapter: async () => ({
+      screenshot: {
+        fileName: "home.png",
+        bytes: Buffer.from("browser"),
+        width: 1280,
+        height: 720,
+      },
+      consoleEntries: [{ level: "info", text: "ready" }],
+      pageErrors: [],
+    }),
+  });
+  writeReviewArtifacts(project, { runPath: run.relativePath });
+  writeFileSync(join(run.absolutePath, "screenshot-manifest.json"), "{");
+
+  const gate = gateRun(project, { runPath: run.relativePath });
+  assert.equal(gate.verdict, "FAIL");
+  assert.match(gate.errors.join("\n"), /screenshot-manifest\.json failed to parse/);
+  assert.doesNotMatch(gate.errors.join("\n"), /screenshots\[0\]\.path/);
+  assert.match(readFileSync(join(run.absolutePath, "gate-report.md"), "utf8"), /FAIL: screenshot-manifest\.json failed to parse/);
+  const state = readJson(join(run.absolutePath, "run-state.json"));
+  assert.equal(state.status, "blocked");
+});
+
+test("gate fails when captured browser pageerror evidence is present", async () => {
+  const project = makeProject();
+  initPoisonProject(project);
+  const run = createReviewRun(project, { mode: "review", name: "pageerror" });
+  await recordBrowserCapture(project, {
+    runPath: run.relativePath,
+    url: "http://localhost:5173",
+    adapter: async () => ({
+      screenshot: {
+        fileName: "home.png",
+        bytes: Buffer.from("browser"),
+        width: 1280,
+        height: 720,
+      },
+      consoleEntries: [{ level: "info", text: "ready" }],
+      pageErrors: [{ text: "ReferenceError: missingWidget is not defined" }],
+    }),
+  });
+  writeReviewArtifacts(project, { runPath: run.relativePath });
+
+  const gate = gateRun(project, { runPath: run.relativePath });
+  assert.equal(gate.verdict, "FAIL");
+  assert.match(gate.errors.join("\n"), /severe-runtime-error: browser pageerror evidence is present/);
+  assert.match(readFileSync(join(run.absolutePath, "gate-report.md"), "utf8"), /FAIL: severe-runtime-error: browser pageerror evidence is present/);
+  const state = readJson(join(run.absolutePath, "run-state.json"));
+  assert.equal(state.status, "blocked");
+});
+
+test("gate does not fail on warning-level console evidence", async () => {
+  const project = makeProject();
+  initPoisonProject(project);
+  const run = createReviewRun(project, { mode: "review", name: "console warning" });
+  await recordBrowserCapture(project, {
+    runPath: run.relativePath,
+    url: "http://localhost:5173",
+    adapter: async () => ({
+      screenshot: {
+        fileName: "home.png",
+        bytes: Buffer.from("browser"),
+        width: 1280,
+        height: 720,
+      },
+      consoleEntries: [{ level: "warn", text: "slow resource" }],
+      pageErrors: [],
+    }),
+  });
+  writeReviewArtifacts(project, { runPath: run.relativePath });
+
+  const gate = gateRun(project, { runPath: run.relativePath });
+  assert.equal(gate.verdict, "PASS");
+  assert.deepEqual(gate.errors, []);
+  const state = readJson(join(run.absolutePath, "run-state.json"));
+  assert.equal(state.status, "gated");
+});
+
+test("gate does not fail when non-error console text contains the word error", async () => {
+  const project = makeProject();
+  initPoisonProject(project);
+  const run = createReviewRun(project, { mode: "review", name: "console text error" });
+  await recordBrowserCapture(project, {
+    runPath: run.relativePath,
+    url: "http://localhost:5173",
+    adapter: async () => ({
+      screenshot: {
+        fileName: "home.png",
+        bytes: Buffer.from("browser"),
+        width: 1280,
+        height: 720,
+      },
+      consoleEntries: [{ level: "warn", text: "console.error documentation mention [error]" }],
+      pageErrors: [],
+    }),
+  });
+  writeReviewArtifacts(project, { runPath: run.relativePath });
+
+  const gate = gateRun(project, { runPath: run.relativePath });
+  assert.equal(gate.verdict, "PASS");
+  assert.deepEqual(gate.errors, []);
+});
+
+test("gate fails when captured console evidence contains a timestamped severe runtime error", async () => {
   const project = makeProject();
   initPoisonProject(project);
   const run = createReviewRun(project, { mode: "review", name: "runtime error" });
-  recordDegradedCapture(project, {
+  await recordBrowserCapture(project, {
     runPath: run.relativePath,
     url: "http://localhost:5173",
-    reason: "Automated browser capture is unavailable in this runtime.",
+    adapter: async () => ({
+      screenshot: {
+        fileName: "home.png",
+        bytes: Buffer.from("browser"),
+        width: 1280,
+        height: 720,
+      },
+      consoleEntries: [
+        {
+          level: "error",
+          text: "TypeError: Cannot read properties of undefined",
+          timestamp: "2026-06-16T00:00:00.000Z",
+        },
+      ],
+      pageErrors: [],
+    }),
   });
   writeReviewArtifacts(project, { runPath: run.relativePath });
-  writeFileSync(join(run.absolutePath, "console.log"), "[error] TypeError: Cannot read properties of undefined\n");
 
   const gate = gateRun(project, { runPath: run.relativePath });
   assert.equal(gate.verdict, "FAIL");

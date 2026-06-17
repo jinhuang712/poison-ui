@@ -31,20 +31,19 @@ and learn what to fix first.
 | Version | Status | User job | Owner |
 |---|---|---|---|
 | V0 Documentation scaffold | complete | make the repository implementable without a monolithic plan | [PROGRESS.md](../../PROGRESS.md#v0-documentation-migration) |
-| V1 Review-first detector | active, V1d next | I have an AI-made local UI demo; tell me what is poisoned and what to fix first | [v1-review-first.md](./v1-review-first.md) |
-| V2 Controlled hardening | blocked | improve this prototype without breaking what already works | [v2-controlled-hardening.md](./v2-controlled-hardening.md) |
+| V1 Review-first detector | complete | I have an AI-made local UI demo; tell me what is poisoned and what to fix first | [v1-review-first.md](./v1-review-first.md) |
+| V2 Controlled hardening | next | improve this prototype without breaking what already works | [v2-controlled-hardening.md](./v2-controlled-hardening.md) |
 | V3 Design package | blocked | publish a traceable handoff from evidence-backed runs | [v3-design-package.md](./v3-design-package.md) |
 | V4 Platform and adapter maturity | deferred | use the same Poison contract across harnesses | [v4-platform-adapter-maturity.md](./v4-platform-adapter-maturity.md) |
 | VN Backlog | parked | future items awaiting a narrow owner and gate | [vn-backlog.md](./vn-backlog.md) |
 
 ## Current Active Sequence
 
-1. Finish V1d mechanical gate failure fixtures.
-2. Start V2 only after the V1 gates above pass.
+1. Start V2a protected baseline.
+2. Keep V2 limited to one controlled hardening slice before V3.
 
 ## Must Not Start Yet
 
-- V2 implementation before V1 evidence/review/gate fixtures pass.
 - V3 publishing before V2 performs one bounded harden loop and re-gates.
 - V4 adapter parity or packaging before V3 publish traceability is stable.
 - VN items before they have one user job, one artifact owner, one gate behavior,

@@ -23,7 +23,7 @@ schemas, and runs a mechanical gate.
 | V1a Runtime skeleton | implemented minimal subset | `init`, `new-run`, legal state transitions, degraded evidence path | Do not start V1b until state/artifact/schema helpers are tested. |
 | V1b Evidence capture | implemented | real screenshot evidence, console evidence, explicit degraded fallback | Do not start V1c until real and degraded evidence are distinguishable. |
 | V1c Review packet | implemented | review packet and summary generated only from available evidence | Do not start V1d until summaries cannot claim observations without matching artifacts. |
-| V1d Mechanical gate | next implementation target | schema-check, gate pass/fail, blocked-state recovery | Do not start V2 until V1d failure fixtures are passing. |
+| V1d Mechanical gate | implemented | schema-check, gate pass/fail, blocked-state recovery | Do not start V2 until V1d failure fixtures are passing. |
 
 ## Command Path
 
