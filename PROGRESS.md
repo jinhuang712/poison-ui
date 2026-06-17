@@ -40,8 +40,8 @@ The repository currently provides:
 - An operational `skills/poison/SKILL.md` entrypoint that routes behavior to
   contract owners.
 
-The repository does not yet provide multi-reviewer review, harness degradation
-matrix, screen/flow/review package expansion, or later seed/evolve/full modes.
+The repository does not yet provide multi-reviewer review, package validation
+report, screen/flow/review package expansion, or later seed/evolve/full modes.
 
 ## Active
 
@@ -69,6 +69,8 @@ The most recent completed implementation direction was:
   transcript through the CLI to catch contract drift.
 - V4c adapter-facing contract: publish a manifest that maps implemented
   commands to the shared CLI and disallows private adapter behavior.
+- V4d harness degradation matrix: document current local CLI degradation
+  behavior without claiming cross-harness support.
 
 Recent acceptance checks:
 
@@ -122,20 +124,21 @@ Recent acceptance checks:
   completion artifacts, and absence of `design/review`.
 - V4c manifest tests cover implemented command names, `poison` adapter entry,
   and no-private-schema behavior.
+- V4d matrix tests cover current degradation behavior and no cross-harness
+  support claim.
 
 ## Blocked
 
 These items must not begin implementation yet:
 
-- V4 packaging work is blocked until degradation behavior is documented and
-  tested.
+- V4 release work is blocked until package validation evidence exists.
 
 ## Next
 
-Continue V4 only as a narrow harness-degradation slice:
+Continue V4 only as a narrow package-validation slice:
 
-- Document and test missing automation degradation behavior.
-- Keep packaging, release, broad adapter matrix, seed/full generation, and
+- Generate package validation evidence without publishing a release.
+- Keep release, distribution, broad adapter matrix, seed/full generation, and
   screen/flow/review expansion blocked.
 
 ## Deferred

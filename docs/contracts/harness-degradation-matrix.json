@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "scope": "local-cli-current-harness",
+  "crossHarnessSupportClaimed": false,
+  "degradations": [
+    {
+      "capability": "browser-automation",
+      "command": "capture",
+      "behavior": "write degraded-evidence.md and continue as captured",
+      "exitCode": 0,
+      "nextRecommendedAction": "review"
+    },
+    {
+      "capability": "console-evidence",
+      "command": "capture",
+      "behavior": "write degraded-evidence.md when console capture is unavailable",
+      "exitCode": 0,
+      "nextRecommendedAction": "review"
+    },
+    {
+      "capability": "referenced-artifact",
+      "command": "gate",
+      "behavior": "write gate-report.md and move run to blocked",
+      "exitCode": 1,
+      "nextRecommendedAction": "schema-check"
+    },
+    {
+      "capability": "completion-percentage-denominator",
+      "command": "audit-completion",
+      "behavior": "label percentage as blocked and publish no percentage",
+      "exitCode": 0,
+      "nextRecommendedAction": "review-completion-audit"
+    },
+    {
+      "capability": "external-subagent",
+      "command": "none",
+      "behavior": "do not claim cross-harness subagent support in V4d",
+      "exitCode": null,
+      "nextRecommendedAction": "defer-to-adapter-parity"
+    }
+  ]
+}

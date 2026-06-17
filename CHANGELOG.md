@@ -4,6 +4,9 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
+- Implemented V4d harness degradation matrix with
+  `docs/contracts/harness-degradation-matrix.json` and tests for current local
+  CLI degraded behavior without claiming cross-harness support.
 - Implemented V4c first adapter-facing contract with
   `docs/contracts/adapter-command-manifest.json`, manifest/CLI consistency
   tests, and an explicit no-private-schema rule without adding a real adapter

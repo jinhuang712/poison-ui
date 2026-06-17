@@ -137,16 +137,21 @@ items as they are completed.
 - Adapter private schemas and private behavior are explicitly disallowed.
 - No real external adapter, package release, or broad adapter matrix was added.
 
-## Next: V4d Harness Degradation Matrix
+## Completed: V4d Harness Degradation Matrix
 
-- Document and test the current degradation behavior for missing automation
-  capability.
-- Keep packaging and release deferred.
+- `docs/contracts/harness-degradation-matrix.json` records current local CLI
+  degradation behavior.
+- Tests cover browser/console degradation, missing referenced artifact
+  behavior, completion percentage blocking, and no cross-harness support claim.
+
+## Next: V4e Package Validation Report
+
+- Generate package validation evidence without publishing a release.
+- Keep release and distribution deferred until validation passes.
 
 ## Deferred: V4 And VN
 
-- Do not implement package release, distribution, or broad adapter matrix work
-  in V4d.
+- Do not publish package releases or distribution channels in V4e.
 - Keep manual evidence registration in VN. If V1 automation is unavailable, V1
   records degraded evidence or a blocked state instead of registering manual
   evidence.

@@ -23,8 +23,8 @@ them across adapters instead of inventing new workflow behavior.
 | V4a Command semantics freeze | implemented | exit codes, output channels, state-transition failures, blocked metadata | Do not start adapter parity until the shared CLI/core semantics are stable. |
 | V4b Fixture contract suite | implemented | one harness running V1-V3 fixture transcripts | Do not add adapter matrix breadth until one harness catches contract drift. |
 | V4c First adapter parity | implemented | adapter-facing manifest using shared command/core modules | Do not package until parity proves no behavior fork. |
-| V4d Harness degradation | next | missing browser, console, subagent, file capability handling | Do not declare support without degradation transcripts. |
-| V4e Packaging and release | package validation and release docs | Do not release while any adapter owns private schemas or hidden contracts. |
+| V4d Harness degradation | implemented | missing browser, console, subagent, file capability handling | Do not declare support without degradation transcripts. |
+| V4e Packaging and release | next | package validation and release docs | Do not release while any adapter owns private schemas or hidden contracts. |
 
 ## Must Ship
 
@@ -82,6 +82,19 @@ them across adapters instead of inventing new workflow behavior.
   output or blocked state.
 - Degradation fixtures must stay local to the current harness; cross-harness
   support claims remain blocked.
+
+## Current V4d Exit Criteria
+
+- `docs/contracts/harness-degradation-matrix.json` documents current local CLI
+  degradation behavior.
+- The matrix explicitly avoids cross-harness support claims.
+- V4d does not add release packaging, distribution, broad adapter matrices, or
+  external harness support.
+
+## Current V4e Entry Criteria
+
+- Package validation must inspect the actual package files and scripts.
+- V4e may produce validation evidence, but it must not publish a release.
 
 ## Weighting
 
