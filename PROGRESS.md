@@ -40,8 +40,8 @@ The repository currently provides:
 - An operational `skills/poison/SKILL.md` entrypoint that routes behavior to
   contract owners.
 
-The repository does not yet provide multi-reviewer review, adapter parity,
-screen/flow/review package expansion, or later seed/evolve/full modes.
+The repository does not yet provide multi-reviewer review, harness degradation
+matrix, screen/flow/review package expansion, or later seed/evolve/full modes.
 
 ## Active
 
@@ -67,6 +67,8 @@ The most recent completed implementation direction was:
   illegal command-order behavior, and blocked-state recovery metadata.
 - V4b fixture contract suite: run one harness-local V1-V3c happy-path
   transcript through the CLI to catch contract drift.
+- V4c adapter-facing contract: publish a manifest that maps implemented
+  commands to the shared CLI and disallows private adapter behavior.
 
 Recent acceptance checks:
 
@@ -118,19 +120,21 @@ Recent acceptance checks:
   schema-check failure, gate failure, illegal early gate, and blocked metadata.
 - V4b transcript tests cover V1-V3c command sequence, final `published` state,
   completion artifacts, and absence of `design/review`.
+- V4c manifest tests cover implemented command names, `poison` adapter entry,
+  and no-private-schema behavior.
 
 ## Blocked
 
 These items must not begin implementation yet:
 
-- V4 packaging work is blocked until first adapter parity exists.
+- V4 packaging work is blocked until degradation behavior is documented and
+  tested.
 
 ## Next
 
-Continue V4 only as a narrow first-adapter parity slice:
+Continue V4 only as a narrow harness-degradation slice:
 
-- Add one additional adapter or adapter-facing contract that calls shared
-  command/core behavior.
+- Document and test missing automation degradation behavior.
 - Keep packaging, release, broad adapter matrix, seed/full generation, and
   screen/flow/review expansion blocked.
 

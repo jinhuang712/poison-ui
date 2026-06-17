@@ -130,16 +130,23 @@ items as they are completed.
 - Adapter matrix breadth, package release, and external harness parity remain
   deferred.
 
-## Next: V4c First Adapter Parity
+## Completed: V4c First Adapter-Facing Contract
 
-- Add one additional adapter or adapter-facing contract only after it can call
-  shared command/core modules without private behavior.
-- Do not start package release or broad adapter matrix work in the same slice.
+- `docs/contracts/adapter-command-manifest.json` maps implemented commands to
+  the shared `poison` CLI entrypoint.
+- Adapter private schemas and private behavior are explicitly disallowed.
+- No real external adapter, package release, or broad adapter matrix was added.
+
+## Next: V4d Harness Degradation Matrix
+
+- Document and test the current degradation behavior for missing automation
+  capability.
+- Keep packaging and release deferred.
 
 ## Deferred: V4 And VN
 
 - Do not implement package release, distribution, or broad adapter matrix work
-  in V4c.
+  in V4d.
 - Keep manual evidence registration in VN. If V1 automation is unavailable, V1
   records degraded evidence or a blocked state instead of registering manual
   evidence.

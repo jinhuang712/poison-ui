@@ -22,8 +22,8 @@ them across adapters instead of inventing new workflow behavior.
 |---|---|---|---|
 | V4a Command semantics freeze | implemented | exit codes, output channels, state-transition failures, blocked metadata | Do not start adapter parity until the shared CLI/core semantics are stable. |
 | V4b Fixture contract suite | implemented | one harness running V1-V3 fixture transcripts | Do not add adapter matrix breadth until one harness catches contract drift. |
-| V4c First adapter parity | next | one additional adapter using shared command/core modules | Do not package until parity proves no behavior fork. |
-| V4d Harness degradation | missing browser, console, subagent, file capability handling | Do not declare support without degradation transcripts. |
+| V4c First adapter parity | implemented | adapter-facing manifest using shared command/core modules | Do not package until parity proves no behavior fork. |
+| V4d Harness degradation | next | missing browser, console, subagent, file capability handling | Do not declare support without degradation transcripts. |
 | V4e Packaging and release | package validation and release docs | Do not release while any adapter owns private schemas or hidden contracts. |
 
 ## Must Ship
@@ -62,11 +62,26 @@ them across adapters instead of inventing new workflow behavior.
 
 ## Current V4c Entry Criteria
 
-- The first adapter must call `poison` or shared core modules instead of
+- The first adapter-facing contract must call `poison` or shared core modules instead of
   defining private schemas, modes, state transitions, or gate rules.
-- Only one additional adapter or adapter-facing contract may be added in V4c.
+- Only one adapter-facing contract may be added in V4c.
 - Package validation and release remain blocked until parity proves no behavior
   fork.
+
+## Current V4c Exit Criteria
+
+- `docs/contracts/adapter-command-manifest.json` maps implemented commands to
+  the shared `poison` entrypoint.
+- The manifest explicitly rejects private adapter behavior and schemas.
+- V4c does not add external adapter code, broad adapter matrices, packaging, or
+  release docs.
+
+## Current V4d Entry Criteria
+
+- Current missing automation behavior can be represented as explicit degraded
+  output or blocked state.
+- Degradation fixtures must stay local to the current harness; cross-harness
+  support claims remain blocked.
 
 ## Weighting
 

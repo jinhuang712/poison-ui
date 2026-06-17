@@ -4,6 +4,10 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
+- Implemented V4c first adapter-facing contract with
+  `docs/contracts/adapter-command-manifest.json`, manifest/CLI consistency
+  tests, and an explicit no-private-schema rule without adding a real adapter
+  or package release.
 - Implemented V4b fixture contract suite with a harness-local V1-V3c happy-path
   transcript, transcript runner, final state/artifact assertions, and no
   adapter matrix or packaging work.

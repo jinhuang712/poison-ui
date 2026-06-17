@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "behaviorOwner": "poison-cli-shared-core",
+  "adaptersMayDefinePrivateSchemas": false,
+  "commands": [
+    { "name": "init", "adapterEntry": "poison", "privateBehaviorAllowed": false },
+    { "name": "new-run", "adapterEntry": "poison", "privateBehaviorAllowed": false },
+    { "name": "capture", "adapterEntry": "poison", "privateBehaviorAllowed": false },
+    { "name": "review", "adapterEntry": "poison", "privateBehaviorAllowed": false },
+    { "name": "schema-check", "adapterEntry": "poison", "privateBehaviorAllowed": false },
+    { "name": "gate", "adapterEntry": "poison", "privateBehaviorAllowed": false },
+    { "name": "init-protected-features", "adapterEntry": "poison", "privateBehaviorAllowed": false },
+    { "name": "repair-plan", "adapterEntry": "poison", "privateBehaviorAllowed": false },
+    { "name": "arbiter-route", "adapterEntry": "poison", "privateBehaviorAllowed": false },
+    { "name": "harden", "adapterEntry": "poison", "privateBehaviorAllowed": false },
+    { "name": "regression-check", "adapterEntry": "poison", "privateBehaviorAllowed": false },
+    { "name": "visual-drift", "adapterEntry": "poison", "privateBehaviorAllowed": false },
+    { "name": "publish-design", "adapterEntry": "poison", "privateBehaviorAllowed": false },
+    { "name": "publish-handoff", "adapterEntry": "poison", "privateBehaviorAllowed": false },
+    { "name": "audit-completion", "adapterEntry": "poison", "privateBehaviorAllowed": false }
+  ]
+}
