@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "packageName": "poison-ui",
+  "releasePublished": false,
+  "verdict": "READY_FOR_MANUAL_RELEASE_REVIEW",
+  "bin": {
+    "poison": "./bin/poison.mjs"
+  },
+  "requiredFiles": [
+    "bin",
+    "src",
+    "docs",
+    "skills",
+    "README.md",
+    "LICENSE"
+  ],
+  "missingRequiredFiles": [],
+  "validationNotes": [
+    "V4e validates package metadata and included files only.",
+    "No npm package was published.",
+    "Release distribution remains a manual follow-up."
+  ]
+}

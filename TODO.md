@@ -144,14 +144,16 @@ items as they are completed.
 - Tests cover browser/console degradation, missing referenced artifact
   behavior, completion percentage blocking, and no cross-harness support claim.
 
-## Next: V4e Package Validation Report
+## Completed: V4e Package Validation Report
 
-- Generate package validation evidence without publishing a release.
-- Keep release and distribution deferred until validation passes.
+- `docs/delivery/package-validation-report.json` records package validation
+  evidence.
+- `package.json` includes the source and docs files needed by the CLI and
+  contracts.
+- No package release was published.
 
-## Deferred: V4 And VN
+## Parked: VN Backlog
 
-- Do not publish package releases or distribution channels in V4e.
 - Keep manual evidence registration in VN. If V1 automation is unavailable, V1
   records degraded evidence or a blocked state instead of registering manual
   evidence.

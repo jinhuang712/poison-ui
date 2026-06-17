@@ -4,6 +4,9 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
+- Implemented V4e package validation evidence with
+  `docs/delivery/package-validation-report.json`, package file coverage for
+  `src` and `docs`, and validation tests without publishing a release.
 - Implemented V4d harness degradation matrix with
   `docs/contracts/harness-degradation-matrix.json` and tests for current local
   CLI degraded behavior without claiming cross-harness support.

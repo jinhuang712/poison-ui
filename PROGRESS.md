@@ -7,9 +7,9 @@ implementation contracts live under [docs/contracts](./docs/contracts).
 
 ## Current Status
 
-Poison has moved from V0 documentation scaffold through the V1 review-first
-CLI subset, the bounded V2 controlled-hardening slice, and the V3 design
-package traceability slices.
+Poison has completed the current V0-V4 numbered roadmap: V0 documentation
+scaffold, V1 review-first CLI, bounded V2 controlled hardening, V3 design
+package traceability, and V4 platform contract maturity.
 
 The repository currently provides:
 
@@ -40,8 +40,8 @@ The repository currently provides:
 - An operational `skills/poison/SKILL.md` entrypoint that routes behavior to
   contract owners.
 
-The repository does not yet provide multi-reviewer review, package validation
-report, screen/flow/review package expansion, or later seed/evolve/full modes.
+The repository does not yet provide multi-reviewer review, screen/flow/review
+package expansion, later seed/evolve/full modes, or VN backlog features.
 
 ## Active
 
@@ -71,6 +71,8 @@ The most recent completed implementation direction was:
   commands to the shared CLI and disallows private adapter behavior.
 - V4d harness degradation matrix: document current local CLI degradation
   behavior without claiming cross-harness support.
+- V4e package validation: record package validation evidence without
+  publishing a release.
 
 Recent acceptance checks:
 
@@ -126,25 +128,29 @@ Recent acceptance checks:
   and no-private-schema behavior.
 - V4d matrix tests cover current degradation behavior and no cross-harness
   support claim.
+- V4e package validation tests cover package file inclusion and no release
+  publication.
 
 ## Blocked
 
 These items must not begin implementation yet:
 
-- V4 release work is blocked until package validation evidence exists.
+- VN backlog items are parked until promoted by the VN promotion rule.
 
 ## Next
 
-Continue V4 only as a narrow package-validation slice:
+Continue only by promoting a single VN item when it has a narrow owner:
 
-- Generate package validation evidence without publishing a release.
-- Keep release, distribution, broad adapter matrix, seed/full generation, and
-  screen/flow/review expansion blocked.
+- One user job.
+- One artifact owner.
+- One gate behavior.
+- Bounded evidence.
+- Pass/fail tests.
 
-## Deferred
+## Parked
 
 - V2 work beyond one controlled hardening slice.
-- V4 adapter parity, package validation, and release distribution.
+- Package release distribution.
 - Future VN backlog items such as manual evidence registration, design-system
   extraction, visual intelligence, and code repair automation.
 
