@@ -8,7 +8,7 @@ import {
 } from "node:fs";
 import { basename, join, relative, resolve } from "node:path";
 
-const STATE_STATUSES = new Set(["created", "captured", "reviewed", "gated", "completed", "blocked"]);
+const STATE_STATUSES = new Set(["created", "captured", "reviewed", "gated", "completed", "blocked", "protected_ready"]);
 const REQUIRED_STATE_FIELDS = [
   "schemaVersion",
   "runId",
@@ -696,19 +696,24 @@ export function schemaCheckRun(projectRoot = process.cwd(), { runPath } = {}) {
   requireMarkdownSections(run.absolutePath, "run-contract.md", ["Summary", "Inputs", "Evidence", "Decisions", "Open Questions", "Next Actions"], errors);
   requireMarkdownSections(run.absolutePath, "context-health.md", ["Summary", "Inputs", "Evidence", "Decisions", "Open Questions", "Next Actions"], errors);
 
-  if (state?.status === "captured" || state?.status === "reviewed" || state?.status === "gated") {
+  if (state?.status === "captured" || state?.status === "reviewed" || state?.status === "gated" || state?.status === "protected_ready") {
     if (!existsSync(join(run.absolutePath, "degraded-evidence.md")) && !existsSync(join(run.absolutePath, "screenshot-manifest.json"))) {
       errors.push("capture evidence or degraded evidence is required");
     }
   }
 
-  if (state?.status === "reviewed" || state?.status === "gated") {
+  if (state?.status === "reviewed" || state?.status === "gated" || state?.status === "protected_ready") {
     requireMarkdownSections(run.absolutePath, "review-packet.md", ["Summary", "Inputs", "Evidence", "Decisions", "Open Questions", "Next Actions"], errors);
     requireMarkdownSections(run.absolutePath, "review-summary.md", ["Findings"], errors);
     const summary = existsSync(join(run.absolutePath, "review-summary.md"))
       ? readFileSync(join(run.absolutePath, "review-summary.md"), "utf8")
       : "";
     validateReviewFindings(summary, errors);
+  }
+
+  if (state?.status === "protected_ready") {
+    requireMarkdownSections(run.absolutePath, "gate-report.md", ["Verdict", "Hard checks", "Warnings", "Required fixes", "Next action"], errors);
+    requireMarkdownSections(run.absolutePath, "protected-features.md", ["Summary", "Source Evidence", "Protected Items", "Update Rules", "Next Actions"], errors);
   }
 
   const unique = uniqueErrors(errors);
@@ -777,4 +782,60 @@ export function gateRun(projectRoot = process.cwd(), { runPath } = {}) {
     nextRecommendedAction: "complete-or-review-warnings",
   });
   return { verdict, errors: [] };
+}
+
+export function initializeProtectedFeatures(projectRoot = process.cwd(), { runPath } = {}) {
+  const run = normalizeRunPath(projectRoot, runPath);
+  const state = readState(run.absolutePath);
+  if (!["gated", "protected_ready"].includes(state.status)) {
+    throw new Error(`protected baseline requires status gated, got ${state.status}`);
+  }
+
+  if (state.status === "protected_ready" && existsSync(join(run.absolutePath, "protected-features.md"))) {
+    return writeState(run.absolutePath, {
+      ...addArtifact(state, "protected-features.md"),
+      previousStatus: null,
+      blockedReason: null,
+      nextRecommendedAction: "repair-plan",
+    });
+  }
+
+  writeMarkdown(
+    run.absolutePath,
+    run.runId,
+    "protected-features.md",
+    "READY",
+    "init-protected-features",
+    [
+      "# Protected Features",
+      "",
+      "## Summary",
+      "V2a protected baseline initialized from the current evidence-backed review run.",
+      "",
+      "## Source Evidence",
+      "- run-contract.md",
+      "- review-summary.md",
+      "- gate-report.md",
+      "",
+      "## Protected Items",
+      "- none declared yet",
+      "",
+      "## Update Rules",
+      "- Do not remove or weaken a protected item without explicit user decision.",
+      "- New protected items must name source evidence and owner.",
+      "- Repair planning must not start until protected items have ownership and evidence.",
+      "",
+      "## Next Actions",
+      "- repair-plan",
+      "",
+    ].join("\n"),
+  );
+
+  return writeState(run.absolutePath, {
+    ...addArtifact(state, "protected-features.md"),
+    status: "protected_ready",
+    previousStatus: null,
+    blockedReason: null,
+    nextRecommendedAction: "repair-plan",
+  });
 }

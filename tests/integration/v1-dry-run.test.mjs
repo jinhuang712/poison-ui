@@ -24,7 +24,7 @@ function readJson(path) {
   return JSON.parse(readFileSync(path, "utf8"));
 }
 
-test("V1 review-first dry-run creates required artifacts and passes the mechanical gate", () => {
+test("V1 review-first dry-run can initialize the V2a protected baseline after gate", () => {
   const project = makeProject();
 
   runPoison(project, ["init"]);
@@ -73,4 +73,12 @@ test("V1 review-first dry-run creates required artifacts and passes the mechanic
   assert.equal(state.status, "gated");
   assert.equal(state.nextRecommendedAction, "complete-or-review-warnings");
   assert.match(readFileSync(join(runDir, "gate-report.md"), "utf8"), /## Verdict\nPASS/);
+
+  const protectedOutput = runPoison(project, ["init-protected-features", "--run", ".poison/runs/001-poisoned-demo"]);
+  assert.match(protectedOutput, /init-protected-features: protected baseline written/);
+  state = readJson(join(runDir, "run-state.json"));
+  assert.equal(state.status, "protected_ready");
+  assert.equal(state.nextRecommendedAction, "repair-plan");
+  assert.match(readFileSync(join(runDir, "protected-features.md"), "utf8"), /# Protected Features/);
+  assert.doesNotMatch(readFileSync(join(runDir, "protected-features.md"), "utf8"), /design\/manifest/);
 });

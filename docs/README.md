@@ -5,9 +5,9 @@ contracts for Poison.
 
 ## Current Status
 
-Poison has a minimal V1 review-first CLI subset and a split contract
-documentation structure. See [Progress](../PROGRESS.md) and the
-[Version Roadmap](./delivery/version-roadmap.md).
+Poison has a complete V1 review-first CLI subset, a V2a protected-baseline
+action, and a split contract documentation structure. See
+[Progress](../PROGRESS.md) and the [Version Roadmap](./delivery/version-roadmap.md).
 
 ## Ownership Rule
 

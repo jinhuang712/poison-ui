@@ -56,6 +56,14 @@ poison schema-check --run .poison/runs/001-poisoned-demo
 poison gate --run .poison/runs/001-poisoned-demo
 ```
 
+## V2a Deterministic Action Mapping
+
+This action initializes the protected baseline after a V1 run has passed gate:
+
+```bash
+poison init-protected-features --run .poison/runs/001-poisoned-demo
+```
+
 ## Later Deterministic Action Mappings
 
 These actions exist for testing, adapter calls, and dry-run workflows. They are
@@ -65,7 +73,6 @@ requirements unless listed in the V1 mappings above.
 ```bash
 poison init
 poison new-run --mode seed --name test-seed
-poison init-protected-features --run .poison/runs/001-test-seed
 poison assess-readiness --input ./docs/sample-prd.md --run .poison/runs/001-test-seed
 poison assess-scope --run .poison/runs/001-test-seed
 poison capture --url http://localhost:5173 --run .poison/runs/001-test-seed

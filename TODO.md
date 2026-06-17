@@ -28,11 +28,21 @@ items as they are completed.
   evidence.
 - Gate does not fail on warning-level console evidence.
 
-## Next: V2 Controlled Hardening
+## Completed: V2a Protected Baseline
+
+- `poison init-protected-features --run <run>` writes
+  `protected-features.md`.
+- Protected baseline records source evidence, empty initial protected items,
+  update rules, and next action.
+- Run state moves to `protected_ready` without creating repair-plan or design
+  publishing artifacts.
+
+## Next: V2b Repair Planning
 
 - Implement only the first bounded hardening slice.
-- Start with protected-feature initialization, repair-plan artifacts, arbiter
-  routing, and one bounded harden loop.
+- Start with repair-plan artifacts from V1 finding IDs.
+- Do not start arbiter routing until repair items map one-to-one to findings or
+  declared backlog items.
 - Do not add optional design publishing to V2.
 - Do not add broad `evolve` behavior to V2.
 - Keep V2 implementation limited to

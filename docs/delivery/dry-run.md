@@ -25,6 +25,15 @@ node bin/poison.mjs gate \
   --run .poison/runs/001-poisoned-demo
 ```
 
+## V2a Protected Baseline
+
+After the V1 gate passes, V2a may initialize the protected baseline:
+
+```bash
+node bin/poison.mjs init-protected-features \
+  --run .poison/runs/001-poisoned-demo
+```
+
 ## Degraded Evidence Path
 
 If Playwright, browser access, the local app URL, or console capture is not
@@ -43,7 +52,6 @@ versions unless the roadmap changes:
 ```bash
 node bin/poison.mjs assess-readiness
 node bin/poison.mjs assess-scope
-node bin/poison.mjs init-protected-features
 node bin/poison.mjs decision-html
 node bin/poison.mjs ambiguity-check
 node bin/poison.mjs audit-completion

@@ -7,8 +7,8 @@ implementation contracts live under [docs/contracts](./docs/contracts).
 
 ## Current Status
 
-Poison has moved from V0 documentation scaffold into a minimal V1 review-first
-CLI subset.
+Poison has moved from V0 documentation scaffold through the V1 review-first
+CLI subset and into the first V2 controlled-hardening slice.
 
 The repository currently provides:
 
@@ -17,6 +17,7 @@ The repository currently provides:
 - Detailed architecture, delivery, and implementation contract owners.
 - A V1 dependency-free CLI path for `init`, `new-run`, `capture`, `review`,
   `schema-check`, and `gate`.
+- A V2a protected baseline action for `init-protected-features`.
 - Node built-in tests for the dry-run flow, run-state handling, degraded
   evidence reporting, schema checks, and the mechanical gate.
 - An operational `skills/poison/SKILL.md` entrypoint that routes behavior to
@@ -29,10 +30,10 @@ seed/evolve/full/harden modes, or full `design/` publishing.
 
 The most recent completed implementation direction was:
 
-- V1d mechanical gate: fail deterministically for missing artifacts, invalid
-  required JSON, and severe captured runtime errors.
+- V2a protected baseline: initialize `protected-features.md` from a gated run
+  without creating repair-plan or design publishing artifacts.
 
-V1 acceptance checks:
+Recent acceptance checks:
 
 - Browser evidence review packets reference `screenshot-manifest.json`,
   `console.log`, and the captured screenshot.
@@ -42,8 +43,11 @@ V1 acceptance checks:
 - Gate fails on invalid required V1 JSON artifacts.
 - Gate fails on captured `pageerror` or console `error` evidence.
 - Gate does not fail on warning-level console evidence.
+- `init-protected-features` writes `protected-features.md` and moves a run to
+  `protected_ready`.
+- V2a does not create repair-plan or `design/` publishing artifacts.
 
-Do not start V2 implementation in the V1d commit.
+Do not start V2b repair planning inside the V2a commit.
 
 ## Blocked
 
@@ -55,9 +59,8 @@ These items must not begin implementation yet:
 
 ## Next
 
-Move to V2 only as a controlled hardening slice:
+Continue V2 only as a controlled hardening slice:
 
-- Initialize protected-feature artifacts.
 - Convert one review finding into a bounded repair plan.
 - Re-capture and re-gate after repair.
 
@@ -131,7 +134,7 @@ Exit gate:
 
 ## V2 Controlled Hardening Loop
 
-Status: next, limited to one controlled hardening slice.
+Status: V2a implemented; V2b repair planning is next.
 
 User job:
 
@@ -151,7 +154,8 @@ Design intent:
 Prerequisites:
 
 - V1 browser evidence and gate checks are stable.
-- Protected-feature and repair-plan artifacts have tests.
+- Protected-feature artifacts have tests.
+- Repair-plan artifacts need tests before implementation.
 - Autonomous workflow decisions are traceable to contract owners.
 
 ## V3 Design Package Mode

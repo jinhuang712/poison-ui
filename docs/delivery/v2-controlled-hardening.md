@@ -18,13 +18,13 @@ work. Any repair must trace to a V1 finding accepted by the arbiter.
 
 ## Milestone Ladder
 
-| Slice | Owns | Must-not-start gate |
-|---|---|---|
-| V2a Protected baseline | `protected-features.md`, update rules, source evidence | Do not start repair planning until protected items have ownership and evidence. |
-| V2b Repair planning | ordered `repair-plan.md` and `repair-plan.json` from V1 finding IDs | Do not start arbiter routing until repair items map one-to-one to findings or declared backlog items. |
-| V2c Arbiter routing | `currentRepair`, `backlog`, `needsUserDecision`, `rejected` only | Do not start hardening while any item is ambiguously routed. |
-| V2d Single bounded harden loop | one narrow repair round, recapture, review, gate | Do not start drift reporting until a before/after repair round exists. |
-| V2e Regression and drift | protected-feature regression first; visual drift only when evidence exists | Do not start V3 until a bounded repair can re-gate without scope expansion. |
+| Slice | Status | Owns | Must-not-start gate |
+|---|---|---|---|
+| V2a Protected baseline | implemented | `protected-features.md`, update rules, source evidence | Do not start repair planning until protected items have ownership and evidence. |
+| V2b Repair planning | next | ordered `repair-plan.md` and `repair-plan.json` from V1 finding IDs | Do not start arbiter routing until repair items map one-to-one to findings or declared backlog items. |
+| V2c Arbiter routing | blocked | `currentRepair`, `backlog`, `needsUserDecision`, `rejected` only | Do not start hardening while any item is ambiguously routed. |
+| V2d Single bounded harden loop | blocked | one narrow repair round, recapture, review, gate | Do not start drift reporting until a before/after repair round exists. |
+| V2e Regression and drift | blocked | protected-feature regression first; visual drift only when evidence exists | Do not start V3 until a bounded repair can re-gate without scope expansion. |
 
 ## Must Ship
 

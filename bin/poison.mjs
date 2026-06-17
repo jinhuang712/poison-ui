@@ -3,6 +3,7 @@
 import {
   createReviewRun,
   gateRun,
+  initializeProtectedFeatures,
   initPoisonProject,
   recordBrowserCapture,
   recordDegradedCapture,
@@ -13,7 +14,7 @@ import { createPlaywrightCaptureAdapter } from "../src/tools/playwright-capture.
 
 const help = `poison-ui
 
-V1 review-first CLI for the poison UI prototype workflow.
+V1 review-first and V2a protected-baseline CLI for the poison UI prototype workflow.
 
 Usage:
   poison --help
@@ -23,6 +24,7 @@ Usage:
   poison review --run <run-path>
   poison schema-check --run <run-path>
   poison gate --run <run-path>
+  poison init-protected-features --run <run-path>
 
 See:
   docs/delivery/v1-acceptance.md
@@ -137,6 +139,10 @@ try {
       }
       break;
     }
+    case "init-protected-features":
+      initializeProtectedFeatures(cwd, { runPath: options.run });
+      process.stdout.write("init-protected-features: protected baseline written\n");
+      break;
     default:
       throw new Error(`Unknown command: ${command}`);
   }

@@ -9,6 +9,7 @@ import {
   createReviewRun,
   recordBrowserCapture,
   recordDegradedCapture,
+  initializeProtectedFeatures,
   writeReviewArtifacts,
   schemaCheckRun,
   gateRun,
@@ -556,4 +557,115 @@ test("gate fails when captured console evidence contains a timestamped severe ru
   assert.match(readFileSync(join(run.absolutePath, "gate-report.md"), "utf8"), /FAIL: severe-runtime-error/);
   const state = readJson(join(run.absolutePath, "run-state.json"));
   assert.equal(state.status, "blocked");
+});
+
+test("protected baseline requires a gated source run", () => {
+  const project = makeProject();
+  initPoisonProject(project);
+  const run = createReviewRun(project, { mode: "review", name: "protected too early" });
+
+  assert.throws(
+    () => initializeProtectedFeatures(project, { runPath: run.relativePath }),
+    /protected baseline requires status gated/,
+  );
+});
+
+test("protected baseline rejects reviewed runs before gate passes", () => {
+  const project = makeProject();
+  initPoisonProject(project);
+  const run = createReviewRun(project, { mode: "review", name: "protected before gate" });
+  recordDegradedCapture(project, {
+    runPath: run.relativePath,
+    url: "http://localhost:5173",
+    reason: "Automated browser capture is unavailable in this runtime.",
+  });
+  writeReviewArtifacts(project, { runPath: run.relativePath });
+
+  assert.throws(
+    () => initializeProtectedFeatures(project, { runPath: run.relativePath }),
+    /protected baseline requires status gated/,
+  );
+});
+
+test("protected baseline initializes V2a protected features from a gated run", () => {
+  const project = makeProject();
+  initPoisonProject(project);
+  const run = createReviewRun(project, { mode: "review", name: "protected baseline" });
+  recordDegradedCapture(project, {
+    runPath: run.relativePath,
+    url: "http://localhost:5173",
+    reason: "Automated browser capture is unavailable in this runtime.",
+  });
+  writeReviewArtifacts(project, { runPath: run.relativePath });
+  gateRun(project, { runPath: run.relativePath });
+
+  initializeProtectedFeatures(project, { runPath: run.relativePath });
+
+  const protectedFeatures = readFileSync(join(run.absolutePath, "protected-features.md"), "utf8");
+  assert.match(protectedFeatures, /# Protected Features/);
+  assert.match(protectedFeatures, /## Source Evidence/);
+  assert.match(protectedFeatures, /review-summary\.md/);
+  assert.match(protectedFeatures, /gate-report\.md/);
+  assert.match(protectedFeatures, /## Protected Items/);
+  assert.match(protectedFeatures, /none declared yet/);
+  assert.match(protectedFeatures, /## Update Rules/);
+  assert.match(protectedFeatures, /Do not remove or weaken a protected item without explicit user decision/);
+  assert.doesNotMatch(protectedFeatures, /repair-plan\.md/);
+  assert.doesNotMatch(protectedFeatures, /repair-plan\.json/);
+  assert.doesNotMatch(protectedFeatures, /design\/manifest/);
+
+  const state = readJson(join(run.absolutePath, "run-state.json"));
+  assert.equal(state.status, "protected_ready");
+  assert.equal(state.previousStatus, null);
+  assert.equal(state.blockedReason, null);
+  assert.equal(state.nextRecommendedAction, "repair-plan");
+  assert.ok(state.artifacts.includes("protected-features.md"));
+
+  const schema = schemaCheckRun(project, { runPath: run.relativePath });
+  assert.deepEqual(schema.errors, []);
+});
+
+test("protected baseline rerun preserves existing protected items", () => {
+  const project = makeProject();
+  initPoisonProject(project);
+  const run = createReviewRun(project, { mode: "review", name: "protected rerun" });
+  recordDegradedCapture(project, {
+    runPath: run.relativePath,
+    url: "http://localhost:5173",
+    reason: "Automated browser capture is unavailable in this runtime.",
+  });
+  writeReviewArtifacts(project, { runPath: run.relativePath });
+  gateRun(project, { runPath: run.relativePath });
+  initializeProtectedFeatures(project, { runPath: run.relativePath });
+
+  const protectedPath = join(run.absolutePath, "protected-features.md");
+  const edited = readFileSync(protectedPath, "utf8").replace(
+    "- none declared yet",
+    "- checkout search input must remain visible; owner: user; source evidence: review-summary.md",
+  );
+  writeFileSync(protectedPath, edited);
+
+  initializeProtectedFeatures(project, { runPath: run.relativePath });
+
+  const protectedFeatures = readFileSync(protectedPath, "utf8");
+  assert.match(protectedFeatures, /checkout search input must remain visible/);
+});
+
+test("schema check fails when protected-ready run loses protected baseline artifact", () => {
+  const project = makeProject();
+  initPoisonProject(project);
+  const run = createReviewRun(project, { mode: "review", name: "missing protected baseline" });
+  recordDegradedCapture(project, {
+    runPath: run.relativePath,
+    url: "http://localhost:5173",
+    reason: "Automated browser capture is unavailable in this runtime.",
+  });
+  writeReviewArtifacts(project, { runPath: run.relativePath });
+  gateRun(project, { runPath: run.relativePath });
+  initializeProtectedFeatures(project, { runPath: run.relativePath });
+  rmSync(join(run.absolutePath, "protected-features.md"));
+
+  const schema = schemaCheckRun(project, { runPath: run.relativePath });
+  assert.equal(schema.ok, false);
+  assert.match(schema.errors.join("\n"), /protected-features\.md/);
 });

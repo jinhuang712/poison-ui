@@ -56,11 +56,16 @@ completed
 blocked
 ```
 
+V2 active states:
+
+```text
+protected_ready
+```
+
 Later-version states:
 
 ```text
 context_ready
-protected_ready
 scope_assessed
 designing
 prototype_ready
@@ -80,12 +85,17 @@ published
 | `finalize` | `gated` | `completed` | `blocked` | CLI/orchestrator | yes | final state update and no unresolved V1 hard failures |
 | `resolve-blocker` | `blocked` | `previousStatus` or next legal state | `blocked` | CLI/user | yes | artifact or user decision named by `blockedReason` |
 
+## V2 Transition Table
+
+| Command/action | From | Success to | Failure to | Actor | Idempotent | Required artifacts |
+|---|---|---|---|---|---|---|
+| `init-protected-features` | `gated`, `protected_ready` | `protected_ready` | `blocked` | CLI/user | yes | `protected-features.md` |
+
 ## Later-Version Transition Table
 
 | Command/action | From | Success to | Failure to | Actor | Idempotent | Required artifacts |
 |---|---|---|---|---|---|---|
 | build context package | `created` | `context_ready` | `blocked` | librarian | yes | `context-pack.md`, `sot-index.json`, `context-health.md` |
-| `init-protected-features` | `context_ready` | `protected_ready` | `blocked` | CLI/user | yes | `protected-features.md` |
 | `assess-scope` | `protected_ready` | `scope_assessed` | `blocked` | orchestrator | yes | `scope-assessment.md` |
 | design generation | `scope_assessed` | `designing` | `blocked` | designer | no | design work log or design rationale |
 | prototype output ready | `designing` | `prototype_ready` | `blocked` | designer/builder | no | inspectable prototype or design output |
