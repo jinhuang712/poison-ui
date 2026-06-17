@@ -97,6 +97,11 @@ V2e protected regression adds only
 both available, it records an explicit evidence gap instead of a visual
 judgment.
 
+V3a minimal publishing writes only project-root `design/manifest.json` and
+`design/handoff.md` from a gated V2 source run. It does not create wider
+`design/screens`, `design/review`, `design/flows`, completion audit, seed, or
+full-generation output.
+
 ## Generated Evidence
 
 Generated evidence can be ignored by default:

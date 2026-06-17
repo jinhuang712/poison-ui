@@ -6,6 +6,7 @@ import {
   hardenRun,
   initializeProtectedFeatures,
   initPoisonProject,
+  publishDesignSnapshot,
   recordBrowserCapture,
   recordDegradedCapture,
   routeRepairs,
@@ -19,7 +20,7 @@ import { createPlaywrightCaptureAdapter } from "../src/tools/playwright-capture.
 
 const help = `poison-ui
 
-V1 review-first and V2 protected-baseline/repair-planning/routing/harden/regression/drift CLI for the poison UI prototype workflow.
+V1 review-first plus V2 hardening and V3 minimal publish CLI for the poison UI prototype workflow.
 
 Usage:
   poison --help
@@ -35,6 +36,7 @@ Usage:
   poison harden --run <run-path>
   poison regression-check --run <run-path>
   poison visual-drift --run <run-path>
+  poison publish-design --run <run-path>
 
 See:
   docs/delivery/v1-acceptance.md
@@ -172,6 +174,10 @@ try {
     case "visual-drift":
       writeVisualDriftReport(cwd, { runPath: options.run });
       process.stdout.write("visual-drift: report written\n");
+      break;
+    case "publish-design":
+      publishDesignSnapshot(cwd, { runPath: options.run });
+      process.stdout.write("publish-design: minimal design handoff written\n");
       break;
     default:
       throw new Error(`Unknown command: ${command}`);

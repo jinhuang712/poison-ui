@@ -4,6 +4,9 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
+- Implemented V3a minimal design publishing with `poison publish-design`,
+  `design/manifest.json`, `design/handoff.md`, source-run traceability, schema
+  coverage, and CLI dry-run support without broader package output.
 - Implemented V2e visual drift reporting with `poison visual-drift`,
   `repair-rounds/001/visual-drift.json`, screenshot-backed or explicit-absence
   outputs, schema coverage, and CLI dry-run support without design publishing.

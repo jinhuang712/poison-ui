@@ -62,6 +62,9 @@ node bin/poison.mjs regression-check \
 
 node bin/poison.mjs visual-drift \
   --run .poison/runs/001-poisoned-demo
+
+node bin/poison.mjs publish-design \
+  --run .poison/runs/001-poisoned-demo
 ```
 
 ## Degraded Evidence Path
@@ -85,5 +88,4 @@ node bin/poison.mjs assess-scope
 node bin/poison.mjs decision-html
 node bin/poison.mjs ambiguity-check
 node bin/poison.mjs audit-completion
-node bin/poison.mjs publish-design
 ```

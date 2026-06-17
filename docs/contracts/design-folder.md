@@ -54,13 +54,12 @@ A small review-first or hardening run may publish only:
 
 ```text
 design/
-  README.md
-  review/
-    latest-summary.md
-  handoff/
-    acceptance-checklist.md
-    open-questions.md
+  manifest.json
+  handoff.md
 ```
+
+V3a starts with only these two files. Wider review, screen, flow, interaction,
+ADR, and handoff subtrees are optional later package expansions.
 
 If a runnable prototype is part of the handoff, add:
 

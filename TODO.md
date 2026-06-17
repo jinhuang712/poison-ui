@@ -89,15 +89,18 @@ items as they are completed.
   explicit `NO_VISUAL_EVIDENCE` gap instead of claiming a visual comparison.
 - This slice does not write design publishing artifacts.
 
-## Next: V3a Design Publishing
+## Completed: V3a Design Publishing
 
-- Publish only `design/manifest.json` and `design/handoff.md` from a gated V2
-  source run.
-- Require `sourceRunId` and source artifact refs.
-- Do not broaden into full package files, completion percentages, seed/full
-  generation, or adapter maturity.
-- First V3 slice is only `design/manifest.json` and `design/handoff.md` from a
-  gated V2 source run.
+- `poison publish-design --run <run>` writes only `design/manifest.json` and
+  `design/handoff.md` from a gated V2 source run.
+- The manifest includes `sourceRunId`, `packageStatus`, source artifact refs,
+  and the minimal file list.
+- V3a does not write wider screen, flow, review, completion percentage,
+  seed/full generation, or adapter-maturity output.
+
+## Next: V3b Handoff Package
+
+- Add wider handoff files only when they map back to V3a source artifacts.
 - Keep completion percentages, seed generation, full generation, and broad
   design package expansion deferred.
 - Keep V3 implementation limited to

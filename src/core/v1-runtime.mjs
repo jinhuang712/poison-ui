@@ -8,7 +8,7 @@ import {
 } from "node:fs";
 import { basename, join, relative, resolve } from "node:path";
 
-const STATE_STATUSES = new Set(["created", "captured", "reviewed", "gated", "completed", "blocked", "protected_ready", "repair_planned", "repair_routed", "repaired"]);
+const STATE_STATUSES = new Set(["created", "captured", "reviewed", "gated", "completed", "blocked", "protected_ready", "repair_planned", "repair_routed", "repaired", "published"]);
 const REQUIRED_STATE_FIELDS = [
   "schemaVersion",
   "runId",
@@ -110,6 +110,14 @@ const VISUAL_DRIFT_ALLOWED_TOP_LEVEL_FIELDS = new Set([
   "beforeScreenshots",
   "afterScreenshots",
   "evidenceGap",
+]);
+const DESIGN_MANIFEST_ALLOWED_FIELDS = new Set([
+  "schemaVersion",
+  "sourceRunId",
+  "packageStatus",
+  "publishedAt",
+  "files",
+  "sourceArtifacts",
 ]);
 
 function now() {
@@ -739,6 +747,36 @@ function validateVisualDriftReport(drift, runState, errors) {
   }
 }
 
+function validateDesignManifest(manifest, runState, errors) {
+  for (const field of Object.keys(manifest || {})) {
+    if (!DESIGN_MANIFEST_ALLOWED_FIELDS.has(field)) {
+      errors.push(`design/manifest.json has unknown field ${field}`);
+    }
+  }
+  if (manifest.schemaVersion !== 1) {
+    errors.push("design/manifest.json schemaVersion must be 1");
+  }
+  if (manifest.sourceRunId !== runState.runId) {
+    errors.push("design/manifest.json sourceRunId must match run-state");
+  }
+  if (manifest.packageStatus !== "MINIMAL_READY") {
+    errors.push("design/manifest.json packageStatus must be MINIMAL_READY");
+  }
+  if (typeof manifest.publishedAt !== "string" || manifest.publishedAt.trim() === "") {
+    errors.push("design/manifest.json publishedAt is required");
+  }
+  const expectedFiles = ["design/manifest.json", "design/handoff.md"];
+  if (!Array.isArray(manifest.files) || JSON.stringify(manifest.files) !== JSON.stringify(expectedFiles)) {
+    errors.push("design/manifest.json files must exactly list minimal V3a files");
+  }
+  if (!Array.isArray(manifest.sourceArtifacts) || manifest.sourceArtifacts.length === 0) {
+    errors.push("design/manifest.json sourceArtifacts must be a non-empty array");
+  }
+  if ("completionPercent" in manifest || "screens" in manifest || "flows" in manifest) {
+    errors.push("design/manifest.json must not include broader V3 package output");
+  }
+}
+
 function validateStateArtifacts(runDir, state, errors) {
   if (!Array.isArray(state.artifacts)) {
     return;
@@ -765,7 +803,7 @@ function validateStateArtifacts(runDir, state, errors) {
       }
     }
   }
-  if (state.artifacts.includes(REGRESSION_ARTIFACT) && state.status !== "gated") {
+  if (state.artifacts.includes(REGRESSION_ARTIFACT) && state.status !== "gated" && state.status !== "published") {
     errors.push("regression-results.json requires post-repair gated status");
   }
   if (state.artifacts.includes(REGRESSION_ARTIFACT)) {
@@ -776,7 +814,7 @@ function validateStateArtifacts(runDir, state, errors) {
     }
   }
   if (state.artifacts.includes(VISUAL_DRIFT_ARTIFACT)) {
-    if (state.status !== "gated") {
+    if (state.status !== "gated" && state.status !== "published") {
       errors.push("visual-drift.json requires post-repair gated status");
     }
     if (!state.artifacts.includes(REGRESSION_ARTIFACT)) {
@@ -790,6 +828,9 @@ function validateStateArtifacts(runDir, state, errors) {
   }
 
   for (const artifact of state.artifacts) {
+    if (artifact.startsWith("design/")) {
+      continue;
+    }
     if (!existsSync(join(runDir, artifact))) {
       errors.push(`missing artifact: ${artifact}`);
     }
@@ -1291,13 +1332,13 @@ export function schemaCheckRun(projectRoot = process.cwd(), { runPath } = {}) {
   requireMarkdownSections(run.absolutePath, "run-contract.md", ["Summary", "Inputs", "Evidence", "Decisions", "Open Questions", "Next Actions"], errors);
   requireMarkdownSections(run.absolutePath, "context-health.md", ["Summary", "Inputs", "Evidence", "Decisions", "Open Questions", "Next Actions"], errors);
 
-  if (state?.status === "captured" || state?.status === "reviewed" || state?.status === "gated" || state?.status === "protected_ready" || state?.status === "repair_planned" || state?.status === "repair_routed" || state?.status === "repaired") {
+  if (state?.status === "captured" || state?.status === "reviewed" || state?.status === "gated" || state?.status === "protected_ready" || state?.status === "repair_planned" || state?.status === "repair_routed" || state?.status === "repaired" || state?.status === "published") {
     if (!existsSync(join(run.absolutePath, "degraded-evidence.md")) && !existsSync(join(run.absolutePath, "screenshot-manifest.json"))) {
       errors.push("capture evidence or degraded evidence is required");
     }
   }
 
-  if (state?.status === "reviewed" || state?.status === "gated" || state?.status === "protected_ready" || state?.status === "repair_planned" || state?.status === "repair_routed" || state?.status === "repaired") {
+  if (state?.status === "reviewed" || state?.status === "gated" || state?.status === "protected_ready" || state?.status === "repair_planned" || state?.status === "repair_routed" || state?.status === "repaired" || state?.status === "published") {
     requireMarkdownSections(run.absolutePath, "review-packet.md", ["Summary", "Inputs", "Evidence", "Decisions", "Open Questions", "Next Actions"], errors);
     requireMarkdownSections(run.absolutePath, "review-summary.md", ["Findings"], errors);
     const summary = existsSync(join(run.absolutePath, "review-summary.md"))
@@ -1357,7 +1398,7 @@ export function schemaCheckRun(projectRoot = process.cwd(), { runPath } = {}) {
   const hasRegressionArtifact =
     (state?.artifacts || []).includes(REGRESSION_ARTIFACT) || existsSync(join(run.absolutePath, REGRESSION_ARTIFACT));
   if (hasRegressionArtifact) {
-    if (state?.status !== "gated") {
+    if (state?.status !== "gated" && state?.status !== "published") {
       errors.push("regression-results.json requires post-repair gated status");
     }
     const missingRoundArtifacts = ROUND_ARTIFACTS.filter((artifact) => !existsSync(join(run.absolutePath, artifact)));
@@ -1372,7 +1413,7 @@ export function schemaCheckRun(projectRoot = process.cwd(), { runPath } = {}) {
   const hasVisualDriftArtifact =
     (state?.artifacts || []).includes(VISUAL_DRIFT_ARTIFACT) || existsSync(join(run.absolutePath, VISUAL_DRIFT_ARTIFACT));
   if (hasVisualDriftArtifact) {
-    if (state?.status !== "gated") {
+    if (state?.status !== "gated" && state?.status !== "published") {
       errors.push("visual-drift.json requires post-repair gated status");
     }
     if (!existsSync(join(run.absolutePath, REGRESSION_ARTIFACT))) {
@@ -1386,6 +1427,14 @@ export function schemaCheckRun(projectRoot = process.cwd(), { runPath } = {}) {
     if (drift) {
       validateVisualDriftReport(drift, state, errors);
     }
+  }
+  if (state?.status === "published") {
+    const designRoot = join(projectRoot, "design");
+    const manifest = readJsonArtifact(projectRoot, "design/manifest.json", errors);
+    if (manifest) {
+      validateDesignManifest(manifest, state, errors);
+    }
+    requireMarkdownSections(designRoot, "handoff.md", ["Implementation Scope", "Source Evidence", "Open Questions", "Next Actions"], errors);
   }
 
   const unique = uniqueErrors(errors);
@@ -1995,5 +2044,86 @@ export function writeVisualDriftReport(projectRoot = process.cwd(), { runPath } 
     previousStatus: null,
     blockedReason: null,
     nextRecommendedAction: "complete-or-review-warnings",
+  });
+}
+
+export function publishDesignSnapshot(projectRoot = process.cwd(), { runPath } = {}) {
+  const run = normalizeRunPath(projectRoot, runPath);
+  const state = readState(run.absolutePath);
+  if (state.status !== "gated" && state.status !== "published") {
+    throw new Error(`publish design requires gated V2 source, got ${state.status}`);
+  }
+
+  const requiredSourceArtifacts = [
+    "review-summary.md",
+    "gate-report.md",
+    "repair-rounds/001/round-summary.md",
+    REGRESSION_ARTIFACT,
+    VISUAL_DRIFT_ARTIFACT,
+  ];
+  const missingSources = requiredSourceArtifacts.filter((artifact) => !existsSync(join(run.absolutePath, artifact)));
+  if (missingSources.length > 0) {
+    const message = missingSources.some((artifact) => artifact.startsWith("repair-rounds/001/"))
+      ? `publish design requires V2 repair round artifacts: missing ${missingSources.join(", ")}`
+      : `publish design requires source artifacts: missing ${missingSources.join(", ")}`;
+    const nextAction = missingSources.some((artifact) => artifact === "repair-rounds/001/round-summary.md")
+      ? "harden"
+      : (missingSources.some((artifact) => artifact === VISUAL_DRIFT_ARTIFACT) ? "visual-drift" : "harden");
+    blockRun(run.absolutePath, state, message, nextAction);
+    throw new Error(message);
+  }
+
+  const sourceSchema = schemaCheckRun(projectRoot, { runPath });
+  if (!sourceSchema.ok) {
+    const message = `publish design requires valid source run: ${sourceSchema.errors.join("; ")}`;
+    blockRun(run.absolutePath, state, message, "schema-check");
+    throw new Error(message);
+  }
+
+  const designDir = join(projectRoot, "design");
+  ensureDir(designDir);
+  const sourceArtifacts = requiredSourceArtifacts.map((artifact) => `${run.relativePath}/${artifact}`);
+  const manifest = {
+    schemaVersion: 1,
+    sourceRunId: run.runId,
+    packageStatus: "MINIMAL_READY",
+    publishedAt: now(),
+    files: ["design/manifest.json", "design/handoff.md"],
+    sourceArtifacts,
+  };
+  writeFileSync(join(designDir, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
+
+  writeFileSync(join(designDir, "handoff.md"), [
+    "---",
+    "schemaVersion: 1",
+    `sourceRunId: ${run.runId}`,
+    "artifact: design/handoff.md",
+    "status: READY",
+    "source: publish-design",
+    `updatedAt: ${now()}`,
+    "---",
+    "",
+    "# Design Handoff",
+    "",
+    "## Implementation Scope",
+    "Minimal V3a handoff published from a gated V2 source run.",
+    "",
+    "## Source Evidence",
+    ...sourceArtifacts.map((artifact) => `- ${artifact}`),
+    "",
+    "## Open Questions",
+    "none",
+    "",
+    "## Next Actions",
+    "- review design/manifest.json and this handoff before expanding the design package",
+    "",
+  ].join("\n"));
+
+  return writeState(run.absolutePath, {
+    ...addArtifacts(state, ["design/manifest.json", "design/handoff.md"]),
+    status: "published",
+    previousStatus: null,
+    blockedReason: null,
+    nextRecommendedAction: "review-design-handoff",
   });
 }

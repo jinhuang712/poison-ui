@@ -108,6 +108,15 @@ claiming a visual comparison:
 poison visual-drift --run .poison/runs/001-poisoned-demo
 ```
 
+## V3a Deterministic Action Mapping
+
+This action publishes the minimal human-facing design handoff from a gated V2
+source run:
+
+```bash
+poison publish-design --run .poison/runs/001-poisoned-demo
+```
+
 ## Later Deterministic Action Mappings
 
 These actions exist for testing, adapter calls, and dry-run workflows. They are

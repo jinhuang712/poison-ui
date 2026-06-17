@@ -11,6 +11,7 @@ import {
   recordDegradedCapture,
   hardenRun,
   initializeProtectedFeatures,
+  publishDesignSnapshot,
   routeRepairs,
   writeRegressionResults,
   writeVisualDriftReport,
@@ -2004,4 +2005,67 @@ test("visual drift report records before and after screenshots when browser evid
 
   const schema = schemaCheckRun(project, { runPath: run.relativePath });
   assert.deepEqual(schema.errors, []);
+});
+
+test("publish design snapshot writes only minimal V3a manifest and handoff from gated V2 run", () => {
+  const project = makeProject();
+  const run = createRegatedV2Run(project, "publish design");
+  writeRegressionResults(project, { runPath: run.relativePath });
+  writeVisualDriftReport(project, { runPath: run.relativePath });
+
+  publishDesignSnapshot(project, { runPath: run.relativePath });
+
+  const manifest = readJson(join(project, "design", "manifest.json"));
+  assert.equal(manifest.schemaVersion, 1);
+  assert.equal(manifest.sourceRunId, run.runId);
+  assert.equal(manifest.packageStatus, "MINIMAL_READY");
+  assert.deepEqual(manifest.files, ["design/manifest.json", "design/handoff.md"]);
+  assert.deepEqual(manifest.sourceArtifacts, [
+    `${run.relativePath}/review-summary.md`,
+    `${run.relativePath}/gate-report.md`,
+    `${run.relativePath}/repair-rounds/001/round-summary.md`,
+    `${run.relativePath}/repair-rounds/001/regression-results.json`,
+    `${run.relativePath}/repair-rounds/001/visual-drift.json`,
+  ]);
+  assert.equal("completionPercent" in manifest, false);
+
+  const handoff = readFileSync(join(project, "design", "handoff.md"), "utf8");
+  assert.match(handoff, new RegExp(`sourceRunId: ${run.runId}`));
+  assert.match(handoff, /## Implementation Scope/);
+  assert.match(handoff, /## Source Evidence/);
+  assert.match(handoff, /repair-rounds\/001\/visual-drift\.json/);
+  assert.doesNotMatch(handoff, /completion percentage/i);
+
+  const state = readJson(join(run.absolutePath, "run-state.json"));
+  assert.equal(state.status, "published");
+  assert.ok(state.artifacts.includes("design/manifest.json"));
+  assert.ok(state.artifacts.includes("design/handoff.md"));
+  assert.equal(existsSync(join(project, "design", "screens")), false);
+  assert.equal(existsSync(join(project, "design", "review")), false);
+
+  const schema = schemaCheckRun(project, { runPath: run.relativePath });
+  assert.deepEqual(schema.errors, []);
+});
+
+test("publish design snapshot requires gated V2 source artifacts", () => {
+  const project = makeProject();
+  initPoisonProject(project);
+  const run = createReviewRun(project, { mode: "review", name: "publish too early" });
+  recordDegradedCapture(project, {
+    runPath: run.relativePath,
+    url: "http://localhost:5173",
+    reason: "Automated browser capture is unavailable in this runtime.",
+  });
+  writeReviewArtifacts(project, { runPath: run.relativePath });
+  gateRun(project, { runPath: run.relativePath });
+
+  assert.throws(
+    () => publishDesignSnapshot(project, { runPath: run.relativePath }),
+    /publish design requires V2 repair round artifacts/,
+  );
+  const state = readJson(join(run.absolutePath, "run-state.json"));
+  assert.equal(state.status, "blocked");
+  assert.equal(state.previousStatus, "gated");
+  assert.equal(state.nextRecommendedAction, "harden");
+  assert.equal(existsSync(join(project, "design")), false);
 });

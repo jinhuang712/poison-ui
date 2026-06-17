@@ -19,13 +19,13 @@ useful.
 
 ## Milestone Ladder
 
-| Slice | Owns | Must-not-start gate |
-|---|---|---|
-| V3a Evidence-to-design publish | `design/manifest.json` and `design/handoff.md` from a gated V2 run | Do not start wider package files until the manifest has `sourceRunId` and evidence refs. |
-| V3b Handoff package | screens, flows, interactions, and review notes when validated | Do not start completion audit until handoff files map to source evidence. |
-| V3c Completion audit | evidence-backed coverage labels only | Do not publish percentages until mapping and evidence are deterministic. |
-| V3d Mode readiness | readiness decisions for design-producing modes | Do not run generation while product ambiguity is unresolved. |
-| V3e Generation modes | one mode at a time, preferably `evolve` before `seed` or `full` | Do not make generation the default first-user path. |
+| Slice | Status | Owns | Must-not-start gate |
+|---|---|---|---|
+| V3a Evidence-to-design publish | implemented | `design/manifest.json` and `design/handoff.md` from a gated V2 run | Do not start wider package files until the manifest has `sourceRunId` and evidence refs. |
+| V3b Handoff package | next | screens, flows, interactions, and review notes when validated | Do not start completion audit until handoff files map to source evidence. |
+| V3c Completion audit | deferred | evidence-backed coverage labels only | Do not publish percentages until mapping and evidence are deterministic. |
+| V3d Mode readiness | deferred | readiness decisions for design-producing modes | Do not run generation while product ambiguity is unresolved. |
+| V3e Generation modes | deferred | one mode at a time, preferably `evolve` before `seed` or `full` | Do not make generation the default first-user path. |
 
 ## Must Ship
 
@@ -39,6 +39,18 @@ useful.
   without unsupported percentages.
 - Tests proving optional `design/` files are not treated as mandatory.
 - Tests proving every published snapshot points back to run evidence.
+
+## Current V3a Exit Criteria
+
+- `poison publish-design --run <run-path>` accepts only a gated V2 source run
+  that has repair-round, regression, and visual-drift artifacts.
+- A first successful run writes only `design/manifest.json` and
+  `design/handoff.md`.
+- `design/manifest.json` includes `sourceRunId`, source artifact refs, and
+  `packageStatus: MINIMAL_READY`.
+- `design/handoff.md` names the source run and source evidence.
+- V3a must not write wider screen, flow, review, completion percentage, seed,
+  full-generation, or adapter-maturity output.
 
 ## Weighting
 

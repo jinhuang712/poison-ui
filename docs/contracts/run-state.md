@@ -112,7 +112,7 @@ source state is a command-order error and must not silently mutate run state.
 | design generation | `scope_assessed` | `designing` | `blocked` | designer | no | design work log or design rationale |
 | prototype output ready | `designing` | `prototype_ready` | `blocked` | designer/builder | no | inspectable prototype or design output |
 | capture generated prototype | `prototype_ready` | `captured` | `blocked` | CLI/browser adapter | yes | screenshots, manifest, console evidence, or degraded evidence artifact |
-| publish design snapshot | `gated`, `completed` | `published` | `blocked` | CLI/publisher | yes | `design/README.md`, publish manifest with `sourceRunId` |
+| `publish-design` | `gated`, `published` | `published` | `blocked` | CLI/publisher | yes | `design/manifest.json`, `design/handoff.md`, publish manifest with `sourceRunId` |
 
 ## Hard Command Rules
 

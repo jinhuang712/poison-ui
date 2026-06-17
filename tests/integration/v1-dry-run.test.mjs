@@ -148,4 +148,16 @@ test("V1 review-first dry-run can initialize V2 protected baseline and repair pl
   assert.equal(drift.status, "ABSENT");
   assert.equal(drift.verdict, "NO_VISUAL_EVIDENCE");
   assert.equal(existsSync(join(runDir, "design")), false);
+
+  const publishOutput = runPoison(project, ["publish-design", "--run", ".poison/runs/001-poisoned-demo"]);
+  assert.match(publishOutput, /publish-design: minimal design handoff written/);
+  state = readJson(join(runDir, "run-state.json"));
+  assert.equal(state.status, "published");
+  assert.ok(state.artifacts.includes("design/manifest.json"));
+  assert.ok(state.artifacts.includes("design/handoff.md"));
+  const designManifest = readJson(join(project, "design", "manifest.json"));
+  assert.equal(designManifest.sourceRunId, "001-poisoned-demo");
+  assert.deepEqual(designManifest.files, ["design/manifest.json", "design/handoff.md"]);
+  assert.match(readFileSync(join(project, "design", "handoff.md"), "utf8"), /## Source Evidence/);
+  assert.equal(existsSync(join(project, "design", "screens")), false);
 });

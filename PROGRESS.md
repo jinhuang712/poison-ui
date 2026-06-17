@@ -28,13 +28,15 @@ The repository currently provides:
   `repair-rounds/001/regression-results.json` after post-repair gate.
 - A V2e visual drift action for `visual-drift` that writes
   `repair-rounds/001/visual-drift.json` or an explicit visual evidence gap.
+- A V3a minimal publishing action for `publish-design` that writes only
+  `design/manifest.json` and `design/handoff.md`.
 - Node built-in tests for the dry-run flow, run-state handling, degraded
   evidence reporting, schema checks, and the mechanical gate.
 - An operational `skills/poison/SKILL.md` entrypoint that routes behavior to
   contract owners.
 
-The repository does not yet provide multi-reviewer review, V3 `design/`
-publishing, or later seed/evolve/full modes.
+The repository does not yet provide multi-reviewer review, wider V3 handoff
+package files, completion audit, or later seed/evolve/full modes.
 
 ## Active
 
@@ -49,6 +51,8 @@ The most recent completed implementation direction was:
   without drift reports or design publishing.
 - V2e visual drift: write a screenshot-backed drift report when before/after
   screenshots exist, or an explicit `NO_VISUAL_EVIDENCE` gap when they do not.
+- V3a minimal design publishing: write a source-linked manifest and handoff
+  from a gated V2 run without broader package output.
 
 Recent acceptance checks:
 
@@ -88,8 +92,11 @@ Recent acceptance checks:
 - Degraded runs record `NO_VISUAL_EVIDENCE` rather than a visual judgment.
 - Browser-evidence runs can reference before and after screenshot paths while
   leaving the verdict as `NEEDS_HUMAN_REVIEW`.
+- `publish-design` writes only `design/manifest.json` and `design/handoff.md`
+  from a gated V2 source run.
+- Published design output includes `sourceRunId` and source artifact refs.
 
-Do not start V3 design publishing inside the visual-drift commit.
+Do not start V3b wider handoff files inside the V3a commit.
 
 ## Blocked
 
@@ -99,12 +106,11 @@ These items must not begin implementation yet:
 
 ## Next
 
-Start V3 only as a minimal publishing slice:
+Continue V3 only as a narrow handoff slice:
 
-- Publish `design/manifest.json` and `design/handoff.md` from a gated V2 source
-  run.
-- Keep wider package files, completion percentages, seed/full generation, and
-  adapter maturity blocked until V3a traceability is proven.
+- Add wider handoff files only when they map back to V3a source artifacts.
+- Keep completion percentages, seed/full generation, and adapter maturity
+  blocked.
 
 ## Deferred
 
@@ -207,7 +213,8 @@ Prerequisites:
 
 ## V3 Design Package Mode
 
-Status: active, V3a minimal evidence-to-design publishing is next.
+Status: active, V3a minimal evidence-to-design publishing implemented; V3b
+handoff package is next.
 
 User job:
 
@@ -230,6 +237,7 @@ Prerequisites:
 - V2 repair loops are stable and evidence-backed.
 - `design/` publishing is one-way from `.poison/runs` evidence.
 - Optional design files do not become mandatory by accident.
+- V3a minimal publishing has tests.
 
 ## Active Decisions From Critique
 

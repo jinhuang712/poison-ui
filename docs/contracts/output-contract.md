@@ -84,6 +84,8 @@ repair-rounds/001/visual-drift.json
 Later-version artifacts:
 
 ```text
+design/manifest.json
+design/handoff.md
 context-pack.md
 scope-assessment.md
 design-rationale.md
@@ -114,6 +116,9 @@ completion-report.md
 - V2e visual drift results only appear after regression results. They either
   reference before/after screenshots or record an explicit evidence gap, and
   they do not embed design publishing output.
+- V3a design publishing writes only `design/manifest.json` and
+  `design/handoff.md`, both tied to a source run and source artifacts. Missing
+  broader design package files must not fail V3a.
 
 Gate must call `schema-check` or an equivalent core module. Missing schema
 metadata prevents entering `gated`.
