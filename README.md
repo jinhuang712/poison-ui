@@ -36,6 +36,13 @@ Install both Codex CLI and Claude Code from the pinned `v0.9.0` release:
 curl -fsSL https://raw.githubusercontent.com/jinhuang712/poison-ui/v0.9.0/scripts/install-poison-ui.sh | bash -s -- --target both --ref v0.9.0
 ```
 
+Uninstall:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/jinhuang712/poison-ui/main/scripts/uninstall-poison-ui.sh | bash -s -- --target codex
+curl -fsSL https://raw.githubusercontent.com/jinhuang712/poison-ui/main/scripts/uninstall-poison-ui.sh | bash -s -- --target claude
+```
+
 Restart the target CLI after installing the skill. The root-level skill install
 includes the CLI implementation and the contract docs, so required reading such
 as `docs/contracts/command-api.md` is available inside Codex and Claude Code.

@@ -107,6 +107,7 @@ install_one() {
   test -f "$dest/SKILL.md"
   test -f "$dest/docs/contracts/command-api.md"
   test -f "$dest/bin/poison.mjs"
+  rm -rf "$dest/skills/poison"
   chmod +x "$dest/bin/poison.mjs"
   echo "Installed poison-ui for ${label}: ${dest}"
 }

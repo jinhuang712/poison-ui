@@ -8,8 +8,12 @@ All notable changes to this project will be documented here.
 
 - Added `scripts/install-poison-ui.sh` for Codex CLI and Claude Code skill
   installation.
+- Added `scripts/uninstall-poison-ui.sh` for Codex CLI and Claude Code skill
+  removal.
 - Added a root-level `SKILL.md` so repo-root skill installs include the CLI
   implementation and contract docs.
+- Removed the nested `skills/poison/SKILL.md` entrypoint to avoid duplicate
+  recursive skill discovery.
 - Prepared GitHub Release `v0.9.0` as the first demo distribution target
   without publishing to npm.
 - Implemented V4e package validation evidence with

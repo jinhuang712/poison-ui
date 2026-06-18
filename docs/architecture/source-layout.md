@@ -23,12 +23,8 @@ This file owns the intended repository source layout for V1 implementation.
 
 - `SKILL.md`: Codex-installable skill entrypoint that includes repository docs,
   CLI code, and contracts when installed from the repo root.
-- `skills/poison/SKILL.md`: compatibility skill entrypoint for harnesses that
-  install from a nested skill path.
-- `skills/poison/references`: operational references derived from contracts.
-- `skills/poison/roles`: role instructions for orchestrator, librarian,
-  designer, reviewer, and arbiter.
-- `skills/poison/reviewers`: reviewer profiles.
+- Do not package nested `SKILL.md` files under `skills/`; recursive skill
+  discovery may expose duplicate `poison` entries.
 
 ## Source
 
