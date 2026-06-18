@@ -14,8 +14,7 @@ Claude Code skill workflows. It is not an npm release.
 - V4 package, command, degradation, and adapter-facing validation contracts.
 - Root-level `SKILL.md` for repo-root skill installation.
 - `scripts/install-poison-ui.sh` for Codex CLI and Claude Code installs.
-- `scripts/uninstall-poison-ui.sh` for removing installed skills with optional
-  backups.
+- `scripts/uninstall-poison-ui.sh` for removing installed skills.
 
 ## Install
 
@@ -44,8 +43,6 @@ curl -fsSL https://raw.githubusercontent.com/jinhuang712/poison-ui/v0.9.0/script
 ## Notes
 
 - Restart the target CLI after installing the skill.
-- Backups are stored outside scanned skill directories to avoid duplicate skill
-  discovery.
 - Browser evidence depends on optional Playwright availability. If browser
   automation is unavailable, `poison capture` records degraded evidence
   explicitly.

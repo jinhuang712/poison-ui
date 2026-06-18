@@ -6,7 +6,7 @@ usage() {
 Install poison-ui into Codex CLI and/or Claude Code skill directories.
 
 Usage:
-  ./scripts/install-poison-ui.sh [--target codex|claude|both] [--ref <git-ref>] [--repo <owner/repo>] [--no-backup]
+  ./scripts/install-poison-ui.sh [--target codex|claude|both] [--ref <git-ref>] [--repo <owner/repo>]
 
 Defaults:
   --target codex
@@ -15,9 +15,7 @@ Defaults:
 
 Environment overrides:
   CODEX_SKILLS_DIR   default: ~/.codex/skills
-  CODEX_BACKUP_DIR   default: ~/.codex/skill-backups
   CLAUDE_SKILLS_DIR  default: ~/.claude/skills
-  CLAUDE_BACKUP_DIR  default: ~/.claude/skill-backups
 
 Examples:
   ./scripts/install-poison-ui.sh --target codex
@@ -29,7 +27,6 @@ EOF
 target="codex"
 ref="main"
 repo="jinhuang712/poison-ui"
-backup_existing=1
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -44,10 +41,6 @@ while [[ $# -gt 0 ]]; do
     --repo)
       repo="${2:-}"
       shift 2
-      ;;
-    --no-backup)
-      backup_existing=0
-      shift
       ;;
     -h|--help)
       usage
@@ -69,7 +62,6 @@ case "$target" in
     ;;
 esac
 
-timestamp="$(date +%Y%m%d%H%M%S)"
 tmpdir="$(mktemp -d)"
 trap 'rm -rf "$tmpdir"' EXIT
 
@@ -90,20 +82,12 @@ fi
 install_one() {
   local label="$1"
   local skills_dir="$2"
-  local backup_root="$3"
   local dest="$skills_dir/poison"
 
   mkdir -p "$skills_dir"
   if [[ -e "$dest" ]]; then
-    if [[ "$backup_existing" -eq 1 ]]; then
-      mkdir -p "$backup_root"
-      local backup="${backup_root}/poison.bak.${timestamp}"
-      mv "$dest" "$backup"
-      echo "Backed up existing ${label} skill to ${backup}"
-    else
-      echo "Destination already exists: ${dest}" >&2
-      exit 1
-    fi
+    rm -rf "$dest"
+    echo "Removed existing ${label} skill at ${dest}"
   fi
 
   mkdir -p "$dest"
@@ -117,16 +101,14 @@ install_one() {
 }
 
 codex_skills_dir="${CODEX_SKILLS_DIR:-$HOME/.codex/skills}"
-codex_backup_dir="${CODEX_BACKUP_DIR:-$HOME/.codex/skill-backups}"
 claude_skills_dir="${CLAUDE_SKILLS_DIR:-$HOME/.claude/skills}"
-claude_backup_dir="${CLAUDE_BACKUP_DIR:-$HOME/.claude/skill-backups}"
 
 if [[ "$target" == "codex" || "$target" == "both" ]]; then
-  install_one "Codex CLI" "$codex_skills_dir" "$codex_backup_dir"
+  install_one "Codex CLI" "$codex_skills_dir"
 fi
 
 if [[ "$target" == "claude" || "$target" == "both" ]]; then
-  install_one "Claude Code" "$claude_skills_dir" "$claude_backup_dir"
+  install_one "Claude Code" "$claude_skills_dir"
 fi
 
 cat <<EOF

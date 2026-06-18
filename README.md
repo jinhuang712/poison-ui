@@ -43,10 +43,6 @@ curl -fsSL https://raw.githubusercontent.com/jinhuang712/poison-ui/main/scripts/
 curl -fsSL https://raw.githubusercontent.com/jinhuang712/poison-ui/main/scripts/uninstall-poison-ui.sh | bash -s -- --target claude
 ```
 
-Backups are stored outside the scanned skill directories, under
-`~/.codex/skill-backups` and `~/.claude/skill-backups`, so reinstalling does
-not create duplicate skill entries.
-
 Restart the target CLI after installing the skill. The root-level skill install
 includes the CLI implementation and the contract docs, so required reading such
 as `docs/contracts/command-api.md` is available inside Codex and Claude Code.
