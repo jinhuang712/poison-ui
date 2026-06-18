@@ -25,8 +25,9 @@ capture capability diagnostics. With `--capture`, it checks whether Playwright
 can be imported and Chromium can be launched. With `--url <url>`, it also checks
 whether the target URL is reachable. It must not mutate repository state.
 
-`poison brief --run <run>` is a read-only user-facing result command. It
-summarizes conclusion, evidence limits, top fixes, acceptance criteria,
+`poison brief --run <run>` is a read-only user-facing result command. By
+default it uses plain language and avoids exposing internal artifact paths,
+schema terms, or evidence codes. `--verbose` includes detailed evidence limits,
 required fixes, useful artifacts, and next action from existing run artifacts.
 
 `poison capture` blocks by default when browser capture cannot run. It writes

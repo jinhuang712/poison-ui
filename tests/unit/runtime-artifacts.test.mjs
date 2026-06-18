@@ -299,15 +299,19 @@ test("review artifacts satisfy schema check and gate rules", () => {
   assert.doesNotMatch(readFileSync(join(run.absolutePath, "gate-report.md"), "utf8"), /## Required fixes\nnone/);
 
   const brief = buildRunBrief(project, { runPath: run.relativePath });
-  assert.match(brief, /# Poison Brief/);
-  assert.match(brief, /mechanical pass only; product fixes remain/);
-  assert.match(brief, /## Evidence Limits/);
-  assert.match(brief, /degraded capture:/);
-  assert.match(brief, /## Top Fixes/);
-  assert.match(brief, /V1-F001/);
-  assert.match(brief, /## Acceptance Criteria/);
-  assert.match(brief, /## Required Fixes/);
-  assert.doesNotMatch(brief, /## Required Fixes\n- none/);
+  assert.match(brief, /# Poison 结果/);
+  assert.match(brief, /流程检查通过，不代表界面已经没问题/);
+  assert.match(brief, /## 先修什么/);
+  assert.match(brief, /## 怎么验收/);
+  assert.doesNotMatch(brief, /V1-F001/);
+  assert.doesNotMatch(brief, /\.poison\/runs/);
+
+  const verboseBrief = buildRunBrief(project, { runPath: run.relativePath, verbose: true });
+  assert.match(verboseBrief, /# Poison Brief/);
+  assert.match(verboseBrief, /mechanical pass only; product fixes remain/);
+  assert.match(verboseBrief, /V1-F001/);
+  assert.match(verboseBrief, /## Required Fixes/);
+  assert.doesNotMatch(verboseBrief, /## Required Fixes\n- none/);
 });
 
 test("review artifacts reference only degraded evidence when capture degraded", () => {

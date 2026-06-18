@@ -81,12 +81,16 @@ test("V1 review-first dry-run can initialize V2 protected baseline and repair pl
   assert.match(readFileSync(join(runDir, "gate-report.md"), "utf8"), /V1-F001:/);
 
   const brief = runPoison(project, ["brief", "--run", ".poison/runs/001-poisoned-demo"]);
-  assert.match(brief, /# Poison Brief/);
-  assert.match(brief, /## Evidence Limits/);
-  assert.match(brief, /degraded capture:/);
-  assert.match(brief, /## Top Fixes/);
-  assert.match(brief, /V1-F001/);
-  assert.match(brief, /## Acceptance Criteria/);
+  assert.match(brief, /# Poison 结果/);
+  assert.match(brief, /## 结论/);
+  assert.match(brief, /流程检查通过，不代表界面已经没问题/);
+  assert.match(brief, /## 先修什么/);
+  assert.match(brief, /## 怎么验收/);
+  assert.doesNotMatch(brief, /\.poison\/runs/);
+
+  const verboseBrief = runPoison(project, ["brief", "--run", ".poison/runs/001-poisoned-demo", "--verbose"]);
+  assert.match(verboseBrief, /# Poison Brief/);
+  assert.match(verboseBrief, /V1-F001/);
 
   const protectedOutput = runPoison(project, ["init-protected-features", "--run", ".poison/runs/001-poisoned-demo"]);
   assert.match(protectedOutput, /init-protected-features: protected baseline written/);

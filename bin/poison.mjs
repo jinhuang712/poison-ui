@@ -35,7 +35,7 @@ Evidence-backed UI prototype review, hardening, design handoff, and contract val
 Usage:
   poison --help
   poison doctor [--capture] [--url <url>]
-  poison brief --run <run-path>
+  poison brief --run <run-path> [--verbose]
   poison init
   poison new-run --mode review --name <name>
   poison capture --url <url> --run <run-path> [--allow-degraded]
@@ -224,7 +224,10 @@ try {
       }), null, 2)}\n`);
       break;
     case "brief":
-      process.stdout.write(buildRunBrief(cwd, { runPath: options.run }));
+      process.stdout.write(buildRunBrief(cwd, {
+        runPath: options.run,
+        verbose: Boolean(options.verbose),
+      }));
       break;
     case "init":
       initPoisonProject(cwd);

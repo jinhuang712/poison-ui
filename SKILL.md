@@ -55,8 +55,8 @@ or planning.
 
 Keep user-facing replies short and in the user's language. Report only:
 
-- what was checked
-- what was changed
+- the conclusion in plain language
+- the next one to three things to fix
 - the one next input needed, if any
 
 When no URL or run path is available, do not explain the whole product. Run
@@ -71,15 +71,17 @@ poison brief --run <run-path>
 
 Use that brief as the user-facing result. The final response must include:
 
-- whether the gate is only a mechanical pass or a product-ready pass
-- evidence limitations, especially degraded capture or non-target runtime
-  surfaces
+- whether the result is actually good enough, in plain language
 - the highest-priority fixes in order
-- acceptance criteria for the fixes
-- exact artifact paths only as supporting references
+- how the user can tell the fixes worked
+- evidence limitations only when they affect confidence
 
 Do not finish with only command outputs, artifact inventories, or "work
 completed" language.
+
+Do not expose run IDs, internal artifact names, schema terms, evidence-level
+codes, or long file paths by default. Give those details only when the user asks
+for evidence, debugging detail, or exact paths.
 
 If `poison capture` blocks because browser capture is unavailable, run
 `poison doctor --capture --url <url>` and report the root cause. Do not continue

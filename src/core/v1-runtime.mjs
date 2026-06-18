@@ -871,7 +871,67 @@ function designPackageStatus(projectRoot, runId) {
   }
 }
 
-export function buildRunBrief(projectRoot = process.cwd(), { runPath } = {}) {
+function plainEvidenceLimit(line) {
+  const value = String(line || "");
+  if (value.startsWith("browser evidence captured")) {
+    return "已拿到浏览器截图和控制台证据。";
+  }
+  if (value.startsWith("degraded capture:")) {
+    return "这次没有拿到 Poison 内置浏览器截图和控制台证据，相关视觉结论要谨慎看。";
+  }
+  if (/ordinary browser runtime|non-Tauri|Tauri|runtime/i.test(value)) {
+    return "当前浏览器预览不等同于真实桌面运行环境，运行时问题需要再用真实环境确认。";
+  }
+  if (value.startsWith("no capture evidence")) {
+    return "这次没有可用的界面采集证据。";
+  }
+  return value;
+}
+
+function plainFinding(finding) {
+  const severity = finding.severity === "major"
+    ? "重点"
+    : (finding.severity === "blocker" ? "必须先处理" : "次要");
+  const category = {
+    runtime: "运行环境",
+    ux: "使用体验",
+    evidence: "证据",
+    visual: "视觉一致性",
+    content: "文案",
+    accessibility: "可访问性",
+  }[finding.category] || "界面质量";
+  const text = `${finding.issue || ""} ${finding.firstRepairRecommendation || ""}`.toLowerCase();
+  let advice = "先把这个问题转成明确的修复项，修完后重新验收。";
+  if (text.includes("tauri") || text.includes("browser preview") || text.includes("webview")) {
+    advice = "先确认真实运行环境，不要把普通浏览器预览当成最终效果。";
+  } else if (text.includes("empty")) {
+    advice = "补强空状态，让用户一打开就知道这里能做什么。";
+  } else if (text.includes("search") || text.includes("replace")) {
+    advice = "补齐搜索和替换相关状态，避免后续按不完整原型实现。";
+  } else if (text.includes("legacy") || text.includes("token") || text.includes("visual")) {
+    advice = "统一当前视觉方向，避免旧稿和新规范混用。";
+  } else if (text.includes("playwright") || text.includes("capture") || text.includes("degraded")) {
+    advice = "修好或明确说明采集限制，避免把低证据结论说得太满。";
+  }
+  return `${severity}，${category}: ${advice}`;
+}
+
+function plainAcceptance(finding) {
+  return `修完后重新跑一次采集、审查和 gate，确认这个问题不再出现。`;
+}
+
+function plainNextAction(action) {
+  return {
+    "repair-plan-or-user-review": "先确认这些问题是否都要修，然后进入修复计划。",
+    "complete-or-review-warnings": "先处理上面的遗留问题；如果你接受这些限制，可以把本轮作为阶段性通过。",
+    "review": "继续生成审查结果。",
+    "gate": "继续跑通过检查。",
+    "doctor": "先检查为什么采集能力不可用。",
+    "capture": "重新采集界面证据。",
+  }[action] || action || "暂无";
+}
+
+export function buildRunBrief(projectRoot = process.cwd(), { runPath, verbose = false } = {}) {
   const run = normalizeRunPath(projectRoot, runPath);
   const state = readState(run.absolutePath);
   const summary = readTextArtifact(run.absolutePath, "review-summary.md");
@@ -888,7 +948,36 @@ export function buildRunBrief(projectRoot = process.cwd(), { runPath } = {}) {
     ...bulletLines(extractSection(summary, "Evidence-backed blockers")).map((line) => line.replace(/^- /, "")),
   ];
   const designStatus = designPackageStatus(projectRoot, run.runId);
-  const topFindings = findings.slice(0, 5);
+  const topFindings = findings.slice(0, verbose ? 5 : 3);
+
+  if (!verbose) {
+    return [
+      "# Poison 结果",
+      "",
+      "## 结论",
+      findings.length > 0
+        ? "- 这次只是流程检查通过，不代表界面已经没问题。还有需要修的地方。"
+        : "- 这次没有发现明确的待修问题。",
+      designStatus ? `- 设计交付状态: ${designStatus.status}` : "- 还没有发布设计交付包。",
+      "",
+      "## 先修什么",
+      ...(topFindings.length === 0
+        ? ["- 暂无"]
+        : topFindings.map((finding) => `- ${plainFinding(finding)}`)),
+      "",
+      "## 怎么验收",
+      ...(topFindings.length === 0
+        ? ["- 暂无"]
+        : topFindings.map((finding) => `- ${plainAcceptance(finding)}`)),
+      "",
+      "## 注意",
+      ...Array.from(new Set(evidenceLimits.map(plainEvidenceLimit))).map((line) => `- ${line}`),
+      "",
+      "## 下一步",
+      `- ${plainNextAction(state.nextRecommendedAction)}`,
+      "",
+    ].join("\n");
+  }
 
   return [
     "# Poison Brief",

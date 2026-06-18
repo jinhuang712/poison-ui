@@ -118,7 +118,8 @@ poison brief \
 This produces `.poison/runs/<run-id>` evidence and review artifacts. A passing
 gate means the run has the required mechanical evidence and schema structure;
 it is not a subjective design-quality guarantee. Use `poison brief` for the
-user-facing conclusion, evidence limits, fix order, and acceptance criteria.
+plain-language conclusion, fix order, and acceptance criteria. Add
+`--verbose` only when you need internal artifact details.
 
 ## Full Workflow
 

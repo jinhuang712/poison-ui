@@ -101,7 +101,7 @@
     {
       "command": "brief",
       "args": ["brief", "--run", ".poison/runs/001-poisoned-demo"],
-      "stdoutIncludes": "## Acceptance Criteria"
+      "stdoutIncludes": "## 怎么验收"
     }
   ]
 }
