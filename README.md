@@ -46,6 +46,8 @@ curl -fsSL https://raw.githubusercontent.com/jinhuang712/poison-ui/main/scripts/
 Restart the target CLI after installing the skill. The root-level skill install
 includes the CLI implementation and the contract docs, so required reading such
 as `docs/contracts/command-api.md` is available inside Codex and Claude Code.
+The installer links `poison` into `~/.local/bin`, which is on the default Codex
+PATH on this machine.
 
 From npm after publication:
 
@@ -76,10 +78,10 @@ npm run check
 runtime visual or console evidence exists.
 
 If the npm package is not installed globally, the Codex-installed skill can run
-the CLI through:
+the CLI through the linked command:
 
 ```bash
-node ~/.codex/skills/poison/bin/poison.mjs --help
+poison --help
 ```
 
 ## Quickstart
@@ -88,6 +90,7 @@ Run these commands in the target project you want to inspect. Replace the URL
 with your local prototype URL.
 
 ```bash
+poison doctor
 poison init
 
 poison new-run \

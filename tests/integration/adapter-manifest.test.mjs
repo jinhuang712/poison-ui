@@ -21,6 +21,7 @@ test("V4c adapter command manifest maps implemented commands to shared CLI", () 
   assert.deepEqual(
     manifest.commands.map((command) => command.name),
     [
+      "doctor",
       "init",
       "new-run",
       "capture",

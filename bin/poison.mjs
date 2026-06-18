@@ -1,6 +1,12 @@
 #!/usr/bin/env node
 
 import {
+  existsSync,
+  readFileSync,
+  readdirSync,
+} from "node:fs";
+import { join } from "node:path";
+import {
   createReviewRun,
   gateRun,
   hardenRun,
@@ -26,6 +32,7 @@ Evidence-backed UI prototype review, hardening, design handoff, and contract val
 
 Usage:
   poison --help
+  poison doctor
   poison init
   poison new-run --mode review --name <name>
   poison capture --url <url> --run <run-path>
@@ -47,6 +54,49 @@ See:
 `;
 
 const args = process.argv.slice(2);
+
+function readJsonIfPresent(path) {
+  if (!existsSync(path)) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(readFileSync(path, "utf8"));
+  } catch (error) {
+    return { parseError: error.message };
+  }
+}
+
+function projectDoctor(projectRoot) {
+  const contextDir = join(projectRoot, ".poison", "context");
+  const runsDir = join(projectRoot, ".poison", "runs");
+  const runs = existsSync(runsDir)
+    ? readdirSync(runsDir, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => {
+        const state = readJsonIfPresent(join(runsDir, entry.name, "run-state.json"));
+        return {
+          runId: entry.name,
+          runPath: `.poison/runs/${entry.name}`,
+          status: state?.status || "unknown",
+          nextRecommendedAction: state?.nextRecommendedAction || null,
+          stateParseError: state?.parseError || null,
+        };
+      })
+      .sort((left, right) => left.runId.localeCompare(right.runId))
+    : [];
+
+  return {
+    schemaVersion: 1,
+    cliPath: new URL(import.meta.url).pathname,
+    projectRoot,
+    contextReady: existsSync(contextDir),
+    runsReady: existsSync(runsDir),
+    runCount: runs.length,
+    latestRun: runs.at(-1) || null,
+    designManifestReady: existsSync(join(projectRoot, "design", "manifest.json")),
+  };
+}
 
 function parseOptions(values) {
   const options = {};
@@ -74,6 +124,12 @@ function fail(error) {
 }
 
 async function createOptionalPlaywrightAdapter() {
+  if (process.env.POISON_CAPTURE_MODE === "degraded" || process.env.POISON_DISABLE_BROWSER_CAPTURE === "1") {
+    return {
+      unavailableReason: "Browser capture disabled by POISON_CAPTURE_MODE=degraded",
+    };
+  }
+
   try {
     const playwright = await import("playwright");
     return createPlaywrightCaptureAdapter({ playwright });
@@ -95,6 +151,9 @@ const cwd = process.cwd();
 
 try {
   switch (command) {
+    case "doctor":
+      process.stdout.write(`${JSON.stringify(projectDoctor(cwd), null, 2)}\n`);
+      break;
     case "init":
       initPoisonProject(cwd);
       process.stdout.write("init: created .poison/context and .poison/runs\n");

@@ -16,6 +16,7 @@ Defaults:
 Environment overrides:
   CODEX_SKILLS_DIR   default: ~/.codex/skills
   CLAUDE_SKILLS_DIR  default: ~/.claude/skills
+  POISON_BIN_DIR     default: ~/.local/bin
 
 Examples:
   ./scripts/install-poison-ui.sh --target codex
@@ -82,6 +83,7 @@ fi
 install_one() {
   local label="$1"
   local skills_dir="$2"
+  local create_shim="$3"
   local dest="$skills_dir/poison"
 
   mkdir -p "$skills_dir"
@@ -98,17 +100,28 @@ install_one() {
   rm -rf "$dest/skills/poison"
   chmod +x "$dest/bin/poison.mjs"
   echo "Installed poison-ui for ${label}: ${dest}"
+
+  if [[ "$create_shim" == "1" ]]; then
+    mkdir -p "$poison_bin_dir"
+    ln -sf "$dest/bin/poison.mjs" "$poison_bin_dir/poison"
+    echo "Linked poison command: $poison_bin_dir/poison"
+  fi
 }
 
 codex_skills_dir="${CODEX_SKILLS_DIR:-$HOME/.codex/skills}"
 claude_skills_dir="${CLAUDE_SKILLS_DIR:-$HOME/.claude/skills}"
+poison_bin_dir="${POISON_BIN_DIR:-$HOME/.local/bin}"
 
 if [[ "$target" == "codex" || "$target" == "both" ]]; then
-  install_one "Codex CLI" "$codex_skills_dir"
+  install_one "Codex CLI" "$codex_skills_dir" "1"
 fi
 
 if [[ "$target" == "claude" || "$target" == "both" ]]; then
-  install_one "Claude Code" "$claude_skills_dir"
+  if [[ "$target" == "claude" ]]; then
+    install_one "Claude Code" "$claude_skills_dir" "1"
+  else
+    install_one "Claude Code" "$claude_skills_dir" "0"
+  fi
 fi
 
 cat <<EOF
@@ -116,5 +129,5 @@ cat <<EOF
 Done. Restart Codex CLI or Claude Code so the new skill is loaded.
 
 Smoke test:
-  node <skills-dir>/poison/bin/poison.mjs --help
+  poison --help
 EOF

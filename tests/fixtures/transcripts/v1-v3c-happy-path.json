@@ -16,7 +16,7 @@
     {
       "command": "capture",
       "args": ["capture", "--url", "http://localhost:5173", "--run", ".poison/runs/001-poisoned-demo"],
-      "stdoutIncludes": "capture: degraded evidence recorded"
+      "stdoutMatches": "capture: (degraded|browser) evidence recorded"
     },
     {
       "command": "review",
@@ -56,7 +56,7 @@
     {
       "command": "capture",
       "args": ["capture", "--url", "http://localhost:5173", "--run", ".poison/runs/001-poisoned-demo"],
-      "stdoutIncludes": "capture: degraded evidence recorded"
+      "stdoutMatches": "capture: (degraded|browser) evidence recorded"
     },
     {
       "command": "review",

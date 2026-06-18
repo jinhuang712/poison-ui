@@ -14,6 +14,7 @@ Defaults:
 Environment overrides:
   CODEX_SKILLS_DIR   default: ~/.codex/skills
   CLAUDE_SKILLS_DIR  default: ~/.claude/skills
+  POISON_BIN_DIR     default: ~/.local/bin
 
 Examples:
   ./scripts/uninstall-poison-ui.sh --target codex
@@ -54,18 +55,24 @@ uninstall_one() {
   local label="$1"
   local skills_dir="$2"
   local dest="$skills_dir/poison"
+  local shim="$poison_bin_dir/poison"
 
   if [[ ! -e "$dest" ]]; then
     echo "No ${label} poison skill found at ${dest}"
-    return
+  else
+    rm -rf "$dest"
+    echo "Removed ${label} poison skill from ${dest}"
   fi
 
-  rm -rf "$dest"
-  echo "Removed ${label} poison skill from ${dest}"
+  if [[ -L "$shim" && "$(readlink "$shim")" == "$dest/bin/poison.mjs" ]]; then
+    rm -f "$shim"
+    echo "Removed poison command shim from ${shim}"
+  fi
 }
 
 codex_skills_dir="${CODEX_SKILLS_DIR:-$HOME/.codex/skills}"
 claude_skills_dir="${CLAUDE_SKILLS_DIR:-$HOME/.claude/skills}"
+poison_bin_dir="${POISON_BIN_DIR:-$HOME/.local/bin}"
 
 if [[ "$target" == "codex" || "$target" == "both" ]]; then
   uninstall_one "Codex CLI" "$codex_skills_dir"

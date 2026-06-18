@@ -3,6 +3,7 @@
   "behaviorOwner": "poison-cli-shared-core",
   "adaptersMayDefinePrivateSchemas": false,
   "commands": [
+    { "name": "doctor", "adapterEntry": "poison", "privateBehaviorAllowed": false },
     { "name": "init", "adapterEntry": "poison", "privateBehaviorAllowed": false },
     { "name": "new-run", "adapterEntry": "poison", "privateBehaviorAllowed": false },
     { "name": "capture", "adapterEntry": "poison", "privateBehaviorAllowed": false },

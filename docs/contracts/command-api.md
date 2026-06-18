@@ -16,6 +16,17 @@ npx poison-ui [action-or-mode] [options]
 poison [action-or-mode] [options]
 ```
 
+## Doctor
+
+`poison doctor` is a read-only project inspection command for agents and users.
+It prints JSON with the CLI path, project root, `.poison/context` readiness,
+run count, latest run path/status, and whether `design/manifest.json` exists.
+It must not mutate repository state.
+
+Set `POISON_CAPTURE_MODE=degraded` to force explicit degraded evidence capture
+instead of trying Playwright browser automation. This is useful for deterministic
+tests and non-browser environments.
+
 ## Modes
 
 Long-term conceptual modes:
@@ -49,6 +60,7 @@ These actions are required for the V1 review-first dry-run:
 
 ```bash
 poison init
+poison doctor
 poison new-run --mode review --name poisoned-demo
 poison capture --url http://localhost:5173 --run .poison/runs/001-poisoned-demo
 poison review --run .poison/runs/001-poisoned-demo

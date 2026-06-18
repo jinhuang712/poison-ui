@@ -15,12 +15,16 @@ export function runFixtureTranscript({ repoRoot, fixturePath }) {
     const result = spawnSync(process.execPath, [cliPath, ...step.args], {
       cwd: projectRoot,
       encoding: "utf8",
+      env: { ...process.env, POISON_CAPTURE_MODE: "degraded" },
       stdio: ["ignore", "pipe", "pipe"],
     });
 
     assert.equal(result.status, step.exitCode ?? 0, `${step.command} exit code`);
     if (step.stdoutIncludes) {
       assert.match(result.stdout, new RegExp(escapeRegExp(step.stdoutIncludes)), `${step.command} stdout`);
+    }
+    if (step.stdoutMatches) {
+      assert.match(result.stdout, new RegExp(step.stdoutMatches), `${step.command} stdout`);
     }
     if (step.stderrIncludes) {
       assert.match(result.stderr, new RegExp(escapeRegExp(step.stderrIncludes)), `${step.command} stderr`);

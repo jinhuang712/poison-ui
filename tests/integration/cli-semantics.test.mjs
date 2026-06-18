@@ -12,6 +12,7 @@ function runPoison(cwd, args) {
   return spawnSync(process.execPath, [cliPath, ...args], {
     cwd,
     encoding: "utf8",
+    env: { ...process.env, POISON_CAPTURE_MODE: "degraded" },
     stdio: ["ignore", "pipe", "pipe"],
   });
 }
@@ -20,6 +21,7 @@ function execPoison(cwd, args) {
   return execFileSync(process.execPath, [cliPath, ...args], {
     cwd,
     encoding: "utf8",
+    env: { ...process.env, POISON_CAPTURE_MODE: "degraded" },
     stdio: ["ignore", "pipe", "pipe"],
   });
 }
@@ -45,6 +47,15 @@ test("CLI semantics freeze success, usage error, and unknown command output chan
   assert.equal(unknown.stdout, "");
   assert.match(unknown.stderr, /Unknown command: not-a-command/);
 
+  const doctor = runPoison(project, ["doctor"]);
+  assert.equal(doctor.status, 0);
+  assert.equal(doctor.stderr, "");
+  const doctorJson = JSON.parse(doctor.stdout);
+  assert.equal(doctorJson.schemaVersion, 1);
+  assert.equal(doctorJson.contextReady, false);
+  assert.equal(doctorJson.runCount, 0);
+  assert.equal(doctorJson.latestRun, null);
+
   const missingRun = runPoison(project, ["schema-check"]);
   assert.equal(missingRun.status, 1);
   assert.equal(missingRun.stdout, "");
@@ -54,9 +65,17 @@ test("CLI semantics freeze success, usage error, and unknown command output chan
 test("CLI semantics freeze schema failure output and blocked recovery metadata", () => {
   const project = makeProject();
   execPoison(project, ["init"]);
+  const initializedDoctor = JSON.parse(execPoison(project, ["doctor"]));
+  assert.equal(initializedDoctor.contextReady, true);
+  assert.equal(initializedDoctor.runsReady, true);
+
   execPoison(project, ["new-run", "--mode", "review", "--name", "semantics"]);
   const runPath = ".poison/runs/001-semantics";
   const runDir = join(project, runPath);
+  const runDoctor = JSON.parse(execPoison(project, ["doctor"]));
+  assert.equal(runDoctor.runCount, 1);
+  assert.equal(runDoctor.latestRun.runPath, runPath);
+  assert.equal(runDoctor.latestRun.status, "created");
 
   const earlyGate = runPoison(project, ["gate", "--run", runPath]);
   assert.equal(earlyGate.status, 1);
@@ -68,7 +87,7 @@ test("CLI semantics freeze schema failure output and blocked recovery metadata",
   const reviewedStateBeforeGate = readJson(join(runDir, "run-state.json"));
   execPoison(project, ["review", "--run", runPath]);
   const summaryPath = join(runDir, "review-summary.md");
-  const brokenSummary = readFileSync(summaryPath, "utf8").replace("- issue: automated visual evidence is unavailable\n", "");
+  const brokenSummary = readFileSync(summaryPath, "utf8").replace(/^- issue: .*\n/m, "");
   writeFileSync(summaryPath, brokenSummary);
 
   const schema = runPoison(project, ["schema-check", "--run", runPath]);

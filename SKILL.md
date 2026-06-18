@@ -29,6 +29,69 @@ this skill file:
 The implementation index remains `poison_execution_plan_zh.md`; keep it as an
 index and update detailed owners under `docs/` when behavior changes.
 
+## Agent Behavior
+
+When this skill is invoked, act like an operator, not a menu. Inspect the target
+repository and run the next safe command instead of asking the user to choose
+from the whole workflow.
+
+Default behavior:
+
+1. Resolve the CLI command in this order:
+   - `poison` when it is on `PATH`
+   - `node ~/.codex/skills/poison/bin/poison.mjs`
+   - `node ~/.claude/skills/poison/bin/poison.mjs`
+   - `node <this-skill-directory>/bin/poison.mjs`
+2. If `.poison/context` is missing, run `poison init`.
+3. If the user gives a prototype URL, create or reuse a review run, capture,
+   review, schema-check, and gate it.
+4. If the user gives an existing `.poison/runs/<run-id>` path, continue from
+   that run's state and run the next valid command.
+5. Ask one focused question only when required input is unavailable, usually the
+   prototype URL or the exact run path.
+
+Do not respond with a numbered menu unless the user explicitly asks for options
+or planning.
+
+Keep user-facing replies short and in the user's language. Report only:
+
+- what was checked
+- what was changed
+- the one next input needed, if any
+
+When no URL or run path is available, do not explain the whole product. Run
+`poison doctor`, initialize missing `.poison` state when safe, and ask for the
+prototype URL.
+
+Good first response for "use poison on this repo":
+
+```text
+I will initialize Poison state here, then I need the prototype URL to capture evidence.
+```
+
+Then run:
+
+```bash
+poison init
+```
+
+Good first response when a URL is provided:
+
+```text
+I will create a review run, capture evidence from the URL, write the review artifacts, and run schema/gate checks.
+```
+
+Then run:
+
+```bash
+poison init
+poison new-run --mode review --name <short-target-name>
+poison capture --url <url> --run .poison/runs/<run-id>
+poison review --run .poison/runs/<run-id>
+poison schema-check --run .poison/runs/<run-id>
+poison gate --run .poison/runs/<run-id>
+```
+
 ## Invocation
 
 Prefer the installed `poison` executable when it is available:
@@ -50,6 +113,9 @@ from another project is:
 ```bash
 node ~/.codex/skills/poison/bin/poison.mjs --help
 ```
+
+The user should not normally need the fallback after running
+`scripts/install-poison-ui.sh`; it links `poison` into `~/.local/bin`.
 
 ## Core Workflow
 
