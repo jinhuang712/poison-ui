@@ -12,7 +12,7 @@ function runPoison(cwd, args) {
   return spawnSync(process.execPath, [cliPath, ...args], {
     cwd,
     encoding: "utf8",
-    env: { ...process.env, POISON_CAPTURE_MODE: "degraded" },
+    env: { ...process.env, POISON_DISABLE_BROWSER_CAPTURE: "1" },
     stdio: ["ignore", "pipe", "pipe"],
   });
 }
@@ -21,7 +21,7 @@ function execPoison(cwd, args) {
   return execFileSync(process.execPath, [cliPath, ...args], {
     cwd,
     encoding: "utf8",
-    env: { ...process.env, POISON_CAPTURE_MODE: "degraded" },
+    env: { ...process.env, POISON_DISABLE_BROWSER_CAPTURE: "1" },
     stdio: ["ignore", "pipe", "pipe"],
   });
 }
@@ -55,6 +55,8 @@ test("CLI semantics freeze success, usage error, and unknown command output chan
   assert.equal(doctorJson.contextReady, false);
   assert.equal(doctorJson.runCount, 0);
   assert.equal(doctorJson.latestRun, null);
+  assert.equal(doctorJson.captureCapability.forcedDegradedMode, true);
+  assert.equal(doctorJson.captureCapability.recommendedAction, "unset forced degraded mode or use --allow-degraded");
 
   const missingRun = runPoison(project, ["schema-check"]);
   assert.equal(missingRun.status, 1);
@@ -83,7 +85,16 @@ test("CLI semantics freeze schema failure output and blocked recovery metadata",
   assert.match(earlyGate.stderr, /review-summary\.md is required before gate/);
   assert.equal(readJson(join(runDir, "run-state.json")).status, "created");
 
-  execPoison(project, ["capture", "--url", "http://localhost:5173", "--run", runPath]);
+  const blockedCapture = runPoison(project, ["capture", "--url", "http://localhost:5173", "--run", runPath]);
+  assert.equal(blockedCapture.status, 1);
+  assert.equal(blockedCapture.stdout, "");
+  assert.match(blockedCapture.stderr, /Capture is blocked because no live screenshot and console evidence was recorded/);
+  let blockedState = readJson(join(runDir, "run-state.json"));
+  assert.equal(blockedState.status, "blocked");
+  assert.equal(blockedState.nextRecommendedAction, "doctor");
+  assert.ok(existsSync(join(runDir, "capture-diagnostics.md")));
+
+  execPoison(project, ["capture", "--url", "http://localhost:5173", "--run", runPath, "--allow-degraded"]);
   const reviewedStateBeforeGate = readJson(join(runDir, "run-state.json"));
   execPoison(project, ["review", "--run", runPath]);
   const summaryPath = join(runDir, "review-summary.md");

@@ -38,7 +38,7 @@ Creates `.poison/runs/001-poisoned-demo` with:
 - `context-health.md`
 
 The initial status is `created`, and `nextRecommendedAction` identifies
-capture or degraded evidence recording.
+capture.
 
 ## C. Capture Or Evidence Gap
 
@@ -52,9 +52,10 @@ When capture works, V1 creates:
 - `screenshot-manifest.json`
 - `console.log` or structured console evidence
 
-When capture cannot run, V1 creates an explicit degraded evidence artifact and
-sets a recoverable `blocked` state or a reviewable degraded state with
-`nextRecommendedAction`.
+When capture cannot run, V1 creates `capture-diagnostics.md` and sets a
+recoverable `blocked` state with `nextRecommendedAction: doctor`. Degraded
+evidence is reviewable only when the user explicitly accepts
+`--allow-degraded`.
 
 ## D. Review
 
@@ -90,7 +91,8 @@ Checks:
 
 - `run-state.json` parses and has required fields.
 - Required V1 Markdown artifacts have required headings.
-- Evidence gap artifacts exist when automated evidence is unavailable.
+- Capture diagnostics exist when automated evidence is unavailable, unless the
+  run explicitly accepted degraded evidence.
 - Review summaries have stable finding ID, fix order, severity, category,
   evidence refs, affected screens, and first repair recommendation.
 
@@ -120,6 +122,10 @@ placeholder-looking UI copy, generic demo content, missing browser automation,
 or non-severe console concerns. V1 does not warn or fail on frontend handoff,
 protected-feature, visual-memory, or completion-audit concerns.
 
+`PASS` is a mechanical gate result. If review findings exist, `Required fixes`
+must list those finding-backed follow-ups and the final user-facing output must
+include `poison brief --run <run>`.
+
 ## Exit Criteria
 
 V1 is acceptable when the dry-run can:
@@ -131,8 +137,11 @@ V1 is acceptable when the dry-run can:
 5. Run schema checks.
 6. Run the mechanical gate.
 7. Leave `run-state.json` with a legal status and clear next action.
-8. Prove both degraded-evidence and real-browser-evidence fixtures.
-9. Prove missing-artifact and severe-runtime-error fixtures fail with
+8. Produce a user-facing brief with evidence limits, fix priority, acceptance
+   criteria, and next action.
+9. Prove blocked capture, explicitly allowed degraded evidence, and
+   real-browser-evidence fixtures.
+10. Prove missing-artifact and severe-runtime-error fixtures fail with
    deterministic gate-report lines.
 
 ## Non-Goals

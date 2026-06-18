@@ -12,7 +12,7 @@ function runPoison(cwd, args) {
   return execFileSync(process.execPath, [cliPath, ...args], {
     cwd,
     encoding: "utf8",
-    env: { ...process.env, POISON_CAPTURE_MODE: "degraded" },
+    env: { ...process.env, POISON_DISABLE_BROWSER_CAPTURE: "1" },
     stdio: ["ignore", "pipe", "pipe"],
   });
 }
@@ -40,7 +40,7 @@ test("V1 review-first dry-run can initialize V2 protected baseline and repair pl
   assert.equal(state.status, "created");
   assert.equal(state.nextRecommendedAction, "capture");
 
-  runPoison(project, ["capture", "--url", "http://localhost:5173", "--run", ".poison/runs/001-poisoned-demo"]);
+  runPoison(project, ["capture", "--url", "http://localhost:5173", "--run", ".poison/runs/001-poisoned-demo", "--allow-degraded"]);
   state = readJson(join(runDir, "run-state.json"));
   assert.equal(state.status, "captured");
   assert.equal(state.nextRecommendedAction, "review");
@@ -76,8 +76,17 @@ test("V1 review-first dry-run can initialize V2 protected baseline and repair pl
   assert.match(gateOutput, /gate: PASS/);
   state = readJson(join(runDir, "run-state.json"));
   assert.equal(state.status, "gated");
-  assert.equal(state.nextRecommendedAction, "complete-or-review-warnings");
+  assert.equal(state.nextRecommendedAction, "repair-plan-or-user-review");
   assert.match(readFileSync(join(runDir, "gate-report.md"), "utf8"), /## Verdict\nPASS/);
+  assert.match(readFileSync(join(runDir, "gate-report.md"), "utf8"), /V1-F001:/);
+
+  const brief = runPoison(project, ["brief", "--run", ".poison/runs/001-poisoned-demo"]);
+  assert.match(brief, /# Poison Brief/);
+  assert.match(brief, /## Evidence Limits/);
+  assert.match(brief, /degraded capture:/);
+  assert.match(brief, /## Top Fixes/);
+  assert.match(brief, /V1-F001/);
+  assert.match(brief, /## Acceptance Criteria/);
 
   const protectedOutput = runPoison(project, ["init-protected-features", "--run", ".poison/runs/001-poisoned-demo"]);
   assert.match(protectedOutput, /init-protected-features: protected baseline written/);
@@ -113,7 +122,7 @@ test("V1 review-first dry-run can initialize V2 protected baseline and repair pl
   assert.match(readFileSync(join(runDir, "repair-rounds/001/before-after-evidence.md"), "utf8"), /pending recapture/);
   assert.match(readFileSync(join(runDir, "repair-rounds/001/round-summary.md"), "utf8"), /bounded harden round is planned/);
 
-  runPoison(project, ["capture", "--url", "http://localhost:5173", "--run", ".poison/runs/001-poisoned-demo"]);
+  runPoison(project, ["capture", "--url", "http://localhost:5173", "--run", ".poison/runs/001-poisoned-demo", "--allow-degraded"]);
   state = readJson(join(runDir, "run-state.json"));
   assert.equal(state.status, "captured");
   assert.equal(state.nextRecommendedAction, "review");

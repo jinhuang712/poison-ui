@@ -42,7 +42,7 @@ PASS | PASS_WITH_FIXES | FAIL | BLOCKED
 - evidenceRefs:
 - affectedScreens:
 - evidence source:
-- evidence level: E0 | E1 | E2 | E3 | E4
+- evidence level: E0 | E1 | E2 | E3 | E4 | E-gap
 - issue:
 - why it feels poisoned:
 - firstRepairRecommendation:

@@ -31,6 +31,11 @@ PASS | FAIL
 ## Next action
 ```
 
+`PASS` means mechanical gate pass only. It does not mean UI/UX/product-ready
+when `review-summary.md` contains findings. When review findings exist,
+`Required fixes` must list the finding-backed follow-ups and `Next action` must
+point to repair planning or user review.
+
 ## V1 Hard Checks
 
 V1 hard checks:
@@ -42,15 +47,16 @@ V1 hard checks:
 - Required V1 JSON artifacts parse and include required fields.
 - Required V1 Markdown artifacts include required headings.
 - Evidence exists when capture succeeded.
-- Missing browser, screenshot, URL, or console capability is represented by an
-  explicit degraded evidence artifact.
+- Missing browser, screenshot, URL, or console capability is represented by
+  `capture-diagnostics.md` and a recoverable blocked run unless the user has
+  explicitly accepted `--allow-degraded`.
 - `review-summary.md` exists before gate can pass.
 - Review findings include `findingId`, `priorityRank`, `fixOrder`, severity,
   category, evidence refs, affected screens, and first repair recommendation.
 - Severe console/runtime errors are absent when console evidence was captured,
   or recorded as hard failures. Severe means a browser `pageerror` or console
   entry with level `error`; warnings, info logs, missing browser automation, and
-  degraded evidence do not fail V1 by themselves.
+  explicitly accepted degraded evidence do not fail V1 by themselves.
 - `blocked` cannot pass unless the blocker was resolved by a legal transition.
 - Passing gate moves run-state to `gated`.
 
@@ -101,7 +107,7 @@ as a warning with file or screenshot evidence.
 ## Failure Behavior
 
 - Gate must produce executable fixes.
-- Missing automated screenshot or console capability must be represented as
-  degraded evidence or `blocked`.
+- Missing automated screenshot or console capability must block by default.
+  Degraded evidence is legal only after explicit user acceptance.
 - Gate failure moves the run to `blocked` and sets `previousStatus` plus
   `nextRecommendedAction`.

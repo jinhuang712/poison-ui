@@ -130,6 +130,7 @@ const COMPLETION_AUDIT_ARTIFACTS = [
   "completion-audit-packet.md",
   "completion-report.md",
 ];
+const CAPTURE_DIAGNOSTICS_ARTIFACT = "capture-diagnostics.md";
 
 function now() {
   return new Date().toISOString();
@@ -326,6 +327,18 @@ function parseFindingFields(content) {
     }
   }
   return fields;
+}
+
+function reviewFindingFixes(runDir) {
+  const summaryPath = join(runDir, "review-summary.md");
+  if (!existsSync(summaryPath)) {
+    return [];
+  }
+
+  return findReviewFindings(readFileSync(summaryPath, "utf8"))
+    .map((finding) => parseFindingFields(finding.content))
+    .filter((finding) => String(finding.findingId || "").trim())
+    .sort((left, right) => Number(left.priorityRank || 999) - Number(right.priorityRank || 999));
 }
 
 function readReviewFindings(runDir) {
@@ -802,6 +815,123 @@ function validateCompletionReport(runDir, errors) {
   }
 }
 
+function extractSection(content, heading) {
+  return content.split(new RegExp(`^## ${heading}\\s*$`, "m"))[1]?.split(/^## /m)[0]?.trim() || "";
+}
+
+function bulletLines(value) {
+  return String(value || "")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.startsWith("- "));
+}
+
+function readTextArtifact(runDir, artifact) {
+  const path = join(runDir, artifact);
+  return existsSync(path) ? readFileSync(path, "utf8") : "";
+}
+
+function captureLimitation(runDir, state) {
+  if ((state.artifacts || []).includes("screenshot-manifest.json") && existsSync(join(runDir, "screenshot-manifest.json"))) {
+    return "browser evidence captured";
+  }
+  const degraded = readTextArtifact(runDir, "degraded-evidence.md");
+  if (!degraded) {
+    return "no capture evidence found";
+  }
+  const source = degraded.match(/^- evidence source:\s*(.*)$/m)?.[1] || "browser capture unavailable";
+  return `degraded capture: ${source}`;
+}
+
+function designPackageStatus(projectRoot, runId) {
+  const manifestPath = join(projectRoot, "design", "manifest.json");
+  if (!existsSync(manifestPath)) {
+    return null;
+  }
+
+  try {
+    const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+    if (manifest.sourceRunId && manifest.sourceRunId !== runId) {
+      return null;
+    }
+    return {
+      status: manifest.status || manifest.packageStatus || "unknown",
+      files: [
+        ...(manifest.entrypoints || []),
+        ...(manifest.files || []),
+      ],
+      knownFixes: manifest.knownFixes || [],
+    };
+  } catch {
+    return {
+      status: "manifest parse failed",
+      files: ["design/manifest.json"],
+      knownFixes: ["design/manifest.json must parse as JSON"],
+    };
+  }
+}
+
+export function buildRunBrief(projectRoot = process.cwd(), { runPath } = {}) {
+  const run = normalizeRunPath(projectRoot, runPath);
+  const state = readState(run.absolutePath);
+  const summary = readTextArtifact(run.absolutePath, "review-summary.md");
+  const gate = readTextArtifact(run.absolutePath, "gate-report.md");
+  const findings = summary ? reviewFindingFixes(run.absolutePath) : [];
+  const verdict = gate.match(/^## Verdict\s*\n([^\n]+)/m)?.[1]?.trim() || state.status;
+  const gateRequiredFixes = bulletLines(extractSection(gate, "Required fixes"))
+    .filter((line) => line !== "- none");
+  const requiredFixes = gateRequiredFixes.length > 0
+    ? gateRequiredFixes
+    : findings.map((finding) => `- ${finding.findingId}: ${finding.firstRepairRecommendation || finding.issue || "review finding requires follow-up"}`);
+  const evidenceLimits = [
+    captureLimitation(run.absolutePath, state),
+    ...bulletLines(extractSection(summary, "Evidence-backed blockers")).map((line) => line.replace(/^- /, "")),
+  ];
+  const designStatus = designPackageStatus(projectRoot, run.runId);
+  const topFindings = findings.slice(0, 5);
+
+  return [
+    "# Poison Brief",
+    "",
+    "## Conclusion",
+    `- run: ${run.relativePath}`,
+    `- status: ${state.status}`,
+    `- gate: ${verdict}`,
+    `- gate meaning: ${findings.length > 0 ? "mechanical pass only; product fixes remain" : "no review findings recorded"}`,
+    `- review findings: ${findings.length}`,
+    designStatus ? `- design package: ${designStatus.status}` : "- design package: not published for this run",
+    "",
+    "## Evidence Limits",
+    ...evidenceLimits.map((line) => `- ${line}`),
+    "",
+    "## Top Fixes",
+    ...(topFindings.length === 0
+      ? ["- none"]
+      : topFindings.map((finding) => `- ${finding.findingId} [${finding.severity}/${finding.category}]: ${finding.issue} Fix: ${finding.firstRepairRecommendation}`)),
+    "",
+    "## Acceptance Criteria",
+    ...(topFindings.length === 0
+      ? ["- none"]
+      : topFindings.map((finding) => `- ${finding.findingId}: after the fix, rerun capture/review/gate and verify ${finding.evidenceRefs || "the cited evidence"} no longer supports this finding.`)),
+    "",
+    "## Required Fixes",
+    ...(requiredFixes.length === 0
+      ? ["- none"]
+      : requiredFixes),
+    "",
+    "## Useful Artifacts",
+    "- review-summary.md",
+    "- gate-report.md",
+    ...(existsSync(join(run.absolutePath, "screenshot-manifest.json")) ? ["- screenshot-manifest.json"] : []),
+    ...(existsSync(join(run.absolutePath, "degraded-evidence.md")) ? ["- degraded-evidence.md"] : []),
+    ...(designStatus?.files || []).slice(0, 8).map((file) => `- ${file}`),
+    "",
+    "## Next Action",
+    `- ${state.nextRecommendedAction || "none"}`,
+    "",
+  ].join("\n");
+}
+
 function validateStateArtifacts(runDir, state, errors) {
   if (!Array.isArray(state.artifacts)) {
     return;
@@ -949,6 +1079,7 @@ function evidenceContext(runDir, state) {
 
     return {
       kind: "browser",
+      evidenceLevel: "E1",
       inputs: ["run-contract.md", "context-health.md", "screenshot-manifest.json", "console.log", screenshotPath],
       evidenceRefs: ["screenshot-manifest.json", "console.log", screenshotPath],
       affectedScreens: screenshotPath,
@@ -967,6 +1098,7 @@ function evidenceContext(runDir, state) {
 
   return {
     kind: "degraded",
+    evidenceLevel: "E-gap",
     inputs: ["run-contract.md", "context-health.md", "degraded-evidence.md"],
     evidenceRefs: ["degraded-evidence.md"],
     affectedScreens: "unknown",
@@ -1137,13 +1269,16 @@ export function recordDegradedCapture(projectRoot = process.cwd(), { runPath, ur
       "- limitation: no screenshot or live console evidence was collected",
       "",
       "## Decisions",
-      "- Continue with a degraded review packet that does not claim visual observations.",
+      "- Continue only because degraded capture was explicitly allowed.",
+      "- Do not claim visual observations from this artifact alone.",
       "",
       "## Open Questions",
+      "- Why is browser capture unavailable in this runtime?",
       "- Can a human or browser adapter provide screenshots and console evidence?",
       "",
       "## Next Actions",
-      "- review",
+      "- diagnose-browser-capture",
+      "- review only if degraded evidence is acceptable for this run",
       "",
     ].join("\n"),
   );
@@ -1159,6 +1294,56 @@ export function recordDegradedCapture(projectRoot = process.cwd(), { runPath, ur
     "degraded-evidence.md",
   );
   return writeState(run.absolutePath, nextState);
+}
+
+export function recordCaptureFailure(projectRoot = process.cwd(), { runPath, url, reason } = {}) {
+  const run = normalizeRunPath(projectRoot, runPath);
+  const state = readState(run.absolutePath);
+  if (!["created", "blocked", "captured", "repaired"].includes(state.status)) {
+    throw new Error(`capture cannot run from status ${state.status}`);
+  }
+
+  writeMarkdown(
+    run.absolutePath,
+    run.runId,
+    CAPTURE_DIAGNOSTICS_ARTIFACT,
+    "BLOCKED",
+    "capture",
+    [
+      "# Capture Diagnostics",
+      "",
+      "## Summary",
+      "Browser capture did not run, so Poison cannot claim screenshot or live console evidence for this command.",
+      "",
+      "## Inputs",
+      `- url: ${url || "not provided"}`,
+      "",
+      "## Evidence",
+      `- capture failure: ${reason || "browser capture unavailable"}`,
+      "",
+      "## Decisions",
+      "- Default CLI behavior blocks instead of silently degrading.",
+      "- Use `--allow-degraded` only when the user accepts a no-screenshot review.",
+      "",
+      "## Open Questions",
+      "- Is Playwright installed and importable from the active Poison runtime?",
+      "- Is a browser binary installed and launchable?",
+      "- Is the target URL reachable from this shell?",
+      "",
+      "## Next Actions",
+      "- poison doctor",
+      "- install or repair Playwright/browser runtime",
+      "- rerun capture, or rerun capture with --allow-degraded after explicit user acceptance",
+      "",
+    ].join("\n"),
+  );
+
+  return blockRun(
+    run.absolutePath,
+    addArtifact(state, CAPTURE_DIAGNOSTICS_ARTIFACT),
+    reason || "browser capture unavailable",
+    "doctor",
+  );
 }
 
 export async function recordBrowserCapture(projectRoot = process.cwd(), { runPath, url, adapter } = {}) {
@@ -1315,7 +1500,7 @@ export function writeReviewArtifacts(projectRoot = process.cwd(), { runPath } = 
         `- evidence source: ${evidence.evidenceRefs[0]}`,
         `- evidenceRefs: ${evidence.evidenceRefs.join(", ")}`,
         `- affectedScreens: ${evidence.affectedScreens}`,
-        "- evidence level: E2",
+        `- evidence level: ${evidence.evidenceLevel}`,
         `- issue: ${evidence.issue}`,
         `- why it feels poisoned: ${evidence.why}`,
         `- firstRepairRecommendation: ${evidence.recommendation}`,
@@ -1510,6 +1695,13 @@ export function gateRun(projectRoot = process.cwd(), { runPath } = {}) {
   const schema = schemaCheckRun(projectRoot, { runPath });
   const hardErrors = uniqueErrors([...schema.errors, ...severeRuntimeErrors(run.absolutePath)]);
   const verdict = hardErrors.length === 0 ? "PASS" : "FAIL";
+  const findingFixes = hardErrors.length === 0 ? reviewFindingFixes(run.absolutePath) : [];
+  const requiredFixLines = hardErrors.length > 0
+    ? ["- resolve V1 hard-check failures"]
+    : findingFixes.map((finding) => `- ${finding.findingId}: ${finding.firstRepairRecommendation || finding.issue || "review finding requires follow-up"}`);
+  const nextAction = hardErrors.length > 0
+    ? "schema-check"
+    : (findingFixes.length > 0 ? "repair-plan-or-user-review" : "complete");
   writeMarkdown(
     run.absolutePath,
     run.runId,
@@ -1529,10 +1721,10 @@ export function gateRun(projectRoot = process.cwd(), { runPath } = {}) {
       "- Degraded evidence limits visual and UX conclusions.",
       "",
       "## Required fixes",
-      hardErrors.length === 0 ? "none" : "- resolve V1 hard-check failures",
+      requiredFixLines.length === 0 ? "none" : requiredFixLines.join("\n"),
       "",
       "## Next action",
-      hardErrors.length === 0 ? "complete-or-review-warnings" : "schema-check",
+      nextAction,
       "",
     ].join("\n"),
   );
@@ -1553,7 +1745,7 @@ export function gateRun(projectRoot = process.cwd(), { runPath } = {}) {
     status: "gated",
     previousStatus: null,
     blockedReason: null,
-    nextRecommendedAction: "complete-or-review-warnings",
+    nextRecommendedAction: nextAction,
   });
   return { verdict, errors: [] };
 }

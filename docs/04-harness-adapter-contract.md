@@ -23,8 +23,8 @@ Adapters may:
 
 - explain how to invoke Poison in a harness
 - report capability availability
-- degrade missing automation into explicit degraded evidence or blocked next
-  actions
+- block missing automation with diagnostics unless the user explicitly accepts
+  degraded evidence
 - provide harness-specific loading instructions
 
 Adapters must not:
@@ -36,6 +36,7 @@ Adapters must not:
 
 ## V1 Degradation
 
-The current V1 dependency-free runtime records degraded evidence when automated
-browser capture is unavailable. Future adapters can add real screenshot and
-console capture behind the same `capture` contract.
+The current V1 runtime blocks capture when automated browser capture is
+unavailable, writes diagnostics, and points to doctor. It records degraded
+evidence only after explicit user acceptance. Future adapters can add real
+screenshot and console capture behind the same `capture` contract.

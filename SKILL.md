@@ -63,6 +63,28 @@ When no URL or run path is available, do not explain the whole product. Run
 `poison doctor`, initialize missing `.poison` state when safe, and ask for the
 prototype URL.
 
+After `poison gate`, run:
+
+```bash
+poison brief --run <run-path>
+```
+
+Use that brief as the user-facing result. The final response must include:
+
+- whether the gate is only a mechanical pass or a product-ready pass
+- evidence limitations, especially degraded capture or non-target runtime
+  surfaces
+- the highest-priority fixes in order
+- acceptance criteria for the fixes
+- exact artifact paths only as supporting references
+
+Do not finish with only command outputs, artifact inventories, or "work
+completed" language.
+
+If `poison capture` blocks because browser capture is unavailable, run
+`poison doctor --capture --url <url>` and report the root cause. Do not continue
+with degraded evidence unless the user explicitly accepts `--allow-degraded`.
+
 Good first response for "use poison on this repo":
 
 ```text
@@ -90,6 +112,7 @@ poison capture --url <url> --run .poison/runs/<run-id>
 poison review --run .poison/runs/<run-id>
 poison schema-check --run .poison/runs/<run-id>
 poison gate --run .poison/runs/<run-id>
+poison brief --run .poison/runs/<run-id>
 ```
 
 ## Invocation
@@ -153,6 +176,7 @@ poison audit-completion --run .poison/runs/001-poisoned-demo
 - Do not define command names, artifact schemas, state transitions, review
   fields, or gate rules in this file. Update the owning contract files.
 - Preserve evidence limitations in review summaries and gate reports.
-- If browser automation is unavailable, record degraded evidence explicitly
-  instead of claiming screenshots or console observations.
+- If browser automation is unavailable, block capture and run doctor. Record
+  degraded evidence only when the user explicitly accepts `--allow-degraded`;
+  never claim screenshots or console observations from degraded evidence.
 - Run `npm test` before claiming implementation changes are complete.

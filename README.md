@@ -74,8 +74,9 @@ npm run check
 ```
 
 `playwright` is an optional dependency. If browser automation is unavailable,
-`poison capture` records explicit degraded evidence instead of pretending that
-runtime visual or console evidence exists.
+`poison capture` blocks by default, writes `capture-diagnostics.md`, and points
+to `poison doctor --capture`. Use `--allow-degraded` only when you explicitly
+accept a no-screenshot/no-live-console review.
 
 If the npm package is not installed globally, the Codex-installed skill can run
 the CLI through the linked command:
@@ -90,7 +91,7 @@ Run these commands in the target project you want to inspect. Replace the URL
 with your local prototype URL.
 
 ```bash
-poison doctor
+poison doctor --capture --url http://localhost:5173
 poison init
 
 poison new-run \
@@ -109,11 +110,15 @@ poison schema-check \
 
 poison gate \
   --run .poison/runs/001-poisoned-demo
+
+poison brief \
+  --run .poison/runs/001-poisoned-demo
 ```
 
 This produces `.poison/runs/<run-id>` evidence and review artifacts. A passing
 gate means the run has the required mechanical evidence and schema structure;
-it is not a subjective design-quality guarantee.
+it is not a subjective design-quality guarantee. Use `poison brief` for the
+user-facing conclusion, evidence limits, fix order, and acceptance criteria.
 
 ## Full Workflow
 

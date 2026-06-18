@@ -7,6 +7,7 @@ import {
 } from "node:fs";
 import { join } from "node:path";
 import {
+  buildRunBrief,
   createReviewRun,
   gateRun,
   hardenRun,
@@ -15,6 +16,7 @@ import {
   publishDesignSnapshot,
   publishHandoffPackage,
   recordBrowserCapture,
+  recordCaptureFailure,
   recordDegradedCapture,
   routeRepairs,
   schemaCheckRun,
@@ -32,10 +34,11 @@ Evidence-backed UI prototype review, hardening, design handoff, and contract val
 
 Usage:
   poison --help
-  poison doctor
+  poison doctor [--capture] [--url <url>]
+  poison brief --run <run-path>
   poison init
   poison new-run --mode review --name <name>
-  poison capture --url <url> --run <run-path>
+  poison capture --url <url> --run <run-path> [--allow-degraded]
   poison review --run <run-path>
   poison schema-check --run <run-path>
   poison gate --run <run-path>
@@ -67,7 +70,66 @@ function readJsonIfPresent(path) {
   }
 }
 
-function projectDoctor(projectRoot) {
+async function inspectCaptureCapability({ url, launchBrowser = false } = {}) {
+  const capability = {
+    forcedDegradedMode: process.env.POISON_CAPTURE_MODE === "degraded" || process.env.POISON_DISABLE_BROWSER_CAPTURE === "1",
+    playwrightImport: "unknown",
+    playwrightImportError: null,
+    chromiumLaunch: launchBrowser ? "unknown" : "skipped",
+    chromiumLaunchError: null,
+    targetUrlReachable: url ? "unknown" : "not-checked",
+    targetUrlError: null,
+    recommendedAction: "capture",
+  };
+
+  let playwright = null;
+  if (capability.forcedDegradedMode) {
+    capability.recommendedAction = "unset forced degraded mode or use --allow-degraded";
+  }
+
+  try {
+    playwright = await import("playwright");
+    capability.playwrightImport = "ok";
+  } catch (error) {
+    capability.playwrightImport = "failed";
+    capability.playwrightImportError = error.message;
+    capability.recommendedAction = "install playwright where the active poison CLI can import it";
+  }
+
+  if (launchBrowser && playwright?.chromium) {
+    try {
+      const browser = await playwright.chromium.launch({ headless: true });
+      await browser.close();
+      capability.chromiumLaunch = "ok";
+    } catch (error) {
+      capability.chromiumLaunch = "failed";
+      capability.chromiumLaunchError = error.message;
+      capability.recommendedAction = "install or repair the Chromium browser used by Playwright";
+    }
+  }
+
+  if (url) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3000);
+    try {
+      const response = await fetch(url, { method: "GET", signal: controller.signal });
+      capability.targetUrlReachable = response.ok ? "ok" : `http-${response.status}`;
+      if (!response.ok) {
+        capability.recommendedAction = "start or fix the target prototype server";
+      }
+    } catch (error) {
+      capability.targetUrlReachable = "failed";
+      capability.targetUrlError = error.message;
+      capability.recommendedAction = "start or fix the target prototype server";
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  return capability;
+}
+
+async function projectDoctor(projectRoot, { capture = false, url } = {}) {
   const contextDir = join(projectRoot, ".poison", "context");
   const runsDir = join(projectRoot, ".poison", "runs");
   const runs = existsSync(runsDir)
@@ -95,6 +157,10 @@ function projectDoctor(projectRoot) {
     runCount: runs.length,
     latestRun: runs.at(-1) || null,
     designManifestReady: existsSync(join(projectRoot, "design", "manifest.json")),
+    captureCapability: await inspectCaptureCapability({
+      url,
+      launchBrowser: Boolean(capture),
+    }),
   };
 }
 
@@ -152,7 +218,13 @@ const cwd = process.cwd();
 try {
   switch (command) {
     case "doctor":
-      process.stdout.write(`${JSON.stringify(projectDoctor(cwd), null, 2)}\n`);
+      process.stdout.write(`${JSON.stringify(await projectDoctor(cwd, {
+        capture: Boolean(options.capture),
+        url: options.url,
+      }), null, 2)}\n`);
+      break;
+    case "brief":
+      process.stdout.write(buildRunBrief(cwd, { runPath: options.run }));
       break;
     case "init":
       initPoisonProject(cwd);
@@ -175,6 +247,21 @@ try {
           process.stdout.write("capture: browser evidence recorded\n");
           break;
         } catch (error) {
+          if (!options["allow-degraded"]) {
+            recordCaptureFailure(cwd, {
+              runPath: options.run,
+              url: options.url,
+              reason: `Browser capture failed: ${error.message}`,
+            });
+            throw new Error(
+              [
+                `Browser capture failed: ${error.message}`,
+                "Capture is blocked because no live screenshot and console evidence was recorded.",
+                `Run: poison doctor --capture${options.url ? ` --url ${options.url}` : ""}`,
+                "Re-run capture with --allow-degraded only after explicit user acceptance.",
+              ].join("\n"),
+            );
+          }
           recordDegradedCapture(cwd, {
             runPath: options.run,
             url: options.url,
@@ -185,6 +272,21 @@ try {
         }
       }
 
+      if (!options["allow-degraded"]) {
+        recordCaptureFailure(cwd, {
+          runPath: options.run,
+          url: options.url,
+          reason: adapter.unavailableReason,
+        });
+        throw new Error(
+          [
+            adapter.unavailableReason,
+            "Capture is blocked because no live screenshot and console evidence was recorded.",
+            `Run: poison doctor --capture${options.url ? ` --url ${options.url}` : ""}`,
+            "Re-run capture with --allow-degraded only after explicit user acceptance.",
+          ].join("\n"),
+        );
+      }
       recordDegradedCapture(cwd, {
         runPath: options.run,
         url: options.url,

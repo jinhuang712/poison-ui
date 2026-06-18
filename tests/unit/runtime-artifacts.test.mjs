@@ -5,9 +5,11 @@ import { join } from "node:path";
 import { test } from "node:test";
 
 import {
+  buildRunBrief,
   initPoisonProject,
   createReviewRun,
   recordBrowserCapture,
+  recordCaptureFailure,
   recordDegradedCapture,
   hardenRun,
   initializeProtectedFeatures,
@@ -101,6 +103,26 @@ test("run-state transitions preserve recoverable blocked metadata for degraded c
   assert.equal(state.blockedReason, null);
   assert.equal(state.nextRecommendedAction, "review");
   assert.ok(state.artifacts.includes("degraded-evidence.md"));
+});
+
+test("capture failure writes diagnostics and blocks by default", () => {
+  const project = makeProject();
+  initPoisonProject(project);
+  const run = createReviewRun(project, { mode: "review", name: "capture failure" });
+
+  recordCaptureFailure(project, {
+    runPath: run.relativePath,
+    url: "http://localhost:5173",
+    reason: "Playwright import failed",
+  });
+
+  const state = readJson(join(run.absolutePath, "run-state.json"));
+  assert.equal(state.status, "blocked");
+  assert.equal(state.previousStatus, "created");
+  assert.equal(state.blockedReason, "Playwright import failed");
+  assert.equal(state.nextRecommendedAction, "doctor");
+  assert.ok(state.artifacts.includes("capture-diagnostics.md"));
+  assert.match(readFileSync(join(run.absolutePath, "capture-diagnostics.md"), "utf8"), /Playwright import failed/);
 });
 
 test("browser capture writes screenshot manifest and console evidence", async () => {
@@ -272,6 +294,20 @@ test("review artifacts satisfy schema check and gate rules", () => {
   assert.equal(gate.verdict, "PASS");
   const state = readJson(join(run.absolutePath, "run-state.json"));
   assert.equal(state.status, "gated");
+  assert.equal(state.nextRecommendedAction, "repair-plan-or-user-review");
+  assert.match(readFileSync(join(run.absolutePath, "gate-report.md"), "utf8"), /V1-F001:/);
+  assert.doesNotMatch(readFileSync(join(run.absolutePath, "gate-report.md"), "utf8"), /## Required fixes\nnone/);
+
+  const brief = buildRunBrief(project, { runPath: run.relativePath });
+  assert.match(brief, /# Poison Brief/);
+  assert.match(brief, /mechanical pass only; product fixes remain/);
+  assert.match(brief, /## Evidence Limits/);
+  assert.match(brief, /degraded capture:/);
+  assert.match(brief, /## Top Fixes/);
+  assert.match(brief, /V1-F001/);
+  assert.match(brief, /## Acceptance Criteria/);
+  assert.match(brief, /## Required Fixes/);
+  assert.doesNotMatch(brief, /## Required Fixes\n- none/);
 });
 
 test("review artifacts reference only degraded evidence when capture degraded", () => {
@@ -296,6 +332,7 @@ test("review artifacts reference only degraded evidence when capture degraded", 
   assert.match(summary, /Local prototype review with degraded evidence/);
   assert.match(summary, /evidence source: degraded-evidence\.md/);
   assert.match(summary, /evidenceRefs: degraded-evidence\.md/);
+  assert.match(summary, /evidence level: E-gap/);
   assert.doesNotMatch(summary, /screenshot-manifest\.json/);
   assert.doesNotMatch(summary, /console\.log/);
   assert.doesNotMatch(summary, /screenshots\//);
@@ -1756,7 +1793,7 @@ test("post-repair review and gate preserve bounded round traceability", () => {
   assert.equal(gate.verdict, "PASS");
   const state = readJson(join(run.absolutePath, "run-state.json"));
   assert.equal(state.status, "gated");
-  assert.equal(state.nextRecommendedAction, "complete-or-review-warnings");
+  assert.equal(state.nextRecommendedAction, "repair-plan-or-user-review");
   assert.ok(state.artifacts.includes("repair-rounds/001/repair-plan.md"));
   assert.ok(state.artifacts.includes("repair-rounds/001/repair-plan.json"));
   assert.ok(state.artifacts.includes("repair-rounds/001/before-after-evidence.md"));

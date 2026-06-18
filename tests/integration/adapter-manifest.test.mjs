@@ -22,6 +22,7 @@ test("V4c adapter command manifest maps implemented commands to shared CLI", () 
     manifest.commands.map((command) => command.name),
     [
       "doctor",
+      "brief",
       "init",
       "new-run",
       "capture",

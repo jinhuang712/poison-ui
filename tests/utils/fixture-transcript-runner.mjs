@@ -15,7 +15,7 @@ export function runFixtureTranscript({ repoRoot, fixturePath }) {
     const result = spawnSync(process.execPath, [cliPath, ...step.args], {
       cwd: projectRoot,
       encoding: "utf8",
-      env: { ...process.env, POISON_CAPTURE_MODE: "degraded" },
+      env: { ...process.env, POISON_DISABLE_BROWSER_CAPTURE: "1" },
       stdio: ["ignore", "pipe", "pipe"],
     });
 

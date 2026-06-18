@@ -23,9 +23,10 @@ V1 implements the review-first dry-run through the single `poison` executable:
 init -> new-run -> capture -> review -> schema-check -> gate
 ```
 
-The current dependency-free V1 runtime records an explicit degraded evidence
-artifact when automated browser capture is unavailable. It must not claim live
-visual or console observations without an evidence artifact.
+The current V1 runtime blocks capture and writes diagnostics when automated
+browser capture is unavailable. It records degraded evidence only after explicit
+user acceptance, and it must not claim live visual or console observations from
+degraded evidence.
 
 The implementation entry points are:
 

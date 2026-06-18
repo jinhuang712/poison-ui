@@ -25,8 +25,9 @@ test("V4d harness degradation matrix documents current local fallback behavior",
 
   const browser = matrix.degradations.find((item) => item.capability === "browser-automation");
   assert.equal(browser.command, "capture");
-  assert.equal(browser.behavior, "write degraded-evidence.md and continue as captured");
-  assert.equal(browser.exitCode, 0);
+  assert.equal(browser.behavior, "write capture-diagnostics.md and move run to blocked unless --allow-degraded is explicit");
+  assert.equal(browser.exitCode, 1);
+  assert.equal(browser.nextRecommendedAction, "doctor");
 
   const artifact = matrix.degradations.find((item) => item.capability === "referenced-artifact");
   assert.equal(artifact.command, "gate");

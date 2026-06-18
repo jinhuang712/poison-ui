@@ -13,11 +13,13 @@ test("V4b fixture transcript locks the V1-V3c happy path", () => {
 
   const result = runFixtureTranscript({ repoRoot, fixturePath });
 
-  assert.equal(result.steps.length, 19);
+  assert.equal(result.steps.length, 20);
   assert.equal(result.steps[0].command, "init");
-  assert.equal(result.steps.at(-1).command, "schema-check");
-  assert.deepEqual(result.steps.map((step) => step.status), Array(19).fill(0));
+  assert.equal(result.steps.at(-1).command, "brief");
+  assert.deepEqual(result.steps.map((step) => step.status), Array(20).fill(0));
   assert.match(result.steps.find((step) => step.command === "audit-completion").stdout, /audit-completion: report written/);
+  assert.match(result.steps.at(-1).stdout, /## Top Fixes/);
+  assert.match(result.steps.at(-1).stdout, /V1-F001/);
   assert.equal(result.finalState.status, "published");
   assert.ok(result.finalState.artifacts.includes("completion-report.md"));
   assert.equal(existsSync(join(result.projectRoot, "design", "review")), false);

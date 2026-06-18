@@ -11,6 +11,7 @@ E1 runtime/screenshot Real screenshot, browser result, console output, responsiv
 E2 source/design      Code, design, spec, PRD, poison-core, visual-memory, visual-system
 E3 rubric/taxonomy    poison taxonomy, completion rubric, visual/UX/frontend rubrics
 E4 reviewer opinion   Reviewer taste, judgment, directional suggestion
+E-gap                 Explicit evidence gap, such as unavailable browser capture
 ```
 
 ## Severity Rules
@@ -28,7 +29,8 @@ E4 reviewer opinion   Reviewer taste, judgment, directional suggestion
 - E0 overrides all other evidence.
 - E1 overrides design guesswork.
 - E4 can trigger discussion or designer discretion only.
-- Insufficient evidence produces `BLOCKED` or `needs-evidence`.
+- Insufficient evidence produces `BLOCKED`, `needs-evidence`, or an explicit
+  `E-gap` finding that cannot support visual/UX conclusions by itself.
 
 ## Finding Fields
 
@@ -45,7 +47,7 @@ Each finding must include:
 - issue:
 - why it feels poisoned:
 - firstRepairRecommendation:
-- evidence level: E0 | E1 | E2 | E3 | E4
+- evidence level: E0 | E1 | E2 | E3 | E4 | E-gap
 - evidence source:
 - why severity is justified:
 ```

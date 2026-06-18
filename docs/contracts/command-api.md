@@ -16,16 +16,23 @@ npx poison-ui [action-or-mode] [options]
 poison [action-or-mode] [options]
 ```
 
-## Doctor
+## Doctor And Brief
 
 `poison doctor` is a read-only project inspection command for agents and users.
 It prints JSON with the CLI path, project root, `.poison/context` readiness,
-run count, latest run path/status, and whether `design/manifest.json` exists.
-It must not mutate repository state.
+run count, latest run path/status, whether `design/manifest.json` exists, and
+capture capability diagnostics. With `--capture`, it checks whether Playwright
+can be imported and Chromium can be launched. With `--url <url>`, it also checks
+whether the target URL is reachable. It must not mutate repository state.
 
-Set `POISON_CAPTURE_MODE=degraded` to force explicit degraded evidence capture
-instead of trying Playwright browser automation. This is useful for deterministic
-tests and non-browser environments.
+`poison brief --run <run>` is a read-only user-facing result command. It
+summarizes conclusion, evidence limits, top fixes, acceptance criteria,
+required fixes, useful artifacts, and next action from existing run artifacts.
+
+`poison capture` blocks by default when browser capture cannot run. It writes
+`capture-diagnostics.md`, moves the run to `blocked`, and tells the user to run
+`poison doctor --capture`. Use `--allow-degraded` only after the user explicitly
+accepts a no-screenshot/no-live-console review.
 
 ## Modes
 
@@ -60,12 +67,13 @@ These actions are required for the V1 review-first dry-run:
 
 ```bash
 poison init
-poison doctor
+poison doctor --capture --url http://localhost:5173
 poison new-run --mode review --name poisoned-demo
 poison capture --url http://localhost:5173 --run .poison/runs/001-poisoned-demo
 poison review --run .poison/runs/001-poisoned-demo
 poison schema-check --run .poison/runs/001-poisoned-demo
 poison gate --run .poison/runs/001-poisoned-demo
+poison brief --run .poison/runs/001-poisoned-demo
 ```
 
 ## V2a Deterministic Action Mapping
@@ -165,7 +173,9 @@ Current frozen result classes:
 | Illegal command order before command starts | 1 | empty | order error | none |
 | `schema-check` failure | 1 | `schema-check: FAIL` plus errors | empty | none |
 | `gate` hard-check failure from a legal source state | 1 | `gate: FAIL` | empty | writes `gate-report.md` and moves to `blocked` |
-| Degraded browser capture fallback | 0 | `capture: degraded evidence recorded` | empty | moves to `captured` with degraded evidence |
+| Browser capture unavailable | 1 | empty | diagnostic message | writes `capture-diagnostics.md` and moves to `blocked` |
+| Explicit degraded browser capture | 0 | `capture: degraded evidence recorded` | empty | only with `--allow-degraded`; moves to `captured` with degraded evidence |
+| Brief | 0 | `# Poison Brief...` | empty | none |
 
 When a command moves a run to `blocked`, it must preserve `previousStatus`,
 write a concrete `blockedReason`, and set `nextRecommendedAction`.

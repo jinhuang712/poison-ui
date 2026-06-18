@@ -80,7 +80,7 @@ published
 | Command/action | From | Success to | Failure to | Actor | Idempotent | Required artifacts |
 |---|---|---|---|---|---|---|
 | `new-run --mode review` | none | `created` | none | CLI | no | `run-state.json`, `run-contract.md`, `context-health.md` |
-| `capture --url <url>` | `created`, `blocked`, `repaired` | `captured` | `blocked` | CLI/browser adapter | yes | `screenshots/`, `screenshot-manifest.json`, console evidence, or degraded evidence artifact |
+| `capture --url <url>` | `created`, `blocked`, `repaired` | `captured` | `blocked` | CLI/browser adapter | yes | `screenshots/`, `screenshot-manifest.json`, console evidence, `capture-diagnostics.md`, or explicitly accepted degraded evidence artifact |
 | `review` | `captured` | `reviewed` | `blocked` | reviewer/orchestrator | yes | `review-packet.md`, `review-summary.md` |
 | `schema-check` | `created`, `captured`, `reviewed`, `gated`, `blocked` | same state | `blocked` | CLI | yes | schema report or inline validation result |
 | `gate` | `reviewed` | `gated` | `blocked` | CLI | yes | `gate-report.md` |
@@ -111,7 +111,7 @@ source state is a command-order error and must not silently mutate run state.
 | `assess-scope` | `protected_ready` | `scope_assessed` | `blocked` | orchestrator | yes | `scope-assessment.md` |
 | design generation | `scope_assessed` | `designing` | `blocked` | designer | no | design work log or design rationale |
 | prototype output ready | `designing` | `prototype_ready` | `blocked` | designer/builder | no | inspectable prototype or design output |
-| capture generated prototype | `prototype_ready` | `captured` | `blocked` | CLI/browser adapter | yes | screenshots, manifest, console evidence, or degraded evidence artifact |
+| capture generated prototype | `prototype_ready` | `captured` | `blocked` | CLI/browser adapter | yes | screenshots, manifest, console evidence, `capture-diagnostics.md`, or explicitly accepted degraded evidence artifact |
 | `publish-design` | `gated`, `published` | `published` | `blocked` | CLI/publisher | yes | `design/manifest.json`, `design/handoff.md`, publish manifest with `sourceRunId` |
 | `publish-handoff` | `published` | `published` | `blocked` | CLI/publisher | yes | `design/handoff/implementation-map.md`, `design/handoff/acceptance-checklist.md`, `design/handoff/open-questions.md`, `design/handoff/backlog.md`, manifest `HANDOFF_READY` |
 | `audit-completion` | `published` | `published` | `blocked` | CLI/reviewer | yes | `completion-audit-packet.md`, `completion-report.md`, evidence-backed labels without percentages |

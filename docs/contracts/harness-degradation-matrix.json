@@ -6,16 +6,16 @@
     {
       "capability": "browser-automation",
       "command": "capture",
-      "behavior": "write degraded-evidence.md and continue as captured",
-      "exitCode": 0,
-      "nextRecommendedAction": "review"
+      "behavior": "write capture-diagnostics.md and move run to blocked unless --allow-degraded is explicit",
+      "exitCode": 1,
+      "nextRecommendedAction": "doctor"
     },
     {
       "capability": "console-evidence",
       "command": "capture",
-      "behavior": "write degraded-evidence.md when console capture is unavailable",
-      "exitCode": 0,
-      "nextRecommendedAction": "review"
+      "behavior": "write capture-diagnostics.md and move run to blocked unless --allow-degraded is explicit",
+      "exitCode": 1,
+      "nextRecommendedAction": "doctor"
     },
     {
       "capability": "referenced-artifact",
