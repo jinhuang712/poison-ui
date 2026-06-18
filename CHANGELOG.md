@@ -4,6 +4,14 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
+## 0.9.0 - 2026-06-18
+
+- Added `scripts/install-poison-ui.sh` for Codex CLI and Claude Code skill
+  installation.
+- Added a root-level `SKILL.md` so repo-root skill installs include the CLI
+  implementation and contract docs.
+- Prepared GitHub Release `v0.9.0` as the first demo distribution target
+  without publishing to npm.
 - Implemented V4e package validation evidence with
   `docs/delivery/package-validation-report.json`, package file coverage for
   `src` and `docs`, and validation tests without publishing a release.

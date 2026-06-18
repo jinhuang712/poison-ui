@@ -18,19 +18,27 @@ owner, one gate behavior, bounded evidence, and pass/fail tests.
 
 ## Install
 
-Install the Codex skill from GitHub:
+Install the Codex skill from the latest GitHub source:
 
 ```bash
-python3 ~/.codex/skills/.system/skill-installer/scripts/install-skill-from-github.py \
-  --repo jinhuang712/poison-ui \
-  --path . \
-  --name poison \
-  --ref main
+curl -fsSL https://raw.githubusercontent.com/jinhuang712/poison-ui/main/scripts/install-poison-ui.sh | bash -s -- --target codex
 ```
 
-Restart Codex after installing the skill. The root-level skill install includes
-the CLI implementation and the contract docs, so required reading such as
-`docs/contracts/command-api.md` is available inside Codex.
+Install Claude Code:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/jinhuang712/poison-ui/main/scripts/install-poison-ui.sh | bash -s -- --target claude
+```
+
+Install both Codex CLI and Claude Code from the pinned `v0.9.0` release:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/jinhuang712/poison-ui/v0.9.0/scripts/install-poison-ui.sh | bash -s -- --target both --ref v0.9.0
+```
+
+Restart the target CLI after installing the skill. The root-level skill install
+includes the CLI implementation and the contract docs, so required reading such
+as `docs/contracts/command-api.md` is available inside Codex and Claude Code.
 
 From npm after publication:
 
@@ -181,6 +189,7 @@ The canonical command behavior is owned by
 - Run state: [docs/contracts/run-state.md](./docs/contracts/run-state.md)
 - Design folder contract: [docs/contracts/design-folder.md](./docs/contracts/design-folder.md)
 - Package validation report: [docs/delivery/package-validation-report.json](./docs/delivery/package-validation-report.json)
+- GitHub release v0.9.0: [docs/delivery/github-release-v0.9.0.md](./docs/delivery/github-release-v0.9.0.md)
 
 The implementation plan index is
 [poison_execution_plan_zh.md](./poison_execution_plan_zh.md). Detailed product,

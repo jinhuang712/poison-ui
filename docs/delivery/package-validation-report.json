@@ -1,7 +1,9 @@
 {
   "schemaVersion": 1,
   "packageName": "poison-ui",
+  "version": "0.9.0",
   "releasePublished": false,
+  "githubReleaseTarget": "v0.9.0",
   "verdict": "READY_FOR_MANUAL_RELEASE_REVIEW",
   "bin": {
     "poison": "bin/poison.mjs"
@@ -11,6 +13,7 @@
     "src",
     "docs",
     "skills",
+    "scripts",
     "SKILL.md",
     "README.md",
     "LICENSE"
@@ -19,6 +22,6 @@
   "validationNotes": [
     "V4e validates package metadata and included files only.",
     "No npm package was published.",
-    "Release distribution remains a manual follow-up."
+    "GitHub Release v0.9.0 is the first distribution target."
   ]
 }

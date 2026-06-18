@@ -13,9 +13,11 @@ test("V4e package validation report records package readiness without publishing
   assert.equal(report.schemaVersion, 1);
   assert.equal(report.releasePublished, false);
   assert.equal(report.packageName, pkg.name);
+  assert.equal(report.version, pkg.version);
+  assert.equal(report.githubReleaseTarget, `v${pkg.version}`);
   assert.equal(report.bin.poison, pkg.bin.poison);
   assert.equal(report.bin.poison, "bin/poison.mjs");
-  assert.deepEqual(report.requiredFiles, ["bin", "src", "docs", "skills", "SKILL.md", "README.md", "LICENSE"]);
+  assert.deepEqual(report.requiredFiles, ["bin", "src", "docs", "skills", "scripts", "SKILL.md", "README.md", "LICENSE"]);
   assert.deepEqual(report.missingRequiredFiles, []);
   assert.equal(report.verdict, "READY_FOR_MANUAL_RELEASE_REVIEW");
 

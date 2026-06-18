@@ -94,7 +94,8 @@ them across adapters instead of inventing new workflow behavior.
 ## Current V4e Entry Criteria
 
 - Package validation must inspect the actual package files and scripts.
-- V4e may produce validation evidence, but it must not publish a release.
+- V4e may produce validation evidence. Distribution requires a separate release
+  decision after package validation passes.
 
 ## Current V4e Exit Criteria
 
@@ -102,7 +103,8 @@ them across adapters instead of inventing new workflow behavior.
   evidence.
 - Package files include the CLI, source modules, docs, skills, README, and
   license.
-- V4e does not publish a package release or create distribution channels.
+- V4e does not publish to npm. GitHub Release distribution may be created after
+  the owner explicitly approves a version.
 
 ## Weighting
 
