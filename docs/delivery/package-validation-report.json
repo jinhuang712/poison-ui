@@ -4,7 +4,7 @@
   "releasePublished": false,
   "verdict": "READY_FOR_MANUAL_RELEASE_REVIEW",
   "bin": {
-    "poison": "./bin/poison.mjs"
+    "poison": "bin/poison.mjs"
   },
   "requiredFiles": [
     "bin",

@@ -4,7 +4,7 @@
   "description": "Controlled UI prototype evolution skill and command design.",
   "type": "module",
   "bin": {
-    "poison": "./bin/poison.mjs"
+    "poison": "bin/poison.mjs"
   },
   "files": [
     "bin",
