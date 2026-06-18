@@ -5,9 +5,10 @@ contracts for Poison.
 
 ## Current Status
 
-Poison has a complete V1 review-first CLI subset, V2a protected-baseline,
-V2b repair-planning, V2c arbiter-routing, and V2d bounded harden round actions,
-plus a split contract documentation structure. See
+Poison has completed the current V0-V4 numbered roadmap: V1 review-first
+detection, bounded V2 hardening, V3 design handoff publishing, and V4 command,
+adapter-facing, degradation, and package validation contracts. VN backlog items
+remain parked until promoted with one owner and pass/fail tests. See
 [Progress](../PROGRESS.md) and the [Version Roadmap](./delivery/version-roadmap.md).
 
 ## Ownership Rule
@@ -41,6 +42,7 @@ schemas, gate behavior, or design-folder structure in multiple files.
 | V2 delivery owner | [delivery/v2-controlled-hardening.md](./delivery/v2-controlled-hardening.md) |
 | V3 delivery owner | [delivery/v3-design-package.md](./delivery/v3-design-package.md) |
 | V4 delivery owner | [delivery/v4-platform-adapter-maturity.md](./delivery/v4-platform-adapter-maturity.md) |
+| Package validation report | [delivery/package-validation-report.json](./delivery/package-validation-report.json) |
 | Future-version backlog | [delivery/vn-backlog.md](./delivery/vn-backlog.md) |
 | Source layout | [architecture/source-layout.md](./architecture/source-layout.md) |
 | Adapter layout | [architecture/adapter-layout.md](./architecture/adapter-layout.md) |
@@ -56,4 +58,6 @@ schemas, gate behavior, or design-folder structure in multiple files.
 | Role contracts | [contracts/role-contracts.md](./contracts/role-contracts.md) |
 | Output contract | [contracts/output-contract.md](./contracts/output-contract.md) |
 | Design folder package | [contracts/design-folder.md](./contracts/design-folder.md) |
+| Adapter command manifest | [contracts/adapter-command-manifest.json](./contracts/adapter-command-manifest.json) |
+| Harness degradation matrix | [contracts/harness-degradation-matrix.json](./contracts/harness-degradation-matrix.json) |
 | Decision log index | [decisions/README.md](./decisions/README.md) |

@@ -1,102 +1,183 @@
 # poison-ui
 
-`poison-ui` is an early-stage, platform-neutral skill and command design for
-controlled UI prototype review and evolution. It is being designed to support
-Claude Code, Codex, and agentic workflows through one command, shared contracts,
-and evidence-based review gates.
+`poison-ui` is a command-line workflow for evidence-backed UI prototype
+review, controlled hardening, design handoff, and platform contract validation.
+It is built for vibe coding developers who can ship with AI but still need a
+strict process for deciding why a prototype feels poisoned, what to fix first,
+and what evidence supports the handoff.
 
-The project now includes a minimal V1 review-first CLI subset. The
-implementation plan index is
-[poison_execution_plan_zh.md](./poison_execution_plan_zh.md), current progress
-is tracked in [PROGRESS.md](./PROGRESS.md), and detailed docs live under
-[docs](./docs).
+The current numbered roadmap is complete for V0-V4:
 
-## Goals
+- V1 review-first detector
+- V2 controlled hardening loop
+- V3 design package handoff
+- V4 platform and package contract validation
 
-- Help vibe coding developers diagnose AI-generated prototypes that feel
-  poisoned because the developer does not yet have enough design, frontend, or
-  UI/UX skill to identify the failure points.
-- Review and harden existing high-fidelity runnable UI prototypes before trying
-  to generate entire design systems.
-- Keep product context, visual memory, reviewer feedback, and gate evidence consistent across runs.
-- Support one public command with deterministic internal tools.
-- Allow Claude Code and Codex adapters without diverging workflow contracts.
+VN backlog items remain parked until promoted with one user job, one artifact
+owner, one gate behavior, bounded evidence, and pass/fail tests.
 
-## Architecture
+## Install
 
-```text
-1 skill + 3-5 modes + 1 public command + N internal tools
-```
-
-Long-term planned modes:
-
-- `seed`
-- `evolve`
-- `full`
-- `review`
-- `harden`
-
-`auto` is command behavior, not a separate mode. The first implementation target
-is narrower: V1 is a review-first poison detector for an existing local
-prototype.
-
-## Repository Layout
-
-```text
-bin/poison.mjs
-skills/poison/SKILL.md
-skills/poison/references/
-docs/
-PROGRESS.md
-poison_execution_plan_zh.md
-poison_taxonomy_single_word_full.md
-WORKFLOW.md
-AGENTS.md
-CLAUDE.md
-```
-
-## CLI
-
-The CLI exposes the V1 review-first dry-run path:
+From npm after publication:
 
 ```bash
-node bin/poison.mjs --help
-node bin/poison.mjs init
-node bin/poison.mjs new-run --mode review --name poisoned-demo
-node bin/poison.mjs capture --url http://localhost:5173 --run .poison/runs/001-poisoned-demo
-node bin/poison.mjs review --run .poison/runs/001-poisoned-demo
-node bin/poison.mjs schema-check --run .poison/runs/001-poisoned-demo
-node bin/poison.mjs gate --run .poison/runs/001-poisoned-demo
+npm install -g poison-ui
+poison --help
 ```
 
-The current capture command records explicit degraded evidence when automated
-browser capture is unavailable. It does not claim live visual or console
-observations without evidence artifacts.
+Without a global install, run from a clone:
+
+```bash
+git clone https://github.com/jinhuang712/poison-ui.git
+cd poison-ui
+npm install
+node bin/poison.mjs --help
+```
+
+For local development inside this repository:
+
+```bash
+npm install
+npm test
+npm run check
+```
+
+`playwright` is an optional dependency. If browser automation is unavailable,
+`poison capture` records explicit degraded evidence instead of pretending that
+runtime visual or console evidence exists.
+
+## Quickstart
+
+Run these commands in the target project you want to inspect. Replace the URL
+with your local prototype URL.
+
+```bash
+poison init
+
+poison new-run \
+  --mode review \
+  --name poisoned-demo
+
+poison capture \
+  --url http://localhost:5173 \
+  --run .poison/runs/001-poisoned-demo
+
+poison review \
+  --run .poison/runs/001-poisoned-demo
+
+poison schema-check \
+  --run .poison/runs/001-poisoned-demo
+
+poison gate \
+  --run .poison/runs/001-poisoned-demo
+```
+
+This produces `.poison/runs/<run-id>` evidence and review artifacts. A passing
+gate means the run has the required mechanical evidence and schema structure;
+it is not a subjective design-quality guarantee.
+
+## Full Workflow
+
+After the V1 gate passes, run the bounded V2 hardening sequence:
+
+```bash
+poison init-protected-features --run .poison/runs/001-poisoned-demo
+poison repair-plan --run .poison/runs/001-poisoned-demo
+poison arbiter-route --run .poison/runs/001-poisoned-demo
+poison harden --run .poison/runs/001-poisoned-demo
+
+poison capture \
+  --url http://localhost:5173 \
+  --run .poison/runs/001-poisoned-demo
+
+poison review --run .poison/runs/001-poisoned-demo
+poison gate --run .poison/runs/001-poisoned-demo
+poison regression-check --run .poison/runs/001-poisoned-demo
+poison visual-drift --run .poison/runs/001-poisoned-demo
+```
+
+Then publish the V3 design handoff:
+
+```bash
+poison publish-design --run .poison/runs/001-poisoned-demo
+poison publish-handoff --run .poison/runs/001-poisoned-demo
+poison audit-completion --run .poison/runs/001-poisoned-demo
+```
+
+Typical outputs:
+
+- `.poison/runs/<run-id>/review-summary.md`
+- `.poison/runs/<run-id>/gate-report.md`
+- `.poison/runs/<run-id>/repair-rounds/001/*`
+- `.poison/runs/<run-id>/completion-report.md`
+- `design/manifest.json`
+- `design/handoff.md`
+- `design/handoff/implementation-map.md`
+- `design/handoff/acceptance-checklist.md`
+
+The workflow intentionally does not generate completion percentages,
+`design/screens`, `design/flows`, or `design/review` output in the current
+numbered roadmap.
+
+## Command Summary
+
+```text
+poison init
+poison new-run --mode review --name <name>
+poison capture --url <url> --run <run-path>
+poison review --run <run-path>
+poison schema-check --run <run-path>
+poison gate --run <run-path>
+poison init-protected-features --run <run-path>
+poison repair-plan --run <run-path>
+poison arbiter-route --run <run-path>
+poison harden --run <run-path>
+poison regression-check --run <run-path>
+poison visual-drift --run <run-path>
+poison publish-design --run <run-path>
+poison publish-handoff --run <run-path>
+poison audit-completion --run <run-path>
+```
+
+The canonical command behavior is owned by
+[docs/contracts/command-api.md](./docs/contracts/command-api.md).
+
+## What It Does Not Do Yet
+
+- It does not automatically rewrite your frontend code.
+- It does not publish npm releases automatically.
+- It does not claim completion percentages.
+- It does not implement seed, evolve, or full generation modes.
+- It does not implement broad adapter matrices or external harness support.
+
+## Documentation
+
+- Current progress: [PROGRESS.md](./PROGRESS.md)
+- Version ladder: [docs/delivery/version-roadmap.md](./docs/delivery/version-roadmap.md)
+- Dry run: [docs/delivery/dry-run.md](./docs/delivery/dry-run.md)
+- Command contract: [docs/contracts/command-api.md](./docs/contracts/command-api.md)
+- Runtime artifacts: [docs/contracts/runtime-artifacts.md](./docs/contracts/runtime-artifacts.md)
+- Run state: [docs/contracts/run-state.md](./docs/contracts/run-state.md)
+- Design folder contract: [docs/contracts/design-folder.md](./docs/contracts/design-folder.md)
+- Package validation report: [docs/delivery/package-validation-report.json](./docs/delivery/package-validation-report.json)
+
+The implementation plan index is
+[poison_execution_plan_zh.md](./poison_execution_plan_zh.md). Detailed product,
+runtime, command, artifact, review, and gate behavior belongs under
+[docs](./docs), not in the root README.
 
 ## Development Workflow
 
-Read [WORKFLOW.md](./WORKFLOW.md) first. This file is intentionally project-neutral. Repository-specific agent instructions live in [AGENTS.md](./AGENTS.md) and [CLAUDE.md](./CLAUDE.md). [poison_execution_plan_zh.md](./poison_execution_plan_zh.md) is an implementation index; product and skill behavior belongs in the relevant owner files under [docs](./docs) and `skills/poison/**`.
+Read [WORKFLOW.md](./WORKFLOW.md) first. Repository-specific agent instructions
+live in [AGENTS.md](./AGENTS.md) and [CLAUDE.md](./CLAUDE.md).
 
-Do not grow [poison_execution_plan_zh.md](./poison_execution_plan_zh.md) back into a single huge reference. Update the relevant file under [docs](./docs).
+Before claiming a change is complete, run:
 
-Root project state is tracked in [TODO.md](./TODO.md) and
-[CHANGELOG.md](./CHANGELOG.md). Current implementation readiness is tracked in
-[PROGRESS.md](./PROGRESS.md). High-level design entries stay in [docs](./docs),
-while implementation-facing contracts are owned by the semantic subdirectories
-under `docs/architecture`, `docs/contracts`, `docs/delivery`, and
-`docs/decisions`. The detailed docs index is [docs/README.md](./docs/README.md).
-
-The version ladder and V1 review-first scope are defined in
-[docs/delivery/version-roadmap.md](./docs/delivery/version-roadmap.md).
-
-The expected target-project `design/` delivery package is defined in
-[docs/contracts/design-folder.md](./docs/contracts/design-folder.md).
-
-## Status
-
-This repository is public early implementation work. The V1 review-first subset
-is test-covered, but later seed/evolve/full/harden modes and full design folder
-publishing are not implemented yet.
+```bash
+npm test
+npm run check
+git diff --check
+```
 
 ## License
 

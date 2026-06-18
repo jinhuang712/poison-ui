@@ -22,7 +22,7 @@ import { createPlaywrightCaptureAdapter } from "../src/tools/playwright-capture.
 
 const help = `poison-ui
 
-V1 review-first plus V2 hardening and V3 publish CLI for the poison UI prototype workflow.
+Evidence-backed UI prototype review, hardening, design handoff, and contract validation CLI.
 
 Usage:
   poison --help
