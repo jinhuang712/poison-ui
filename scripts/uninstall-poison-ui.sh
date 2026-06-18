@@ -14,7 +14,9 @@ Defaults:
 
 Environment overrides:
   CODEX_SKILLS_DIR   default: ~/.codex/skills
+  CODEX_BACKUP_DIR   default: ~/.codex/skill-backups
   CLAUDE_SKILLS_DIR  default: ~/.claude/skills
+  CLAUDE_BACKUP_DIR  default: ~/.claude/skill-backups
 
 Examples:
   ./scripts/uninstall-poison-ui.sh --target codex
@@ -67,11 +69,13 @@ timestamp="$(date +%Y%m%d%H%M%S)"
 uninstall_one() {
   local label="$1"
   local skills_dir="$2"
+  local backup_root="$3"
   local dest="$skills_dir/poison"
 
   if [[ "$purge_backups" -eq 1 ]]; then
+    rm -rf "$backup_root"/poison.bak.* 2>/dev/null || true
     find "$skills_dir" -maxdepth 1 -type d -name 'poison.bak.*' -exec rm -rf {} +
-    echo "Purged ${label} poison backups under ${skills_dir}"
+    echo "Purged ${label} poison backups under ${backup_root}"
   fi
 
   if [[ ! -e "$dest" ]]; then
@@ -80,7 +84,8 @@ uninstall_one() {
   fi
 
   if [[ "$backup_existing" -eq 1 ]]; then
-    local backup="${dest}.bak.${timestamp}"
+    mkdir -p "$backup_root"
+    local backup="${backup_root}/poison.bak.${timestamp}"
     mv "$dest" "$backup"
     echo "Uninstalled ${label} poison skill; backup kept at ${backup}"
   else
@@ -90,14 +95,16 @@ uninstall_one() {
 }
 
 codex_skills_dir="${CODEX_SKILLS_DIR:-$HOME/.codex/skills}"
+codex_backup_dir="${CODEX_BACKUP_DIR:-$HOME/.codex/skill-backups}"
 claude_skills_dir="${CLAUDE_SKILLS_DIR:-$HOME/.claude/skills}"
+claude_backup_dir="${CLAUDE_BACKUP_DIR:-$HOME/.claude/skill-backups}"
 
 if [[ "$target" == "codex" || "$target" == "both" ]]; then
-  uninstall_one "Codex CLI" "$codex_skills_dir"
+  uninstall_one "Codex CLI" "$codex_skills_dir" "$codex_backup_dir"
 fi
 
 if [[ "$target" == "claude" || "$target" == "both" ]]; then
-  uninstall_one "Claude Code" "$claude_skills_dir"
+  uninstall_one "Claude Code" "$claude_skills_dir" "$claude_backup_dir"
 fi
 
 cat <<'EOF'

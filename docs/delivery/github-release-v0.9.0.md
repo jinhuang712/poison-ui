@@ -44,6 +44,8 @@ curl -fsSL https://raw.githubusercontent.com/jinhuang712/poison-ui/v0.9.0/script
 ## Notes
 
 - Restart the target CLI after installing the skill.
+- Backups are stored outside scanned skill directories to avoid duplicate skill
+  discovery.
 - Browser evidence depends on optional Playwright availability. If browser
   automation is unavailable, `poison capture` records degraded evidence
   explicitly.
