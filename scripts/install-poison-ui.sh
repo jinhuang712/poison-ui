@@ -17,6 +17,8 @@ Environment overrides:
   CODEX_SKILLS_DIR   default: ~/.codex/skills
   CLAUDE_SKILLS_DIR  default: ~/.claude/skills
   POISON_BIN_DIR     default: ~/.local/bin
+  POISON_INSTALL_DEPS      default: 1; set to 0 to skip npm dependencies
+  POISON_INSTALL_BROWSERS  default: 1; set to 0 to skip Playwright Chromium
 
 Examples:
   ./scripts/install-poison-ui.sh --target codex
@@ -28,6 +30,8 @@ EOF
 target="codex"
 ref="main"
 repo="jinhuang712/poison-ui"
+install_deps="${POISON_INSTALL_DEPS:-1}"
+install_browsers="${POISON_INSTALL_BROWSERS:-1}"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -62,6 +66,13 @@ case "$target" in
     exit 2
     ;;
 esac
+
+is_enabled() {
+  case "${1:-}" in
+    0|false|FALSE|no|NO|off|OFF) return 1 ;;
+    *) return 0 ;;
+  esac
+}
 
 tmpdir="$(mktemp -d)"
 trap 'rm -rf "$tmpdir"' EXIT
@@ -100,6 +111,32 @@ install_one() {
   rm -rf "$dest/skills/poison"
   chmod +x "$dest/bin/poison.mjs"
   echo "Installed poison-ui for ${label}: ${dest}"
+
+  if is_enabled "$install_deps"; then
+    if command -v npm >/dev/null 2>&1; then
+      echo "Installing runtime dependencies for ${label} browser capture"
+      if (cd "$dest" && npm install --omit=dev --include=optional --no-audit --no-fund); then
+        if is_enabled "$install_browsers"; then
+          if [[ -x "$dest/node_modules/.bin/playwright" ]]; then
+            echo "Installing Playwright Chromium for ${label} browser capture"
+            if ! (cd "$dest" && ./node_modules/.bin/playwright install chromium); then
+              echo "Warning: Chromium install failed; run poison doctor --capture for details." >&2
+            fi
+          else
+            echo "Warning: Playwright CLI was not installed; browser capture may be unavailable." >&2
+          fi
+        else
+          echo "Skipped Playwright Chromium install because POISON_INSTALL_BROWSERS=0"
+        fi
+      else
+        echo "Warning: dependency install failed; browser capture may be unavailable." >&2
+      fi
+    else
+      echo "Warning: npm not found; browser capture may be unavailable." >&2
+    fi
+  else
+    echo "Skipped runtime dependency install because POISON_INSTALL_DEPS=0"
+  fi
 
   if [[ "$create_shim" == "1" ]]; then
     mkdir -p "$poison_bin_dir"

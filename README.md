@@ -47,7 +47,11 @@ Restart the target CLI after installing the skill. The root-level skill install
 includes the CLI implementation and the contract docs, so required reading such
 as `docs/contracts/command-api.md` is available inside Codex and Claude Code.
 The installer links `poison` into `~/.local/bin`, which is on the default Codex
-PATH on this machine.
+PATH on this machine. It also installs the runtime Playwright dependency and
+Chromium browser by default so `poison capture` can take real screenshots after
+the target prototype server is running. For offline or docs-only installs, set
+`POISON_INSTALL_DEPS=0` or `POISON_INSTALL_BROWSERS=0` before running the
+installer.
 
 From npm after publication:
 
@@ -73,10 +77,12 @@ npm test
 npm run check
 ```
 
-`playwright` is an optional dependency. If browser automation is unavailable,
-`poison capture` blocks by default, writes `capture-diagnostics.md`, and points
-to `poison doctor --capture`. Use `--allow-degraded` only when you explicitly
-accept a no-screenshot/no-live-console review.
+`playwright` is an optional package dependency for npm consumers, but the skill
+installer installs it by default. If browser automation is unavailable, `poison
+capture` blocks by default, writes `capture-diagnostics.md`, and points to
+`poison doctor --capture`. Common causes are a skipped dependency install or a
+prototype URL that is not reachable. Use `--allow-degraded` only when you
+explicitly accept a no-screenshot/no-live-console review.
 
 If the npm package is not installed globally, the Codex-installed skill can run
 the CLI through the linked command:

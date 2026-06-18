@@ -84,8 +84,11 @@ codes, or long file paths by default. Give those details only when the user asks
 for evidence, debugging detail, or exact paths.
 
 If `poison capture` blocks because browser capture is unavailable, run
-`poison doctor --capture --url <url>` and report the root cause. Do not continue
-with degraded evidence unless the user explicitly accepts `--allow-degraded`.
+`poison doctor --capture --url <url>` and report the root cause. If doctor says
+Playwright cannot be imported, reinstall the skill with dependency installation
+enabled. If doctor says the URL is unreachable, start the target prototype
+server before retrying capture. Do not continue with degraded evidence unless
+the user explicitly accepts `--allow-degraded`.
 
 Good first response for "use poison on this repo":
 
