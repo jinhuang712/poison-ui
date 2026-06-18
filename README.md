@@ -18,6 +18,20 @@ owner, one gate behavior, bounded evidence, and pass/fail tests.
 
 ## Install
 
+Install the Codex skill from GitHub:
+
+```bash
+python3 ~/.codex/skills/.system/skill-installer/scripts/install-skill-from-github.py \
+  --repo jinhuang712/poison-ui \
+  --path . \
+  --name poison \
+  --ref main
+```
+
+Restart Codex after installing the skill. The root-level skill install includes
+the CLI implementation and the contract docs, so required reading such as
+`docs/contracts/command-api.md` is available inside Codex.
+
 From npm after publication:
 
 ```bash
@@ -45,6 +59,13 @@ npm run check
 `playwright` is an optional dependency. If browser automation is unavailable,
 `poison capture` records explicit degraded evidence instead of pretending that
 runtime visual or console evidence exists.
+
+If the npm package is not installed globally, the Codex-installed skill can run
+the CLI through:
+
+```bash
+node ~/.codex/skills/poison/bin/poison.mjs --help
+```
 
 ## Quickstart
 

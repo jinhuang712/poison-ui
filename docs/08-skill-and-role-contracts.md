@@ -18,10 +18,12 @@ file wins and this file should be corrected.
 
 ## Skill Entrypoint
 
-`skills/poison/SKILL.md` is the user-facing skill entrypoint. It should explain
-how to run Poison and where the durable contracts live. It must not become a
-second source of truth for command names, run-state transitions, artifact
-schemas, review fields, or gate rules.
+`SKILL.md` is the Codex-installable user-facing skill entrypoint for repo-root
+installs. It includes the CLI implementation and `docs/` contracts when
+installed into Codex. `skills/poison/SKILL.md` remains a compatibility
+entrypoint for harnesses that install from a nested skill path. Neither file
+should become a second source of truth for command names, run-state
+transitions, artifact schemas, review fields, or gate rules.
 
 The V1 operational command path is:
 
